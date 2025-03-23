@@ -3,7 +3,7 @@ import {
   assertNotEquals,
   assertRejects,
 } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
+import { describe, it, beforeEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
 import { GameCreation } from "../types/game.ts";

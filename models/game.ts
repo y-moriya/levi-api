@@ -17,6 +17,7 @@ const DEFAULT_GAME_SETTINGS: GameSettings = {
 // インメモリゲームストレージ
 const games: Map<string, Game> = new Map();
 
+// deno-lint-ignore require-await
 export const createGame = async (data: GameCreation, ownerId: string): Promise<Game> => {
   const owner = getUserById(ownerId);
   if (!owner) {
@@ -59,6 +60,7 @@ export const getGameById = (gameId: string): Game | undefined => {
   return games.get(gameId);
 };
 
+// deno-lint-ignore require-await
 export const joinGame = async (gameId: string, playerId: string): Promise<Game> => {
   const game = games.get(gameId);
   if (!game) {
@@ -94,6 +96,7 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
   return game;
 };
 
+// deno-lint-ignore require-await
 export const leaveGame = async (gameId: string, playerId: string): Promise<Game> => {
   const game = games.get(gameId);
   if (!game) {

@@ -31,6 +31,11 @@ app.onError((err: Error, c: Context) => {
   }, 500);
 });
 
-// サーバー起動
-Deno.serve({ port: config.port }, app.fetch);
-console.log(`Server running on http://localhost:${config.port}`);
+// テスト用にアプリケーションをエクスポート
+export default app;
+
+// 直接実行時のみサーバーを起動
+if (import.meta.main) {
+  Deno.serve({ port: config.port }, app.fetch);
+  console.log(`Server running on http://localhost:${config.port}`);
+}
