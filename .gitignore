@@ -1,0 +1,27 @@
+# Deno
+.env
+.DS_Store
+
+# Dependencies
+/node_modules/
+/npm-debug.log
+*.pem
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build
+/dist/
+/build/
+
+# Test coverage
+/coverage/
+/.nyc_output/
+
+# Logs
+/logs/
+*.log
+npm-debug.log*

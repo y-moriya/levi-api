@@ -1,0 +1,950 @@
+openapi: 3.0.3
+info:
+  title: 人狼ゲームAPI（levi-api）
+  description: |
+    人狼ゲーム用のREST API仕様です。
+    このAPIはユーザー管理、ゲーム管理、ゲーム進行、プレイヤーアクションなどの機能を提供します。
+  version: 1.0.0
+servers:
+  - url: 'https://api.gunjobiyori.com/v1'
+    description: 本番環境
+  - url: 'https://staging-api.gunjobiyori.com/v1'
+    description: ステージング環境
+  - url: 'http://localhost:8080/v1'
+    description: 開発環境
+
+paths:
+  # ユーザー関連エンドポイント
+  /users:
+    post:
+      tags:
+        - users
+      summary: 新規ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: 不正なリクエスト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: ユーザー情報取得
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ユーザー情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: ユーザーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # 認証関連エンドポイント
+  /auth/register:
+    post:
+      tags:
+        - auth
+      summary: 新規ユーザー登録
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistration'
+      responses:
+        '201':
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: バリデーションエラーまたは重複するメールアドレス
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: ログイン
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+        '401':
+          description: 認証失敗
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  # ゲーム関連エンドポイント
+  /games:
+    get:
+      tags:
+        - games
+      summary: 利用可能なゲーム一覧を取得
+      responses:
+        '200':
+          description: ゲーム一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+    post:
+      tags:
+        - games
+      summary: 新規ゲームを作成
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameCreation'
+      responses:
+        '201':
+          description: ゲーム作成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '400':
+          description: 不正なリクエスト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}:
+    get:
+      tags:
+        - games
+      summary: 特定のゲーム情報を取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム情報
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/join:
+    post:
+      tags:
+        - games
+      summary: ゲームに参加
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム参加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '400':
+          description: 満室などの参加不可状態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/leave:
+    post:
+      tags:
+        - games
+      summary: ゲームから退出
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム退出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/start:
+    post:
+      tags:
+        - games
+      summary: ゲーム開始（ゲームオーナーのみ可能）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ゲーム開始成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        '400':
+          description: 開始条件を満たしていない
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 権限がありません（オーナーではない）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/vote:
+    post:
+      tags:
+        - actions
+      summary: 投票を行う（投票フェーズ）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteAction'
+      responses:
+        '200':
+          description: 投票成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+        '400':
+          description: 不正なリクエスト（投票不可状態など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームまたは対象プレイヤーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/attack:
+    post:
+      tags:
+        - actions
+      summary: 襲撃を行う（夜フェーズ・人狼のみ）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttackAction'
+      responses:
+        '200':
+          description: 襲撃アクション成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+        '400':
+          description: 不正なリクエスト（襲撃不可状態など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 人狼役職ではありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームまたは対象プレイヤーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/divine:
+    post:
+      tags:
+        - actions
+      summary: 占いを行う（夜フェーズ・占い師のみ）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DivineAction'
+      responses:
+        '200':
+          description: 占いアクション成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DivineResult'
+        '400':
+          description: 不正なリクエスト（占い不可状態など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 占い師役職ではありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームまたは対象プレイヤーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/guard:
+    post:
+      tags:
+        - actions
+      summary: 護衛を行う（夜フェーズ・狩人のみ）
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuardAction'
+      responses:
+        '200':
+          description: 護衛アクション成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionResult'
+        '400':
+          description: 不正なリクエスト（護衛不可状態など）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: 狩人役職ではありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームまたは対象プレイヤーが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /games/{gameId}/chat:
+    get:
+      tags:
+        - chat
+      summary: ゲーム内チャットメッセージを取得
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: channel
+          in: query
+          schema:
+            type: string
+            enum: [village, werewolf]
+            default: village
+          description: 取得するチャットチャンネル（村全体または人狼間）
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: この時間以降のメッセージを取得
+      responses:
+        '200':
+          description: チャットメッセージ一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: チャンネルへのアクセス権限がありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    
+    post:
+      tags:
+        - chat
+      summary: ゲーム内チャットにメッセージを送信
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatMessagePost'
+      responses:
+        '201':
+          description: メッセージ送信成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessage'
+        '400':
+          description: 不正なリクエスト
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: 認証エラー
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: チャンネルへの投稿権限がありません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: ゲームが見つかりません
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # ユーザー関連
+    UserRegistration:
+      type: object
+      required:
+        - username
+        - email
+        - password
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 20
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        stats:
+          $ref: '#/components/schemas/UserStats'
+          
+    UserStats:
+      type: object
+      properties:
+        gamesPlayed:
+          type: integer
+        gamesWon:
+          type: integer
+        winRatio:
+          type: number
+          format: float
+        villagerWins:
+          type: integer
+        werewolfWins:
+          type: integer
+          
+    Login:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+        user:
+          $ref: '#/components/schemas/User'
+          
+    # ゲーム関連
+    GameCreation:
+      type: object
+      required:
+        - name
+        - maxPlayers
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 30
+        maxPlayers:
+          type: integer
+          minimum: 3
+          maximum: 20
+        password:
+          type: string
+          description: オプションのゲームパスワード
+        settings:
+          $ref: '#/components/schemas/GameSettings'
+          
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        owner:
+          $ref: '#/components/schemas/User'
+        hasPassword:
+          type: boolean
+        maxPlayers:
+          type: integer
+        currentPlayers:
+          type: integer
+        status:
+          type: string
+          enum: [WAITING, IN_PROGRESS, FINISHED]
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/GamePlayer'
+        createdAt:
+          type: string
+          format: date-time
+        settings:
+          $ref: '#/components/schemas/GameSettings'
+        currentPhase:
+          type: string
+          enum: [DAY_DISCUSSION, DAY_VOTE, NIGHT, GAME_OVER]
+          description: ゲームがIN_PROGRESS状態の時のみ有効
+        currentDay:
+          type: integer
+          description: ゲーム日数（1日目から開始）
+        phaseEndTime:
+          type: string
+          format: date-time
+          description: 現在のフェーズ終了時刻
+        winner:
+          type: string
+          enum: [VILLAGERS, WEREWOLVES, NONE]
+          description: ゲーム終了時に設定される勝者陣営
+        gameEvents:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameEvent'
+          
+    GameSettings:
+      type: object
+      properties:
+        dayTimeSeconds:
+          type: integer
+          default: 300
+          description: 昼フェーズの制限時間（秒）
+        nightTimeSeconds:
+          type: integer
+          default: 180
+          description: 夜フェーズの制限時間（秒）
+        voteTimeSeconds:
+          type: integer
+          default: 60
+          description: 投票フェーズの制限時間（秒）
+        roles:
+          $ref: '#/components/schemas/RoleSettings'
+          
+    RoleSettings:
+      type: object
+      properties:
+        werewolfCount:
+          type: integer
+          default: 2
+        seerCount:
+          type: integer
+          default: 1
+        bodyguardCount:
+          type: integer
+          default: 1
+        mediumCount:
+          type: integer
+          default: 0
+            
+    GamePlayer:
+      type: object
+      properties:
+        playerId:
+          type: string
+          format: uuid
+        username:
+          type: string
+        role:
+          type: string
+          enum: [VILLAGER, WEREWOLF, SEER, BODYGUARD, MEDIUM]
+        isAlive:
+          type: boolean
+          default: true
+        deathDay:
+          type: integer
+          description: プレイヤーが死亡した日
+        deathCause:
+          type: string
+          enum: [WEREWOLF_ATTACK, EXECUTION, NONE]
+          
+    GameEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        day:
+          type: integer
+        phase:
+          type: string
+          enum: [DAY_DISCUSSION, DAY_VOTE, NIGHT]
+        type:
+          type: string
+          enum: [PHASE_CHANGE, GAME_END]
+        description:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          
+    # アクション関連
+    VoteAction:
+      type: object
+      required:
+        - targetPlayerId
+      properties:
+        targetPlayerId:
+          type: string
+          format: uuid
+          
+    AttackAction:
+      type: object
+      required:
+        - targetPlayerId
+      properties:
+        targetPlayerId:
+          type: string
+          format: uuid
+          
+    DivineAction:
+      type: object
+      required:
+        - targetPlayerId
+      properties:
+        targetPlayerId:
+          type: string
+          format: uuid
+          
+    GuardAction:
+      type: object
+      required:
+        - targetPlayerId
+      properties:
+        targetPlayerId:
+          type: string
+          format: uuid
+          
+    ActionResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          
+    DivineResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        targetPlayerId:
+          type: string
+          format: uuid
+        targetUsername:
+          type: string
+        isWerewolf:
+          type: boolean
+          
+    # チャット関連
+    ChatMessagePost:
+      type: object
+      required:
+        - message
+        - channel
+      properties:
+        message:
+          type: string
+          maxLength: 500
+        channel:
+          type: string
+          enum: [village, werewolf]
+          default: village
+          
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        gameId:
+          type: string
+          format: uuid
+        sender:
+          $ref: '#/components/schemas/User'
+        message:
+          type: string
+        channel:
+          type: string
+          enum: [village, werewolf, system]
+        timestamp:
+          type: string
+          format: date-time
+          
+    # エラー
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
