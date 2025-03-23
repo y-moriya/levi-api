@@ -3,6 +3,7 @@ import { cors } from 'https://deno.land/x/hono@v3.11.7/middleware.ts';
 import { Context } from 'https://deno.land/x/hono@v3.11.7/context.ts';
 import { config } from './config.ts';
 import auth from './routes/auth.ts';
+import games from './routes/games.ts';
 
 const app = new Hono();
 
@@ -11,6 +12,7 @@ app.use('*', cors());
 
 // ルート
 app.route('/v1/auth', auth);
+app.route('/v1/games', games);
 
 // 404ハンドラ
 app.notFound((c: Context) => {
