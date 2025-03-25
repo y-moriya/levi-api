@@ -18,11 +18,15 @@ export interface Game {
   players: GamePlayer[];
   createdAt: string;
   settings: GameSettings;
-  currentPhase: GamePhase | null;
+  currentPhase: GamePhase;
   currentDay: number;
   phaseEndTime: string | null;
   winner: Winner;
   gameEvents: GameEvent[];
+  [key: `vote_${number}`]: Map<string, string>;
+  [key: `attack_${number}`]: Map<string, string>;
+  [key: `divine_${number}`]: Map<string, string>;
+  [key: `guard_${number}`]: Map<string, string>;
 }
 
 export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED';
@@ -30,6 +34,60 @@ export type GamePhase = 'DAY_DISCUSSION' | 'DAY_VOTE' | 'NIGHT' | 'GAME_OVER';
 export type Winner = 'VILLAGERS' | 'WEREWOLVES' | 'NONE';
 export type Role = 'VILLAGER' | 'WEREWOLF' | 'SEER' | 'BODYGUARD' | 'MEDIUM';
 export type DeathCause = 'WEREWOLF_ATTACK' | 'EXECUTION' | 'NONE';
+
+// アクションの種類
+export type ActionType = 'VOTE' | 'ATTACK' | 'DIVINE' | 'GUARD';
+
+// ベースアクション
+export interface GameAction {
+  gameId: string;
+  playerId: string;
+  targetId: string;
+  type: ActionType;
+  day: number;
+  phase: GamePhase;
+  timestamp: string;
+}
+
+// 投票アクション
+export interface VoteAction extends GameAction {
+  type: 'VOTE';
+}
+
+// 襲撃アクション
+export interface AttackAction extends GameAction {
+  type: 'ATTACK';
+}
+
+// 占いアクション
+export interface DivineAction extends GameAction {
+  type: 'DIVINE';
+}
+
+// 護衛アクション
+export interface GuardAction extends GameAction {
+  type: 'GUARD';
+}
+
+// アクション結果のベース
+export interface ActionResult {
+  success: boolean;
+  message: string;
+}
+
+export interface DivineResult extends ActionResult {
+  targetPlayerId: string;
+  targetUsername: string;
+  isWerewolf: boolean;
+}
+
+// フェーズごとのアクション状態
+export interface PhaseActions {
+  votes: Map<string, string>; // playerId -> targetId
+  attacks: Map<string, string>;
+  divinations: Map<string, string>;
+  guards: Map<string, string>;
+}
 
 export interface GamePlayer {
   playerId: string;

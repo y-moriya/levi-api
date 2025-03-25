@@ -101,3 +101,33 @@ export const leaveGame = async (c: Context) => {
     throw error;
   }
 };
+
+export const startGame = async (c: Context) => {
+  const gameId = c.req.param('gameId');
+  const userId = c.get('userId');
+  
+  try {
+    logger.info('Starting game', { gameId, userId });
+    const game = await gameModel.startGame(gameId, userId);
+    return c.json(game);
+  } catch (error: unknown) {
+    const err = error as Error;
+    if (err.message === 'Game not found') {
+      logger.warn('Game start failed - Game not found', { gameId });
+      return c.json({ code: 'GAME_NOT_FOUND', message: err.message }, 404);
+    }
+    if (err.message === 'Only the game owner can start the game') {
+      logger.warn('Game start failed - Not owner', { gameId, userId });
+      return c.json({ code: 'NOT_OWNER', message: err.message }, 403);
+    }
+    if (err.message.includes('players are required') || 
+        err.message === 'Game is not in waiting state' ||
+        err.message === 'Too many special roles for the number of players' ||
+        err.message === 'At least 1 werewolf is required') {
+      logger.warn('Game start failed', { gameId, userId, reason: err.message });
+      return c.json({ code: 'START_ERROR', message: err.message }, 400);
+    }
+    logger.error('Failed to start game', error as Error, { gameId, userId });
+    throw error;
+  }
+};

@@ -1,0 +1,17 @@
+{
+  "imports": {
+    "@hono/": "https://deno.land/x/hono@v3.11.7/",
+    "zod": "https://deno.land/x/zod@v3.22.4/mod.ts"
+  },
+  "tasks": {
+    "dev": "deno run --watch --allow-net --allow-read --allow-env main.ts",
+    "test": "deno test --allow-net --allow-read --allow-env"
+  },
+  "nodeModulesDir": "auto",
+  "fmt": {
+    "options": {
+      "lineWidth": 120,
+      "indentWidth": 2
+    }
+  }
+}

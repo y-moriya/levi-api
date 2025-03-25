@@ -1,5 +1,6 @@
 import { Game, GameCreation, GameSettings, GamePlayer } from '../types/game.ts';
 import { getUserById } from '../services/auth.ts';
+import { initializeGame } from '../services/game-logic.ts';
 
 // デフォルトのゲーム設定
 const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -41,7 +42,7 @@ export const createGame = async (data: GameCreation, ownerId: string): Promise<G
     }],
     createdAt: new Date().toISOString(),
     settings: data.settings || DEFAULT_GAME_SETTINGS,
-    currentPhase: null,
+    currentPhase: 'DAY_DISCUSSION', // nullの代わりにデフォルト値を設定
     currentDay: 0,
     phaseEndTime: null,
     winner: 'NONE',
@@ -120,6 +121,27 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<Game>
 
   game.players.splice(playerIndex, 1);
   game.currentPlayers -= 1;
+  return game;
+};
+
+// deno-lint-ignore require-await
+export const startGame = async (gameId: string, playerId: string): Promise<Game> => {
+  const game = games.get(gameId);
+  if (!game) {
+    throw new Error('Game not found');
+  }
+
+  if (game.owner.id !== playerId) {
+    throw new Error('Only the game owner can start the game');
+  }
+
+  if (game.status !== 'WAITING') {
+    throw new Error('Game is not in waiting state');
+  }
+
+  // ゲーム開始のロジックを呼び出し
+  initializeGame(game);
+
   return game;
 };
 

@@ -3,9 +3,10 @@ import {
   assertNotEquals,
   assertRejects,
 } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { describe, it, beforeEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
+import { describe, it, beforeEach, afterEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
+import * as gamePhase from "../services/game-phase.ts";
 import { GameCreation } from "../types/game.ts";
 
 describe("Game Management", () => {
@@ -37,6 +38,14 @@ describe("Game Management", () => {
     // Create test users
     user1 = await authService.register(testUser1);
     user2 = await authService.register(testUser2);
+  });
+
+  afterEach(() => {
+    // 各テスト後にすべてのゲームのタイマーをクリア
+    const games = gameModel.getAllGames();
+    for (const game of games) {
+      gamePhase.clearPhaseTimer(game.id);
+    }
   });
 
   describe("createGame", () => {
@@ -246,6 +255,90 @@ describe("Game Management", () => {
     it("should return undefined for non-existent game", () => {
       const game = gameModel.getGameById("non-existent-id");
       assertEquals(game, undefined);
+    });
+  });
+
+  describe("startGame", () => {
+    let gameId: string;
+    
+    beforeEach(async () => {
+      const game = await gameModel.createGame({
+        ...testGameData,
+        maxPlayers: 6
+      }, user1.id);
+      gameId = game.id;
+
+      // Add enough players for minimum requirements
+      for (let i = 0; i < 4; i++) {
+        const testUser = {
+          username: `player${i + 3}`,
+          email: `player${i + 3}_${Date.now()}@example.com`,
+          password: "password123",
+        };
+        const user = await authService.register(testUser);
+        await gameModel.joinGame(gameId, user.id);
+      }
+    });
+
+    it("should start game successfully", async () => {
+      const game = await gameModel.startGame(gameId, user1.id);
+
+      assertEquals(game.status, "IN_PROGRESS");
+      assertEquals(game.currentDay, 1);
+      assertEquals(game.currentPhase, "DAY_DISCUSSION");
+      assertNotEquals(game.phaseEndTime, null);
+      assertEquals(game.players.every(p => p.role !== undefined), true);
+    });
+
+    it("should not allow non-owner to start game", async () => {
+      await assertRejects(
+        async () => {
+          await gameModel.startGame(gameId, user2.id);
+        },
+        Error,
+        "Only the game owner can start the game"
+      );
+    });
+
+    it("should not allow starting a game in progress", async () => {
+      await gameModel.startGame(gameId, user1.id);
+
+      await assertRejects(
+        async () => {
+          await gameModel.startGame(gameId, user1.id);
+        },
+        Error,
+        "Game is not in waiting state"
+      );
+    });
+
+    it("should assign roles correctly", async () => {
+      const game = await gameModel.startGame(gameId, user1.id);
+
+      const roleCount = {
+        WEREWOLF: 0,
+        SEER: 0,
+        BODYGUARD: 0,
+        MEDIUM: 0,
+        VILLAGER: 0
+      };
+
+      game.players.forEach(player => {
+        if (player.role) {
+          roleCount[player.role]++;
+        }
+      });
+
+      assertEquals(roleCount.WEREWOLF, game.settings.roles.werewolfCount);
+      assertEquals(roleCount.SEER, game.settings.roles.seerCount);
+      assertEquals(roleCount.BODYGUARD, game.settings.roles.bodyguardCount);
+      assertEquals(roleCount.MEDIUM, game.settings.roles.mediumCount);
+      assertEquals(roleCount.VILLAGER, game.players.length - (
+        game.settings.roles.werewolfCount +
+        game.settings.roles.seerCount +
+        game.settings.roles.bodyguardCount +
+        game.settings.roles.mediumCount
+      ));
     });
   });
 });

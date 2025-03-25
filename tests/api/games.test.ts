@@ -1,12 +1,14 @@
 import {
   assertEquals,
+  assertNotEquals,
 } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { describe, it, beforeAll, afterAll, beforeEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
+import { describe, it, beforeAll, afterAll, beforeEach, afterEach } from "https://deno.land/std@0.210.0/testing/bdd.ts";
 import { apiRequest, consumeResponse, testServer, createAuthenticatedUser } from "../helpers/api.ts";
 import { ApiError, UserResponse, GameResponse, GameListResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as gameModel from "../../models/game.ts";
 import * as authService from "../../services/auth.ts";
+import * as gamePhase from "../../services/game-phase.ts";
 
 describe("Games API", () => {
   let ownerAuth: { token: string; user: UserResponse };
@@ -40,6 +42,14 @@ describe("Games API", () => {
 
   beforeEach(() => {
     gameModel.resetGames();
+  });
+
+  afterEach(() => {
+    // 各テスト後にすべてのゲームのタイマーをクリア
+    const games = gameModel.getAllGames();
+    for (const game of games) {
+      gamePhase.clearPhaseTimer(game.id);
+    }
   });
 
   describe("GET /games", () => {
@@ -228,6 +238,300 @@ describe("Games API", () => {
 
       assertEquals(response.status, 401);
       assertEquals(data.code, "UNAUTHORIZED");
+    });
+  });
+
+  describe("POST /games/:gameId/start", () => {
+    let gameId: string;
+
+    beforeEach(async () => {
+      const createResponse = await apiRequest("POST", "/games", {
+        name: "Test Game",
+        maxPlayers: 6
+      }, ownerAuth.token);
+      const game = await consumeResponse<GameResponse>(createResponse);
+      gameId = game.id;
+
+      // Add enough players for minimum requirements
+      for (let i = 0; i < 4; i++) {
+        const player = await createAuthenticatedUser({
+          username: `player${i + 3}`,
+          email: `player${i + 3}_${Date.now()}@example.com`,
+          password: "password123",
+        });
+        const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
+        await consumeResponse<GameResponse>(joinResponse);
+      }
+    });
+
+    it("should start game successfully", async () => {
+      const response = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
+      const game = await consumeResponse<GameResponse>(response);
+
+      assertEquals(response.status, 200);
+      assertEquals(game.status, "IN_PROGRESS");
+      assertEquals(game.currentDay, 1);
+      assertEquals(game.currentPhase, "DAY_DISCUSSION");
+      assertNotEquals(game.phaseEndTime, null);
+      assertEquals(game.players.every(p => p.role !== undefined), true);
+    });
+
+    it("should not allow non-owner to start game", async () => {
+      const response = await apiRequest("POST", `/games/${gameId}/start`, undefined, playerAuth.token);
+      const data = await consumeResponse<ApiError>(response);
+
+      assertEquals(response.status, 403);
+      assertEquals(data.code, "NOT_OWNER");
+    });
+
+    it("should require authentication", async () => {
+      const response = await apiRequest("POST", `/games/${gameId}/start`);
+      const data = await consumeResponse<ApiError>(response);
+
+      assertEquals(response.status, 401);
+      assertEquals(data.code, "UNAUTHORIZED");
+    });
+
+    it("should validate minimum player requirements", async () => {
+      // Create a new game with just the owner
+      const newGameResponse = await apiRequest("POST", "/games", {
+        name: "Small Game",
+        maxPlayers: 6
+      }, ownerAuth.token);
+      const newGame = await consumeResponse<GameResponse>(newGameResponse);
+
+      const startResponse = await apiRequest("POST", `/games/${newGame.id}/start`, undefined, ownerAuth.token);
+      const data = await consumeResponse<ApiError>(startResponse);
+
+      assertEquals(startResponse.status, 400);
+      assertEquals(data.code, "START_ERROR");
+    });
+  });
+
+  describe("GET /games/:gameId", () => {
+    let gameId: string;
+
+    beforeEach(async () => {
+      const createResponse = await apiRequest("POST", "/games", {
+        name: "Test Game",
+        maxPlayers: 5
+      }, ownerAuth.token);
+      const game = await consumeResponse<GameResponse>(createResponse);
+      gameId = game.id;
+    });
+
+    it("should return game by id", async () => {
+      const response = await apiRequest("GET", `/games/${gameId}`, undefined, ownerAuth.token);
+      const game = await consumeResponse<GameResponse>(response);
+
+      assertEquals(response.status, 200);
+      assertEquals(game.id, gameId);
+      assertEquals(game.name, "Test Game");
+    });
+
+    it("should return not found for non-existent game", async () => {
+      const response = await apiRequest("GET", `/games/non-existent-id`, undefined, ownerAuth.token);
+      const error = await consumeResponse<ApiError>(response);
+
+      assertEquals(response.status, 404);
+      assertEquals(error.code, "GAME_NOT_FOUND");
+    });
+
+    it("should require authentication", async () => {
+      const response = await apiRequest("GET", `/games/${gameId}`);
+      const error = await consumeResponse<ApiError>(response);
+
+      assertEquals(response.status, 401);
+      assertEquals(error.code, "UNAUTHORIZED");
+    });
+  });
+
+  describe("Game Actions", () => {
+    let gameId: string;
+    let game: GameResponse;
+    let werewolfAuth: { token: string; user: UserResponse };
+    let seerAuth: { token: string; user: UserResponse };
+    let bodyguardAuth: { token: string; user: UserResponse };
+    let villagerAuth: { token: string; user: UserResponse };
+
+    beforeEach(async () => {
+      // ゲーム作成
+      const response = await apiRequest("POST", "/games", {
+        name: "Test Game",
+        maxPlayers: 6,
+      }, ownerAuth.token);
+      game = await consumeResponse<GameResponse>(response);
+      gameId = game.id;
+
+      // 追加のプレイヤーを作成して参加させる
+      werewolfAuth = await createAuthenticatedUser({
+        username: "werewolf",
+        email: `werewolf${Date.now()}@example.com`,
+        password: "password123",
+      });
+      const joinWerewolfResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, werewolfAuth.token);
+      await consumeResponse<GameResponse>(joinWerewolfResponse);
+
+      seerAuth = await createAuthenticatedUser({
+        username: "seer",
+        email: `seer${Date.now()}@example.com`,
+        password: "password123",
+      });
+      const joinSeerResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, seerAuth.token);
+      await consumeResponse<GameResponse>(joinSeerResponse);
+
+      bodyguardAuth = await createAuthenticatedUser({
+        username: "bodyguard",
+        email: `bodyguard${Date.now()}@example.com`,
+        password: "password123",
+      });
+      const joinBodyguardResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, bodyguardAuth.token);
+      await consumeResponse<GameResponse>(joinBodyguardResponse);
+
+      villagerAuth = await createAuthenticatedUser({
+        username: "villager",
+        email: `villager${Date.now()}@example.com`,
+        password: "password123",
+      });
+      const joinVillagerResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, villagerAuth.token);
+      await consumeResponse<GameResponse>(joinVillagerResponse);
+
+      // ゲーム開始
+      const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
+      await consumeResponse<GameResponse>(startResponse);
+      
+      // Initialize game with roles for testing
+      const gameInstance = gameModel.getGameById(gameId)!;
+      gameInstance.players.find(p => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+      gameInstance.players.find(p => p.playerId === seerAuth.user.id)!.role = "SEER";
+      gameInstance.players.find(p => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+      gameInstance.players.find(p => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    });
+
+    describe("Vote Action", () => {
+      it("should allow voting during vote phase", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        gamePhase.advanceGamePhase(gameInstance); // Advance to DAY_VOTE phase
+
+        const response = await apiRequest("POST", `/games/${gameId}/vote`, {
+          targetPlayerId: werewolfAuth.user.id,
+        }, ownerAuth.token);
+
+        assertEquals(response.status, 200);
+        const result = await consumeResponse<{ success: boolean }>(response);
+        assertEquals(result.success, true);
+      });
+
+      it("should not allow voting during other phases", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/vote`, {
+          targetPlayerId: werewolfAuth.user.id,
+        }, ownerAuth.token);
+
+        assertEquals(response.status, 400);
+        const error = await consumeResponse<ApiError>(response);
+        assertEquals(error.code, "INVALID_PHASE");
+      });
+    });
+
+    describe("Attack Action", () => {
+      it("should allow werewolf to attack during night", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/attack`, {
+          targetPlayerId: villagerAuth.user.id,
+        }, werewolfAuth.token);
+
+        assertEquals(response.status, 200);
+        const result = await consumeResponse<{ success: boolean }>(response);
+        assertEquals(result.success, true);
+      });
+
+      it("should not allow non-werewolf to attack", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/attack`, {
+          targetPlayerId: seerAuth.user.id,
+        }, villagerAuth.token);
+
+        assertEquals(response.status, 403);
+        const error = await consumeResponse<ApiError>(response);
+        assertEquals(error.code, "NOT_WEREWOLF");
+      });
+    });
+
+    describe("Divine Action", () => {
+      it("should allow seer to divine during night", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/divine`, {
+          targetPlayerId: werewolfAuth.user.id,
+        }, seerAuth.token);
+
+        assertEquals(response.status, 200);
+        const result = await consumeResponse<{ success: boolean }>(response);
+        assertEquals(result.success, true);
+      });
+
+      it("should not allow non-seer to divine", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/divine`, {
+          targetPlayerId: werewolfAuth.user.id,
+        }, villagerAuth.token);
+
+        assertEquals(response.status, 403);
+        const error = await consumeResponse<ApiError>(response);
+        assertEquals(error.code, "NOT_SEER");
+      });
+    });
+
+    describe("Guard Action", () => {
+      it("should allow bodyguard to guard during night", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/guard`, {
+          targetPlayerId: villagerAuth.user.id,
+        }, bodyguardAuth.token);
+
+        assertEquals(response.status, 200);
+        const result = await consumeResponse<{ success: boolean }>(response);
+        assertEquals(result.success, true);
+      });
+
+      it("should not allow non-bodyguard to guard", async () => {
+        const gameInstance = gameModel.getGameById(gameId)!;
+        while (gameInstance.currentPhase !== "NIGHT") {
+          gamePhase.advanceGamePhase(gameInstance);
+        }
+
+        const response = await apiRequest("POST", `/games/${gameId}/guard`, {
+          targetPlayerId: seerAuth.user.id,
+        }, villagerAuth.token);
+
+        assertEquals(response.status, 403);
+        const error = await consumeResponse<ApiError>(response);
+        assertEquals(error.code, "NOT_BODYGUARD");
+      });
     });
   });
 });
