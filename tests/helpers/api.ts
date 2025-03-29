@@ -14,13 +14,18 @@ export const BASE_URL = `http://localhost:${TEST_PORT}/v1`;
 // サーバーの起動と停止を管理するクラス
 class TestServer {
   private controller: AbortController | null = null;
+  private server: { shutdown: () => Promise<void> } | null = null;
 
   async start(honoApp: Hono) {
+    if (this.server) {
+      await this.stop();
+    }
+    
     this.controller = new AbortController();
     
     // テストサーバーを起動
     const handler = honoApp.fetch;
-    const server = Deno.serve({
+    this.server = Deno.serve({
       port: TEST_PORT,
       handler,
       signal: this.controller.signal,
@@ -29,13 +34,17 @@ class TestServer {
 
     // サーバーが起動するまで少し待つ
     await new Promise(resolve => setTimeout(resolve, 100));
-    return server;
+    return this.server;
   }
 
-  stop() {
+  async stop() {
     if (this.controller) {
       this.controller.abort();
       this.controller = null;
+    }
+    if (this.server) {
+      await this.server.shutdown();
+      this.server = null;
     }
   }
 }
