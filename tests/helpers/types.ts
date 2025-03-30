@@ -14,5 +14,17 @@ export interface AuthResponse {
   user: UserResponse;
 }
 
+// アクションのレスポンス型
+export interface ActionResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface DivineActionResponse extends ActionResponse {
+  isWerewolf: boolean;
+  targetPlayerId: string;
+  targetUsername: string;
+}
+
 export type GameResponse = Game;
 export type GameListResponse = Game[];

@@ -3,7 +3,7 @@ import {
   assertNotEquals,
 } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, testServer, createAuthenticatedUser } from "../helpers/api.ts";
-import { ApiError, UserResponse, GameResponse, GameListResponse } from "../helpers/types.ts";
+import { UserResponse, GameResponse, GameListResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as gameModel from "../../models/game.ts";
 import * as authService from "../../services/auth.ts";
@@ -125,16 +125,21 @@ Deno.test({
   name: "Game Creation - should validate game creation input",
   async fn() {
     await setupTests();
-    const invalidGame = {
-      name: "a",
-      maxPlayers: 2,
+    const { token } = await createAuthenticatedUser();
+
+    const invalidGameData = {
+      name: "",
+      maxPlayers: 2, // 最小プレイヤー数より少ない
     };
 
-    const response = await apiRequest("POST", "/games", invalidGame, ownerAuth.token);
-    const data = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 400);
-    assertEquals(data.code, "VALIDATION_ERROR");
+    const response = await apiRequest("POST", "/games", invalidGameData, token);
+    try {
+      await consumeResponse(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 400);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+    }
 
     await cleanupTests();
   }
@@ -150,10 +155,13 @@ Deno.test({
     };
 
     const response = await apiRequest("POST", "/games", gameData);
-    const data = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 401);
-    assertEquals(data.code, "UNAUTHORIZED");
+    try {
+      await consumeResponse(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 401);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "UNAUTHORIZED");
+    }
 
     await cleanupTests();
   }

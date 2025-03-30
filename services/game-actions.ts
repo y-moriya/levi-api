@@ -10,15 +10,37 @@ const gameActions = new Map<string, {
 }>();
 
 /**
+ * Reset all game actions (for testing)
+ */
+export function resetGameActions(): void {
+  gameActions.clear();
+  logger.info('Game actions reset');
+}
+
+/**
  * ゲームのアクション状態を初期化
  */
 export function initializeGameActions(gameId: string): void {
-  gameActions.set(gameId, {
-    votes: new Map(),
-    attacks: new Map(),
-    divines: new Map(),
-    guards: new Map(),
-  });
+  // 既存のアクション状態をクリア
+  if (gameActions.has(gameId)) {
+    gameActions.delete(gameId);
+  }
+
+  // 新しいアクション状態を設定
+  const newActions = {
+    votes: new Map<string, string>(),
+    attacks: new Map<string, string>(),
+    divines: new Map<string, string>(),
+    guards: new Map<string, string>(),
+  };
+  gameActions.set(gameId, newActions);
+
+  // アクション状態が正しく初期化されたことを確認
+  const actions = gameActions.get(gameId);
+  if (!actions) {
+    throw new Error(`Failed to initialize game actions for game ${gameId}`);
+  }
+
   logger.info('Game actions initialized', { gameId });
 }
 
@@ -26,7 +48,20 @@ export function initializeGameActions(gameId: string): void {
  * 投票アクションを処理
  */
 export function handleVoteAction(game: Game, playerId: string, targetId: string): ActionResult {
+  logger.info('Handling vote action', {
+    gameId: game.id,
+    currentPhase: game.currentPhase,
+    currentDay: game.currentDay,
+    playerId,
+    targetId
+  });
+
   if (game.currentPhase !== 'DAY_VOTE') {
+    logger.warn('Invalid phase for voting', {
+      gameId: game.id,
+      expectedPhase: 'DAY_VOTE',
+      actualPhase: game.currentPhase
+    });
     return { success: false, message: '投票フェーズではありません' };
   }
 
@@ -34,15 +69,33 @@ export function handleVoteAction(game: Game, playerId: string, targetId: string)
   const target = game.players.find(p => p.playerId === targetId);
 
   if (!player?.isAlive || !target?.isAlive) {
+    logger.warn('Dead player involved in vote', {
+      gameId: game.id,
+      playerAlive: player?.isAlive,
+      targetAlive: target?.isAlive
+    });
     return { success: false, message: '死亡したプレイヤーは投票できません/投票対象にできません' };
   }
 
   const actions = gameActions.get(game.id);
   if (!actions) {
+    logger.error('Game actions not initialized', undefined, { gameId: game.id });
     return { success: false, message: 'ゲームのアクション状態が初期化されていません' };
   }
 
+  // アクション状態とゲーム状態の両方に投票を記録
+  const voteKey = `vote_${game.currentDay}` as const;
+  game[voteKey] = game[voteKey] || new Map<string, string>();
   actions.votes.set(playerId, targetId);
+  game[voteKey].set(playerId, targetId);
+
+  logger.info('Vote recorded', {
+    gameId: game.id,
+    playerId,
+    targetId,
+    currentVotes: Array.from(actions.votes.entries())
+  });
+
   return { success: true, message: '投票が受け付けられました' };
 }
 
@@ -74,7 +127,12 @@ export function handleAttackAction(game: Game, playerId: string, targetId: strin
     return { success: false, message: 'ゲームのアクション状態が初期化されていません' };
   }
 
+  // アクション状態とゲーム状態の両方に記録
+  const attackKey = `attack_${game.currentDay}` as const;
+  game[attackKey] = game[attackKey] || new Map<string, string>();
   actions.attacks.set(playerId, targetId);
+  game[attackKey].set(playerId, targetId);
+
   return { success: true, message: '襲撃が受け付けられました' };
 }
 
@@ -126,7 +184,12 @@ export function handleDivineAction(game: Game, playerId: string, targetId: strin
     };
   }
 
+  // アクション状態とゲーム状態の両方に記録
+  const divineKey = `divine_${game.currentDay}` as const;
+  game[divineKey] = game[divineKey] || new Map<string, string>();
   actions.divines.set(playerId, targetId);
+  game[divineKey].set(playerId, targetId);
+
   return { 
     success: true, 
     message: '占いが受け付けられました',
@@ -160,7 +223,12 @@ export function handleGuardAction(game: Game, playerId: string, targetId: string
     return { success: false, message: 'ゲームのアクション状態が初期化されていません' };
   }
 
+  // アクション状態とゲーム状態の両方に記録
+  const guardKey = `guard_${game.currentDay}` as const;
+  game[guardKey] = game[guardKey] || new Map<string, string>();
   actions.guards.set(playerId, targetId);
+  game[guardKey].set(playerId, targetId);
+
   return { success: true, message: '護衛が受け付けられました' };
 }
 
@@ -245,69 +313,54 @@ export function processPhaseActions(game: Game): void {
   const actions = gameActions.get(game.id);
   if (!actions) return;
 
-  // ランダムアクションの割り当て
-  assignRandomActions(game);
+  // アクション結果をゲーム状態に反映
+  const voteKey = `vote_${game.currentDay}` as const;
+  const votes = game[voteKey] = game[voteKey] || new Map<string, string>();
 
   if (game.currentPhase === 'DAY_VOTE') {
-    // 投票結果の集計
-    const voteCounts = new Map<string, number>();
-    actions.votes.forEach((targetId) => {
-      voteCounts.set(targetId, (voteCounts.get(targetId) || 0) + 1);
-    });
+    // 全プレイヤーが投票済みかチェック
+    const livingPlayers = game.players.filter(p => p.isAlive);
+    const hasAllVoted = livingPlayers.every(p => actions.votes.has(p.playerId));
 
-    // 最多得票者を処刑
-    let maxVotes = 0;
-    let executedId: string | null = null;
-    voteCounts.forEach((count, playerId) => {
-      if (count > maxVotes) {
-        maxVotes = count;
-        executedId = playerId;
-      }
-    });
-
-    if (executedId) {
-      const executed = game.players.find(p => p.playerId === executedId);
-      if (executed) {
-        executed.isAlive = false;
-        executed.deathCause = 'EXECUTION';
-        executed.deathDay = game.currentDay;
-        logger.info('Player executed', { 
-          gameId: game.id, 
-          playerId: executedId, 
-          votes: maxVotes 
-        });
-      }
+    // 未投票のプレイヤーがいる場合のみランダムアクションを割り当て
+    if (!hasAllVoted) {
+      assignRandomActions(game);
     }
 
-    // 投票をリセット
-    actions.votes.clear();
-
-  } else if (game.currentPhase === 'NIGHT') {
-    // 護衛対象を記録
-    const guardedPlayers = new Set(actions.guards.values());
-    
-    // 襲撃の処理
-    actions.attacks.forEach((targetId) => {
-      if (!guardedPlayers.has(targetId)) {
-        const target = game.players.find(p => p.playerId === targetId);
-        if (target?.isAlive) {
-          target.isAlive = false;
-          target.deathCause = 'WEREWOLF_ATTACK';
-          target.deathDay = game.currentDay;
-          logger.info('Player killed', { 
-            gameId: game.id, 
-            playerId: targetId 
-          });
-        }
-      } else {
-        logger.info('Player protected from attack', { 
-          gameId: game.id, 
-          playerId: targetId 
-        });
-      }
+    // アクション状態をゲームの状態に同期
+    votes.clear();
+    actions.votes.forEach((targetId, playerId) => {
+      votes.set(playerId, targetId);
     });
 
-    // 夜アクションをリセット
+    // アクション状態をリセット（同期後に実行）
+    actions.votes.clear();
+  } else if (game.currentPhase === 'NIGHT') {
+    // 夜アクションをゲーム状態に同期
+    const attackKey = `attack_${game.currentDay}` as const;
+    const divineKey = `divine_${game.currentDay}` as const;
+    const guardKey = `guard_${game.currentDay}` as const;
+
+    const attacks = game[attackKey] = game[attackKey] || new Map<string, string>();
+    const divines = game[divineKey] = game[divineKey] || new Map<string, string>();
+    const guards = game[guardKey] = game[guardKey] || new Map<string, string>();
+
+    // まずゲーム状態に同期
+    attacks.clear();
+    divines.clear();
+    guards.clear();
+
+    actions.attacks.forEach((targetId, playerId) => {
+      attacks.set(playerId, targetId);
+    });
+    actions.divines.forEach((targetId, playerId) => {
+      divines.set(playerId, targetId);
+    });
+    actions.guards.forEach((targetId, playerId) => {
+      guards.set(playerId, targetId);
+    });
+
+    // アクション状態をリセット（同期後に実行）
     actions.attacks.clear();
     actions.divines.clear();
     actions.guards.clear();

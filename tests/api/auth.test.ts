@@ -3,7 +3,7 @@ import {
   assertNotEquals,
 } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, testServer } from "../helpers/api.ts";
-import { ApiError, UserResponse, AuthResponse } from "../helpers/types.ts";
+import { UserResponse, AuthResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as authService from "../../services/auth.ts";
 
@@ -59,10 +59,13 @@ Deno.test({
 
     // Attempt duplicate registration
     const response2 = await apiRequest("POST", "/auth/register", validUser);
-    const error = await consumeResponse<ApiError>(response2);
-
-    assertEquals(response2.status, 400);
-    assertEquals(error.code, "EMAIL_EXISTS");
+    try {
+      await consumeResponse<UserResponse>(response2);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response2.status, 400);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "EMAIL_EXISTS");
+    }
 
     await cleanupTests();
   }
@@ -79,10 +82,13 @@ Deno.test({
     };
 
     const response = await apiRequest("POST", "/auth/register", invalidUser);
-    const error = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 400);
-    assertEquals(error.code, "VALIDATION_ERROR");
+    try {
+      await consumeResponse<UserResponse>(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 400);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+    }
 
     await cleanupTests();
   }
@@ -123,10 +129,13 @@ Deno.test({
       email: validUser.email,
       password: "wrongpassword",
     });
-    const error = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 401);
-    assertEquals(error.code, "INVALID_CREDENTIALS");
+    try {
+      await consumeResponse<AuthResponse>(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 401);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
+    }
 
     await cleanupTests();
   }
@@ -140,10 +149,13 @@ Deno.test({
       email: "nonexistent@example.com",
       password: validUser.password,
     });
-    const error = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 401);
-    assertEquals(error.code, "INVALID_CREDENTIALS");
+    try {
+      await consumeResponse<AuthResponse>(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 401);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
+    }
 
     await cleanupTests();
   }
@@ -157,10 +169,13 @@ Deno.test({
       email: "invalid-email",
       password: "",
     });
-    const error = await consumeResponse<ApiError>(response);
-
-    assertEquals(response.status, 400);
-    assertEquals(error.code, "VALIDATION_ERROR");
+    try {
+      await consumeResponse<AuthResponse>(response);
+      throw new Error("Expected an error but got success");
+    } catch (error) {
+      assertEquals(response.status, 400);
+      assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+    }
 
     await cleanupTests();
   }

@@ -4,6 +4,20 @@ import { logger } from '../utils/logger.ts';
 import { scheduleNextPhase } from './game-phase.ts';
 import * as gameActions from "./game-actions.ts";
 
+// フェーズ変更時の説明文を生成
+function getPhaseChangeDescription(phase: GamePhase, day: number): string {
+  switch (phase) {
+    case 'DAY_DISCUSSION':
+      return `${day}日目の昼になりました。自由に議論を行ってください。`;
+    case 'DAY_VOTE':
+      return `投票の時間になりました。処刑する人を決めてください。`;
+    case 'NIGHT':
+      return `夜になりました。各役職は行動を選択してください。`;
+    default:
+      return `フェーズが${phase}に変更されました。`;
+  }
+}
+
 // 役職をランダムに割り当てる
 export const assignRoles = (game: Game): void => {
   const players = [...game.players];
@@ -68,21 +82,26 @@ export const checkGameEnd = (game: Game): { isEnded: boolean, winner: 'VILLAGERS
 };
 
 // フェーズを進める
-export const advancePhase = (game: Game): void => {
-  // 現在のフェーズのアクション確認
-  if (game.currentPhase === "DAY_VOTE") {
-    gameActions.processPhaseActions(game);
-    _processVoteResults(game);
-  } else if (game.currentPhase === "NIGHT") {
-    gameActions.processPhaseActions(game);
-    _processNightActions(game);
-  }
+export const advancePhase = async (game: Game): Promise<void> => {
+  const previousPhase = game.currentPhase;
+  logger.info('Starting phase transition', { 
+    gameId: game.id, 
+    from: previousPhase, 
+    currentDay: game.currentDay,
+    gameStatus: game.status
+  });
 
   // 勝敗判定
   const { isEnded, winner } = checkGameEnd(game);
   if (isEnded) {
     game.status = "FINISHED";
     game.winner = winner;
+    logger.info('Game ended', { 
+      gameId: game.id, 
+      winner,
+      finalDay: game.currentDay,
+      finalPhase: game.currentPhase
+    });
     game.gameEvents.push({
       id: uuid(),
       day: game.currentDay,
@@ -96,20 +115,115 @@ export const advancePhase = (game: Game): void => {
 
   // フェーズ進行
   switch (game.currentPhase) {
-    case "DAY_DISCUSSION":
+    case "DAY_DISCUSSION": {
+      logger.info('Transitioning from DAY_DISCUSSION', { 
+        gameId: game.id,
+        nextPhase: 'DAY_VOTE',
+        hasActions: gameActions.getGameActions(game.id) !== undefined
+      });
       game.currentPhase = "DAY_VOTE";
       game.phaseEndTime = new Date(Date.now() + game.settings.voteTimeSeconds * 1000).toISOString();
+      
+      // アクション状態を初期化
+      await Promise.resolve(gameActions.initializeGameActions(game.id));
       break;
-    case "DAY_VOTE":
+    }
+    case "DAY_VOTE": {
+      logger.info('Processing DAY_VOTE actions', { 
+        gameId: game.id,
+        hasActions: gameActions.getGameActions(game.id) !== undefined,
+        currentVotes: JSON.stringify(gameActions.getGameActions(game.id)?.votes)
+      });
+
+      // 未投票者へのランダム投票割り当てを実行
+      gameActions.processPhaseActions(game);
+      
+      // 投票結果の処理
+      _processVoteResults(game);
+      
+      // 投票結果の処理後に勝敗判定
+      const voteEndCheck = checkGameEnd(game);
+      if (voteEndCheck.isEnded) {
+        game.status = "FINISHED";
+        game.winner = voteEndCheck.winner;
+        logger.info('Game ended after voting', { 
+          gameId: game.id, 
+          winner: voteEndCheck.winner
+        });
+        game.gameEvents.push({
+          id: uuid(),
+          day: game.currentDay,
+          phase: game.currentPhase,
+          type: "GAME_END",
+          description: `ゲームが終了しました。${voteEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
+      // 夜フェーズに移行
       game.currentPhase = "NIGHT";
       game.phaseEndTime = new Date(Date.now() + game.settings.nightTimeSeconds * 1000).toISOString();
+      
+      // 夜フェーズ開始時にアクション状態を初期化
+      await Promise.resolve(gameActions.initializeGameActions(game.id));
+      
+      logger.info('Transitioned to NIGHT phase', { 
+        gameId: game.id,
+        hasActions: gameActions.getGameActions(game.id) !== undefined
+      });
       break;
-    case "NIGHT":
+    }
+    case "NIGHT": {
+      logger.info('Processing NIGHT actions', { 
+        gameId: game.id,
+        hasActions: gameActions.getGameActions(game.id) !== undefined,
+        currentActions: JSON.stringify(gameActions.getGameActions(game.id))
+      });
+      // 夜アクションの処理（processPhaseActionsの前に_processNightActionsを実行）
+      _processNightActions(game);
+      gameActions.processPhaseActions(game);
+      
+      // 夜アクションの処理後に勝敗判定
+      const gameEndCheck = checkGameEnd(game);
+      if (gameEndCheck.isEnded) {
+        game.status = "FINISHED";
+        game.winner = gameEndCheck.winner;
+        logger.info('Game ended after night actions', { 
+          gameId: game.id, 
+          winner: gameEndCheck.winner
+        });
+        game.gameEvents.push({
+          id: uuid(),
+          day: game.currentDay,
+          phase: game.currentPhase,
+          type: "GAME_END",
+          description: `ゲームが終了しました。${gameEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
+          timestamp: new Date().toISOString()
+        });
+        return;
+      }
+      
       game.currentDay += 1;
       game.currentPhase = 'DAY_DISCUSSION';
       game.phaseEndTime = new Date(Date.now() + game.settings.dayTimeSeconds * 1000).toISOString();
+      logger.info('Transitioned to next day', { 
+        gameId: game.id, 
+        newDay: game.currentDay,
+        hasActions: gameActions.getGameActions(game.id) !== undefined
+      });
       break;
+    }
   }
+
+  logger.info('Phase transition completed', {
+    gameId: game.id,
+    day: game.currentDay,
+    previousPhase,
+    currentPhase: game.currentPhase,
+    phaseEndTime: game.phaseEndTime,
+    hasActions: gameActions.getGameActions(game.id) !== undefined
+  });
 
   // ゲームイベントを記録
   game.gameEvents.push({
@@ -117,7 +231,7 @@ export const advancePhase = (game: Game): void => {
     day: game.currentDay,
     phase: game.currentPhase || 'GAME_OVER',
     type: "PHASE_CHANGE",
-    description: `フェーズが${game.currentPhase}に変更されました`,
+    description: getPhaseChangeDescription(game.currentPhase, game.currentDay),
     timestamp: new Date().toISOString()
   });
 };
@@ -148,9 +262,7 @@ export const initializeGame = (game: Game): void => {
   assignRoles(game);
 
   // アクション状態の初期化
-  import('../services/game-actions.ts').then(gameActions => {
-    gameActions.initializeGameActions(game.id);
-  });
+  gameActions.initializeGameActions(game.id);
   
   // 開始イベントの記録
   game.gameEvents.push({
@@ -226,7 +338,7 @@ function countRoles(roles: Role[]): Record<Role, number> {
 }
 
 // 型安全なアクセスのためのユーティリティ関数
-function getActionMap(game: Game, key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}`): Map<string, string> {
+export function getActionMap(game: Game, key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}`): Map<string, string> {
   game[key] = game[key] || new Map<string, string>();
   return game[key];
 }
@@ -236,7 +348,14 @@ const _processVoteResults = (game: Game): void => {
   const voteKey = `vote_${game.currentDay}` as const;
   const votes = getActionMap(game, voteKey);
   
+  logger.info('Processing vote results', { 
+    gameId: game.id, 
+    day: game.currentDay,
+    votes: Array.from(votes.entries())
+  });
+
   if (!votes || votes.size === 0) {
+    logger.warn('No votes to process', { gameId: game.id, day: game.currentDay });
     return;
   }
 
@@ -245,6 +364,11 @@ const _processVoteResults = (game: Game): void => {
   const executedPlayerId = _getMostVotedPlayer(voteCount);
 
   if (executedPlayerId) {
+    logger.info('Executing player', { 
+      gameId: game.id, 
+      playerId: executedPlayerId,
+      voteCount: voteCount.get(executedPlayerId)
+    });
     _killPlayer(game, executedPlayerId, "EXECUTION");
   }
 };
@@ -361,9 +485,88 @@ function _killPlayer(game: Game, playerId: string, cause: 'WEREWOLF_ATTACK' | 'E
 export function handlePhaseEnd(game: Game): void {
   if (!game) return;
 
-  // フェーズ終了時の処理
-  gameActions.processPhaseActions(game);
+  logger.info('Handling phase end', {
+    gameId: game.id,
+    currentPhase: game.currentPhase,
+    currentDay: game.currentDay
+  });
 
-  // フェーズを更新
-  advancePhase(game);
+  // まず現在のフェーズのアクションを処理
+  switch (game.currentPhase) {
+    case 'DAY_VOTE':
+      // 投票の処理
+      gameActions.processPhaseActions(game);
+      _processVoteResults(game);
+      break;
+    case 'NIGHT':
+      // 夜アクションの処理
+      _processNightActions(game);
+      gameActions.processPhaseActions(game);
+      break;
+    default:
+      // その他のフェーズではアクションの同期のみ
+      gameActions.processPhaseActions(game);
+      break;
+  }
+
+  // 勝敗判定（各フェーズの処理後）
+  const { isEnded, winner } = checkGameEnd(game);
+  if (isEnded) {
+    game.status = "FINISHED";
+    game.winner = winner;
+    logger.info('Game ended during phase end', { 
+      gameId: game.id, 
+      winner,
+      phase: game.currentPhase
+    });
+    game.gameEvents.push({
+      id: uuid(),
+      day: game.currentDay,
+      phase: game.currentPhase,
+      type: "GAME_END",
+      description: `ゲームが終了しました。${winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
+      timestamp: new Date().toISOString()
+    });
+    return;
+  }
+
+  // フェーズの更新
+  const nextPhase = _getNextPhase(game.currentPhase);
+  game.currentPhase = nextPhase;
+  
+  // 次のフェーズの準備
+  switch (nextPhase) {
+    case 'DAY_VOTE':
+    case 'NIGHT':
+      // アクション状態の初期化を同期的に実行
+      gameActions.initializeGameActions(game.id);
+      game.phaseEndTime = new Date(Date.now() + _getPhaseTime(nextPhase, game) * 1000).toISOString();
+      
+      logger.info('Phase actions initialized', {
+        gameId: game.id,
+        phase: nextPhase,
+        hasActions: gameActions.getGameActions(game.id) !== undefined
+      });
+      break;
+    case 'DAY_DISCUSSION':
+      game.currentDay += 1;
+      game.phaseEndTime = new Date(Date.now() + _getPhaseTime(nextPhase, game) * 1000).toISOString();
+      break;
+  }
+
+  // フェーズ変更イベントの記録
+  game.gameEvents.push({
+    id: uuid(),
+    day: game.currentDay,
+    phase: game.currentPhase,
+    type: "PHASE_CHANGE",
+    description: getPhaseChangeDescription(game.currentPhase, game.currentDay),
+    timestamp: new Date().toISOString()
+  });
+
+  logger.info('Phase end completed', {
+    gameId: game.id,
+    newPhase: game.currentPhase,
+    currentDay: game.currentDay
+  });
 }

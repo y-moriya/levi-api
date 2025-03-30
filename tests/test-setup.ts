@@ -10,8 +10,8 @@ Deno.test({
     // テストタイムアウトの設定
     assert(TEST_TIMEOUT > 0);
   },
-  sanitizeResources: false,
-  sanitizeOps: false,
+  sanitizeResources: true,
+  sanitizeOps: true,
 });
 
 // グローバルなテストフラグを設定

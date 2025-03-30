@@ -12,6 +12,14 @@ function getActionMap(game: Game, key: `vote_${number}` | `attack_${number}` | `
 // フェーズタイマーの管理用マップ
 const phaseTimers: Map<string, number> = new Map();
 
+// 全てのタイマーをクリア
+export const clearAllTimers = (): void => {
+  for (const [gameId] of phaseTimers) {
+    clearPhaseTimer(gameId);
+  }
+  phaseTimers.clear();
+}
+
 /**
  * フェーズタイマーの設定
  */
@@ -19,36 +27,56 @@ export const scheduleNextPhase = (game: Game): void => {
   // 既存のタイマーがあれば削除
   clearPhaseTimer(game.id);
 
+  if (game.status !== "IN_PROGRESS" || !game.phaseEndTime) {
+    return;
+  }
+
   // フェーズ終了時刻からタイマー時間を計算
-  const phaseEndTime = new Date(game.phaseEndTime!).getTime();
+  const phaseEndTime = new Date(game.phaseEndTime).getTime();
   const currentTime = Date.now();
-  const timeoutMs = phaseEndTime - currentTime;
+  const timeoutMs = Math.max(0, phaseEndTime - currentTime);
 
-  // タイマーを設定
-  const timerId = setTimeout(() => {
-    // タイマー実行時にゲームが終了していないことを確認
-    if (game.status !== "IN_PROGRESS") {
-      return;
-    }
-
-    // フェーズを進める
+  if (timeoutMs === 0) {
+    // タイムアウトが0以下の場合は直ちにフェーズを進める
     advancePhase(game);
-
-    // 次のフェーズのタイマーを設定
     if (game.status === "IN_PROGRESS") {
       scheduleNextPhase(game);
     }
-  }, timeoutMs);
+    return;
+  }
 
-  // タイマーIDを保存
-  phaseTimers.set(game.id, timerId);
+  // タイマーを設定
+  try {
+    const timerId = setTimeout(() => {
+      // タイマー実行時にゲームが終了していないことを確認
+      if (game.status !== "IN_PROGRESS") {
+        return;
+      }
 
-  logger.info('Phase timer scheduled', {
-    gameId: game.id,
-    phase: game.currentPhase,
-    endTime: game.phaseEndTime,
-    timeoutMs
-  });
+      // フェーズを進める
+      advancePhase(game);
+
+      // 次のフェーズのタイマーを設定
+      if (game.status === "IN_PROGRESS") {
+        scheduleNextPhase(game);
+      }
+    }, timeoutMs);
+
+    // タイマーIDを保存
+    phaseTimers.set(game.id, timerId);
+
+    logger.info('Phase timer scheduled', {
+      gameId: game.id,
+      phase: game.currentPhase,
+      endTime: game.phaseEndTime,
+      timeoutMs
+    });
+  } catch (error) {
+    logger.error('Failed to schedule phase timer', error as Error, {
+      gameId: game.id,
+      phase: game.currentPhase
+    });
+  }
 }
 
 /**
@@ -57,9 +85,13 @@ export const scheduleNextPhase = (game: Game): void => {
 export const clearPhaseTimer = (gameId: string): void => {
   const timerId = phaseTimers.get(gameId);
   if (timerId) {
-    clearTimeout(timerId);
-    phaseTimers.delete(gameId);
-    logger.info('Phase timer cleared', { gameId });
+    try {
+      clearTimeout(timerId);
+      phaseTimers.delete(gameId);
+      logger.info('Phase timer cleared', { gameId });
+    } catch (error) {
+      logger.error('Failed to clear phase timer', error as Error, { gameId });
+    }
   }
 }
 

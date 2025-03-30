@@ -4,6 +4,7 @@ import {
   UserResponse,
   GameResponse,
 } from "./types.ts";
+import { logger } from "../../utils/logger.ts";
 
 // テスト用のサーバーポート
 const TEST_PORT = 8081;
@@ -15,26 +16,29 @@ export const BASE_URL = `http://localhost:${TEST_PORT}/v1`;
 class TestServer {
   private controller: AbortController | null = null;
   private server: { shutdown: () => Promise<void> } | null = null;
+  private shutdownPromise: Promise<void> | null = null;
 
   async start(honoApp: Hono) {
-    if (this.server) {
-      await this.stop();
-    }
+    // 既存のサーバーを確実に停止
+    await this.stop();
     
     this.controller = new AbortController();
     
     // テストサーバーを起動
     const handler = honoApp.fetch;
-    this.server = Deno.serve({
+    const server = Deno.serve({
       port: TEST_PORT,
       handler,
       signal: this.controller.signal,
       onListen: undefined,
     });
 
+    this.server = server;
+    this.shutdownPromise = server.finished;
+
     // サーバーが起動するまで少し待つ
     await new Promise(resolve => setTimeout(resolve, 100));
-    return this.server;
+    return server;
   }
 
   async stop() {
@@ -44,7 +48,11 @@ class TestServer {
     }
     if (this.server) {
       await this.server.shutdown();
+      if (this.shutdownPromise) {
+        await this.shutdownPromise;
+      }
       this.server = null;
+      this.shutdownPromise = null;
     }
   }
 }
@@ -79,13 +87,47 @@ export async function apiRequest(
 export async function consumeResponse<T>(response: Response): Promise<T> {
   try {
     const data = await response.json();
+    
+    if (!response.ok) {
+      const err = new Error(`HTTP error! status: ${response.status}`);
+      logger.error('HTTP error response', err, { 
+        status: response.status,
+        data 
+      });
+      // エラーにレスポンスデータを追加
+      Object.assign(err, { response: data });
+      throw err;
+    }
+
+    // レスポンスの型に基づいて検証
+    if (isActionResponse(data)) {
+      if (typeof data.success !== 'boolean') {
+        const err = new Error('Invalid ActionResponse: success property must be boolean');
+        logger.error('Invalid response', err, { data });
+        throw err;
+      }
+      if (typeof data.message !== 'string') {
+        const err = new Error('Invalid ActionResponse: message property must be string');
+        logger.error('Invalid response', err, { data });
+        throw err;
+      }
+    }
     return data as T;
   } catch (error) {
-    if (response.body) {
-      await response.body.cancel();
-    }
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.error('Failed to consume response', err);
     throw error;
   }
+}
+
+// ActionResponseの型ガード
+function isActionResponse(data: unknown): boolean {
+  return (
+    data !== null &&
+    typeof data === 'object' &&
+    'success' in data &&
+    'message' in data
+  );
 }
 
 // テスト用のユーザーを作成

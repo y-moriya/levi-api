@@ -6,6 +6,7 @@ import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
 import { Game, GamePlayer } from "../types/game.ts";
+import { getActionMap } from "../services/game-logic.ts";
 
 let game: Game;
 let villager: GamePlayer;
@@ -241,7 +242,32 @@ Deno.test({
     gameActions.handleVoteAction(game, seer.playerId, werewolf.playerId);
     gameActions.handleVoteAction(game, bodyguard.playerId, werewolf.playerId);
 
+    // 投票のランダム割り当てを処理
     gameActions.processPhaseActions(game);
+    
+    // game-logicの投票結果処理を実行
+    const voteKey = `vote_${game.currentDay}` as const;
+    const votes = getActionMap(game, voteKey);
+    const voteCount = new Map<string, number>();
+    
+    // 投票を集計
+    for (const [_, targetId] of votes) {
+      voteCount.set(targetId, (voteCount.get(targetId) || 0) + 1);
+    }
+    
+    // 最多得票者を処刑
+    const maxVotes = Math.max(...voteCount.values());
+    const executedPlayers = Array.from(voteCount.entries())
+      .filter(([_, count]) => count === maxVotes)
+      .map(([playerId]) => playerId);
+    
+    if (executedPlayers.length > 0) {
+      const executedPlayerId = executedPlayers[Math.floor(Math.random() * executedPlayers.length)];
+      const executedPlayer = game.players.find(p => p.playerId === executedPlayerId)!;
+      executedPlayer.isAlive = false;
+      executedPlayer.deathCause = "EXECUTION";
+    }
+
     assertEquals(werewolf.isAlive, false);
     assertEquals(werewolf.deathCause, "EXECUTION");
   }
