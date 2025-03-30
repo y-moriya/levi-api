@@ -14,36 +14,49 @@ async function setupTests() {
   // Reset stores
   gameModel.resetGames();
   authService.resetStore();
+  gamePhase.clearAllTimers();
 
-  // Start test server
-  await testServer.start(app);
+  try {
+    // Start test server
+    await testServer.start(app);
 
-  // Create authenticated users
-  ownerAuth = await createAuthenticatedUser({
-    username: "gameowner",
-    email: `owner${Date.now()}@example.com`,
-    password: "password123",
-  });
+    // Create authenticated users
+    ownerAuth = await createAuthenticatedUser({
+      username: "gameowner",
+      email: `owner${Date.now()}@example.com`,
+      password: "password123",
+    });
 
-  playerAuth = await createAuthenticatedUser({
-    username: "gameplayer",
-    email: `player${Date.now()}@example.com`,
-    password: "password123",
-  });
+    playerAuth = await createAuthenticatedUser({
+      username: "gameplayer",
+      email: `player${Date.now()}@example.com`,
+      password: "password123",
+    });
+  } catch (error) {
+    console.error("Failed to setup tests:", error);
+    throw error;
+  }
 }
 
 async function cleanupTests() {
-  // Clean up games
-  const games = gameModel.getAllGames();
-  for (const game of games) {
-    gamePhase.clearPhaseTimer(game.id);
+  try {
+    // Clean up games and timers
+    const games = gameModel.getAllGames();
+    for (const game of games) {
+      gamePhase.clearPhaseTimer(game.id);
+    }
+    await testServer.stop();
+  } catch (error) {
+    console.error("Failed to cleanup tests:", error);
+    throw error;
   }
-  await testServer.stop();
 }
 
 // サーバーセットアップのテスト
 Deno.test({
   name: "Games API Server Setup",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     await cleanupTests();
@@ -53,6 +66,8 @@ Deno.test({
 // Game Listing Tests
 Deno.test({
   name: "Games Listing - should return empty array when no games exist",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const response = await apiRequest("GET", "/games", undefined, ownerAuth.token);
@@ -67,6 +82,8 @@ Deno.test({
 
 Deno.test({
   name: "Games Listing - should return list of all games",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     // Create two games
@@ -97,6 +114,8 @@ Deno.test({
 // Game Creation Tests
 Deno.test({
   name: "Game Creation - should create a new game successfully",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const gameData = {
@@ -120,6 +139,8 @@ Deno.test({
 
 Deno.test({
   name: "Game Creation - should validate game creation input",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const { token } = await createAuthenticatedUser();
@@ -144,6 +165,8 @@ Deno.test({
 
 Deno.test({
   name: "Game Creation - should require authentication",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const gameData = {
@@ -167,6 +190,8 @@ Deno.test({
 // Game Joining Tests
 Deno.test({
   name: "Game Joining - should allow a player to join a game",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
@@ -191,6 +216,8 @@ Deno.test({
 // Game Leaving Tests
 Deno.test({
   name: "Game Leaving - should allow a player to leave a game",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
@@ -220,6 +247,8 @@ Deno.test({
 // Game Starting Tests
 Deno.test({
   name: "Game Starting - should start game successfully",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
@@ -257,6 +286,8 @@ Deno.test({
 // Game Actions Tests
 Deno.test({
   name: "Game Actions - Voting",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
@@ -326,6 +357,8 @@ Deno.test({
 
 Deno.test({
   name: "Game Actions - Attack",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {

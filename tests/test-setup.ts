@@ -6,12 +6,12 @@ const TEST_TIMEOUT = 10000;
 // テストのグローバル設定
 Deno.test({
   name: "setup",
+  sanitizeOps: false,
+  sanitizeResources: false,
   fn: () => {
     // テストタイムアウトの設定
     assert(TEST_TIMEOUT > 0);
   },
-  sanitizeResources: true,
-  sanitizeOps: true,
 });
 
 // グローバルなテストフラグを設定

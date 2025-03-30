@@ -24,6 +24,14 @@ app.notFound((c: Context) => {
   }, 404);
 });
 
+// ヘルスチェック
+app.get("/v1/health", (c: Context) => {
+  c.status(200)
+  return c.json({
+    status: "OK"
+  });
+});
+
 // エラーハンドリング
 app.onError((err, c) => {
   logger.error("Unhandled error", err);

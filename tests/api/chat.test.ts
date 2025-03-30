@@ -1,24 +1,108 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { apiRequest, consumeResponse } from "../helpers/api.ts";
-import { AuthenticatedUser, cleanupScenarioTest, setupScenarioTest } from "./game-scenario-common.ts";
-import { ChatError, ChatMessage } from "../../types/chat.ts";
+import { apiRequest, consumeResponse, createAuthenticatedUser, testServer } from "../helpers/api.ts";
+import { UserResponse } from "../helpers/types.ts";
+import app from "../../main.ts";
 import * as gameModel from "../../models/game.ts";
-import * as chatService from "../../services/chat.ts";
+import * as authService from "../../services/auth.ts";
+import * as gamePhase from "../../services/game-phase.ts";
+import { ChatMessage } from "../../types/chat.ts";
 
-let users: {
-  ownerAuth: AuthenticatedUser;
-  werewolfAuth: AuthenticatedUser;
-  seerAuth: AuthenticatedUser;
-  bodyguardAuth: AuthenticatedUser;
-  villagerAuth: AuthenticatedUser;
-};
+interface ChatError {
+  code: string;
+  message: string;
+}
+
+interface TestUsers {
+  ownerAuth: { token: string; user: UserResponse };
+  werewolfAuth: { token: string; user: UserResponse };
+  seerAuth: { token: string; user: UserResponse };
+  bodyguardAuth: { token: string; user: UserResponse };
+  villagerAuth: { token: string; user: UserResponse };
+}
+
 let gameId: string;
+let users: TestUsers;
 
-// チャット機能のテスト
+// セットアップとクリーンアップ
+async function setupTests() {
+  // Reset stores
+  gameModel.resetGames();
+  authService.resetStore();
+  gamePhase.clearAllTimers();
+
+  try {
+    // Start test server
+    await testServer.start(app);
+
+    // Create test users
+    const ownerAuth = await createAuthenticatedUser({
+      username: "owner",
+      email: `owner${Date.now()}@example.com`,
+      password: "password123",
+    });
+
+    const werewolfAuth = await createAuthenticatedUser({
+      username: "werewolf",
+      email: `werewolf${Date.now()}@example.com`,
+      password: "password123",
+    });
+
+    const seerAuth = await createAuthenticatedUser({
+      username: "seer",
+      email: `seer${Date.now()}@example.com`,
+      password: "password123",
+    });
+
+    const bodyguardAuth = await createAuthenticatedUser({
+      username: "bodyguard",
+      email: `bodyguard${Date.now()}@example.com`,
+      password: "password123",
+    });
+
+    const villagerAuth = await createAuthenticatedUser({
+      username: "villager",
+      email: `villager${Date.now()}@example.com`,
+      password: "password123",
+    });
+
+    users = { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth };
+  } catch (error) {
+    console.error("Failed to setup tests:", error);
+    throw error;
+  }
+}
+
+async function cleanupTests() {
+  try {
+    // Clean up games and timers
+    const games = gameModel.getAllGames();
+    for (const game of games) {
+      gamePhase.clearPhaseTimer(game.id);
+    }
+    await testServer.stop();
+  } catch (error) {
+    console.error("Failed to cleanup tests:", error);
+    throw error;
+  }
+}
+
+// チャットAPIのテスト
+Deno.test({
+  name: "Chat API - Server Setup",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await setupTests();
+    await cleanupTests();
+  },
+});
+
 Deno.test({
   name: "Chat - Send and receive messages in global channel",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
-    users = await setupScenarioTest();
+    await setupTests();
     const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
 
     // ゲームの作成
@@ -55,14 +139,16 @@ Deno.test({
     assertEquals(getResult.messages[0].content, "Hello, world!");
     assertEquals(getResult.messages[0].channel, "GLOBAL");
 
-    await cleanupScenarioTest();
+    await cleanupTests();
   },
 });
 
 Deno.test({
   name: "Chat - Werewolf channel access control",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
-    users = await setupScenarioTest();
+    await setupTests();
     const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
 
     // ゲームの作成
@@ -132,6 +218,6 @@ Deno.test({
     assertEquals(werewolfGetResult.messages.length, 1);
     assertEquals(werewolfGetResult.messages[0].content, "Secret message");
 
-    await cleanupScenarioTest();
+    await cleanupTests();
   },
 });

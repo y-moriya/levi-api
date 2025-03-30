@@ -1,6 +1,8 @@
 import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import { AuthResponse, GameResponse, UserResponse } from "./types.ts";
 import { logger } from "../../utils/logger.ts";
+import { Game, GamePhase } from "../../types/game.ts";
+import * as gameActions from "../../services/game-actions.ts";
 
 // テスト用のサーバーポート
 const TEST_PORT = 8081;
@@ -16,25 +18,49 @@ class TestServer {
 
   async start(honoApp: Hono) {
     // 既存のサーバーを確実に停止
-    await this.stop();
+    if (this.server) {
+      await this.stop();
+    }
 
-    this.controller = new AbortController();
+    try {
+      this.controller = new AbortController();
 
-    // テストサーバーを起動
-    const handler = honoApp.fetch;
-    const server = Deno.serve({
-      port: TEST_PORT,
-      handler,
-      signal: this.controller.signal,
-      onListen: undefined,
-    });
+      // テストサーバーを起動
+      const handler = honoApp.fetch;
+      const server = Deno.serve({
+        port: TEST_PORT,
+        handler,
+        signal: this.controller.signal,
+        onListen: undefined,
+      });
 
-    this.server = server;
-    this.shutdownPromise = server.finished;
+      this.server = server;
+      this.shutdownPromise = server.finished;
 
-    // サーバーが起動するまで少し待つ
-    await new Promise((resolve) => setTimeout(resolve, 100));
-    return server;
+      // サーバーが起動するまで待機
+      const isReady = await waitForCondition(
+        async () => {
+          try {
+            const response = await fetch(`${BASE_URL}/health`);
+            return response.ok;
+          } catch {
+            return false;
+          }
+        },
+        1000,
+        10 
+      );
+
+      if (!isReady) {
+        throw new Error("Server failed to start within timeout");
+      }
+
+      return server;
+    } catch (error) {
+      // エラーが発生した場合は確実にクリーンアップ
+      await this.stop();
+      throw error;
+    }
   }
 
   async stop() {
@@ -42,13 +68,31 @@ class TestServer {
       this.controller.abort();
       this.controller = null;
     }
+
     if (this.server) {
-      await this.server.shutdown();
-      if (this.shutdownPromise) {
-        await this.shutdownPromise;
+      try {
+        await this.server.shutdown();
+        if (this.shutdownPromise) {
+          await this.shutdownPromise;
+        }
+      } finally {
+        this.server = null;
+        this.shutdownPromise = null;
+
+        // サーバーが完全に停止するのを確認
+        await waitForCondition(
+          async () => {
+            try {
+              await fetch(`${BASE_URL}/health`);
+              return false; // サーバーがまだ応答する場合
+            } catch {
+              return true;  // サーバーが停止している場合
+            }
+          },
+          1000,
+          10
+        );
       }
-      this.server = null;
-      this.shutdownPromise = null;
     }
   }
 }
@@ -184,4 +228,60 @@ export async function createTestGame(
   const response = await apiRequest("POST", "/games", gameData, token);
   const game = await consumeResponse<GameResponse>(response);
   return { game, response };
+}
+
+/**
+ * 条件が満たされるまで待機するヘルパー関数
+ * @param condition 待機する条件
+ * @param timeout タイムアウト時間（ミリ秒）
+ * @param interval チェック間隔（ミリ秒）
+ */
+export async function waitForCondition(
+  condition: () => boolean | Promise<boolean>,
+  timeout = 5000,
+  interval = 100,
+): Promise<boolean> {
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    if (await condition()) {
+      return true;
+    }
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+
+  return false;
+}
+
+/**
+ * ゲームフェーズが変更されるまで待機する
+ * @param gameId 対象のゲームID
+ * @param phase 待機するフェーズ
+ */
+export async function waitForGamePhase(
+  game: Game,
+  phase: GamePhase,
+  timeout = 5000,
+): Promise<boolean> {
+  return await waitForCondition(
+    () => game.currentPhase === phase,
+    timeout,
+  );
+}
+
+/**
+ * アクション状態が初期化されるまで待機する
+ * @param gameId 対象のゲームID
+ */
+export async function waitForActionInitialization(
+  gameId: string,
+  timeout = 5000,
+): Promise<boolean> {
+  return await waitForCondition(
+    () => {
+      const actions = gameActions.getGameActions(gameId);
+      return actions !== undefined;
+    },
+    timeout,
+  );
 }

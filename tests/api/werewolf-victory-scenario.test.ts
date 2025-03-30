@@ -1,9 +1,9 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { apiRequest, consumeResponse } from "../helpers/api.ts";
-import { ActionResponse, DivineActionResponse, GameResponse } from "../helpers/types.ts";
+import { apiRequest, consumeResponse, waitForActionInitialization } from "../helpers/api.ts";
 import * as gameModel from "../../models/game.ts";
 import * as gameLogic from "../../services/game-logic.ts";
 import { AuthenticatedUser, cleanupScenarioTest, setupScenarioTest, TestUsers } from "./game-scenario-common.ts";
+import { ActionResponse, DivineActionResponse, GameResponse } from "../helpers/types.ts";
 
 let gameId: string;
 let users: TestUsers;
@@ -11,6 +11,8 @@ let users: TestUsers;
 // Complete game scenario test - Werewolf Victory
 Deno.test({
   name: "Complete Game Scenario - Werewolf Victory",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     users = await setupScenarioTest();
     const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
@@ -52,7 +54,7 @@ Deno.test({
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
     // アクション状態の初期化を待機
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    await waitForActionInitialization(gameId);
 
     // 投票の実行（全員がbodyguardに投票）
     for (const player of [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth]) {

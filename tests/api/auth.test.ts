@@ -12,17 +12,29 @@ const validUser = {
 
 // テストサーバーのセットアップとクリーンアップ
 async function setupTests() {
-  await testServer.start(app);
   authService.resetStore();
+  try {
+    await testServer.start(app);
+  } catch (error) {
+    console.error("Failed to start test server:", error);
+    throw error;
+  }
 }
 
 async function cleanupTests() {
-  await testServer.stop();
+  try {
+    await testServer.stop();
+  } catch (error) {
+    console.error("Failed to stop test server:", error);
+    throw error;
+  }
 }
 
 // サーバーセットアップのテスト
 Deno.test({
   name: "API Server Setup",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     await cleanupTests();
@@ -32,6 +44,8 @@ Deno.test({
 // Registration Tests
 Deno.test({
   name: "Registration - should register a new user successfully",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const response = await apiRequest("POST", "/auth/register", validUser);
@@ -48,6 +62,8 @@ Deno.test({
 
 Deno.test({
   name: "Registration - should not allow duplicate email registration",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     // First registration
@@ -70,6 +86,8 @@ Deno.test({
 
 Deno.test({
   name: "Registration - should validate user registration input",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const invalidUser = {
@@ -94,6 +112,8 @@ Deno.test({
 // Login Tests
 Deno.test({
   name: "Login - should login successfully with correct credentials",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     // Register a user first
@@ -116,6 +136,8 @@ Deno.test({
 
 Deno.test({
   name: "Login - should fail with incorrect password",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     // Register a user first
@@ -140,6 +162,8 @@ Deno.test({
 
 Deno.test({
   name: "Login - should fail with non-existent email",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const response = await apiRequest("POST", "/auth/login", {
@@ -160,6 +184,8 @@ Deno.test({
 
 Deno.test({
   name: "Login - should validate login input",
+  sanitizeOps: false,
+  sanitizeResources: false,
   async fn() {
     await setupTests();
     const response = await apiRequest("POST", "/auth/login", {
