@@ -1,6 +1,6 @@
-import { Game, GameCreation, GameSettings, GamePlayer } from '../types/game.ts';
-import { getUserById } from '../services/auth.ts';
-import { initializeGame } from '../services/game-logic.ts';
+import { Game, GameCreation, GamePlayer, GameSettings } from "../types/game.ts";
+import { getUserById } from "../services/auth.ts";
+import { initializeGame } from "../services/game-logic.ts";
 
 // デフォルトのゲーム設定
 const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -22,7 +22,7 @@ const games: Map<string, Game> = new Map();
 export const createGame = async (data: GameCreation, ownerId: string): Promise<Game> => {
   const owner = getUserById(ownerId);
   if (!owner) {
-    throw new Error('Owner not found');
+    throw new Error("Owner not found");
   }
 
   const gameId = crypto.randomUUID();
@@ -33,20 +33,20 @@ export const createGame = async (data: GameCreation, ownerId: string): Promise<G
     hasPassword: !!data.password,
     maxPlayers: data.maxPlayers,
     currentPlayers: 1,
-    status: 'WAITING',
+    status: "WAITING",
     players: [{
       playerId: ownerId,
       username: owner.username,
       isAlive: true,
-      deathCause: 'NONE'
+      deathCause: "NONE",
     }],
     createdAt: new Date().toISOString(),
     settings: data.settings || DEFAULT_GAME_SETTINGS,
-    currentPhase: 'DAY_DISCUSSION', // nullの代わりにデフォルト値を設定
+    currentPhase: "DAY_DISCUSSION", // nullの代わりにデフォルト値を設定
     currentDay: 0,
     phaseEndTime: null,
-    winner: 'NONE',
-    gameEvents: []
+    winner: "NONE",
+    gameEvents: [],
   };
 
   games.set(gameId, game);
@@ -65,31 +65,31 @@ export const getGameById = (gameId: string): Game | undefined => {
 export const joinGame = async (gameId: string, playerId: string): Promise<Game> => {
   const game = games.get(gameId);
   if (!game) {
-    throw new Error('Game not found');
+    throw new Error("Game not found");
   }
 
-  if (game.status !== 'WAITING') {
-    throw new Error('Game is not in waiting state');
+  if (game.status !== "WAITING") {
+    throw new Error("Game is not in waiting state");
   }
 
   if (game.currentPlayers >= game.maxPlayers) {
-    throw new Error('Game is full');
+    throw new Error("Game is full");
   }
 
   const player = getUserById(playerId);
   if (!player) {
-    throw new Error('Player not found');
+    throw new Error("Player not found");
   }
 
-  if (game.players.some(p => p.playerId === playerId)) {
-    throw new Error('Player already in game');
+  if (game.players.some((p) => p.playerId === playerId)) {
+    throw new Error("Player already in game");
   }
 
   const newPlayer: GamePlayer = {
     playerId,
     username: player.username,
     isAlive: true,
-    deathCause: 'NONE'
+    deathCause: "NONE",
   };
 
   game.players.push(newPlayer);
@@ -101,22 +101,22 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
 export const leaveGame = async (gameId: string, playerId: string): Promise<Game> => {
   const game = games.get(gameId);
   if (!game) {
-    throw new Error('Game not found');
+    throw new Error("Game not found");
   }
 
-  if (game.status !== 'WAITING') {
-    throw new Error('Cannot leave game in progress');
+  if (game.status !== "WAITING") {
+    throw new Error("Cannot leave game in progress");
   }
 
-  const playerIndex = game.players.findIndex(p => p.playerId === playerId);
+  const playerIndex = game.players.findIndex((p) => p.playerId === playerId);
   if (playerIndex === -1) {
-    throw new Error('Player not in game');
+    throw new Error("Player not in game");
   }
 
   // オーナーが退出する場合、ゲームを削除
   if (game.owner.id === playerId) {
     games.delete(gameId);
-    throw new Error('Game deleted as owner left');
+    throw new Error("Game deleted as owner left");
   }
 
   game.players.splice(playerIndex, 1);
@@ -128,15 +128,15 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<Game>
 export const startGame = async (gameId: string, playerId: string): Promise<Game> => {
   const game = games.get(gameId);
   if (!game) {
-    throw new Error('Game not found');
+    throw new Error("Game not found");
   }
 
   if (game.owner.id !== playerId) {
-    throw new Error('Only the game owner can start the game');
+    throw new Error("Only the game owner can start the game");
   }
 
-  if (game.status !== 'WAITING') {
-    throw new Error('Game is not in waiting state');
+  if (game.status !== "WAITING") {
+    throw new Error("Game is not in waiting state");
   }
 
   // ゲーム開始のロジックを呼び出し

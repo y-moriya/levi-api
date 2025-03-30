@@ -1,33 +1,33 @@
-import { Hono } from 'https://deno.land/x/hono@v3.11.7/mod.ts';
-import { cors } from 'https://deno.land/x/hono@v3.11.7/middleware.ts';
-import { Context } from 'https://deno.land/x/hono@v3.11.7/context.ts';
-import { config } from './config.ts';
-import auth from './routes/auth.ts';
-import games from './routes/games.ts';
+import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
+import { cors } from "https://deno.land/x/hono@v3.11.7/middleware.ts";
+import { Context } from "https://deno.land/x/hono@v3.11.7/context.ts";
+import { config } from "./config.ts";
+import auth from "./routes/auth.ts";
+import games from "./routes/games.ts";
 
 const app = new Hono();
 
 // グローバルミドルウェア
-app.use('*', cors());
+app.use("*", cors());
 
 // ルート
-app.route('/v1/auth', auth);
-app.route('/v1/games', games);
+app.route("/v1/auth", auth);
+app.route("/v1/games", games);
 
 // 404ハンドラ
 app.notFound((c: Context) => {
-  return c.json({ 
-    code: 'NOT_FOUND', 
-    message: 'Not Found' 
+  return c.json({
+    code: "NOT_FOUND",
+    message: "Not Found",
   }, 404);
 });
 
 // エラーハンドラ
 app.onError((err: Error, c: Context) => {
   console.error(`Error: ${err}`);
-  return c.json({ 
-    code: 'INTERNAL_ERROR', 
-    message: 'Internal Server Error' 
+  return c.json({
+    code: "INTERNAL_ERROR",
+    message: "Internal Server Error",
   }, 500);
 });
 

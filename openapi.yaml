@@ -6,11 +6,11 @@ info:
     このAPIはユーザー管理、ゲーム管理、ゲーム進行、プレイヤーアクションなどの機能を提供します。
   version: 1.0.0
 servers:
-  - url: 'https://api.gunjobiyori.com/v1'
+  - url: "https://api.gunjobiyori.com/v1"
     description: 本番環境
-  - url: 'https://staging-api.gunjobiyori.com/v1'
+  - url: "https://staging-api.gunjobiyori.com/v1"
     description: ステージング環境
-  - url: 'http://localhost:8080/v1'
+  - url: "http://localhost:8080/v1"
     description: 開発環境
 
 paths:
@@ -25,21 +25,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRegistration'
+              $ref: "#/components/schemas/UserRegistration"
       responses:
-        '201':
+        "201":
           description: ユーザー登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '400':
+                $ref: "#/components/schemas/User"
+        "400":
           description: 不正なリクエスト
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  
+                $ref: "#/components/schemas/Error"
+
   /users/{userId}:
     get:
       tags:
@@ -52,19 +52,19 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: ユーザー情報
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '404':
+                $ref: "#/components/schemas/User"
+        "404":
           description: ユーザーが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  
+                $ref: "#/components/schemas/Error"
+
   # 認証関連エンドポイント
   /auth/register:
     post:
@@ -76,20 +76,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserRegistration'
+              $ref: "#/components/schemas/UserRegistration"
       responses:
-        '201':
+        "201":
           description: ユーザー登録成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-        '400':
+                $ref: "#/components/schemas/User"
+        "400":
           description: バリデーションエラーまたは重複するメールアドレス
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /auth/login:
     post:
@@ -101,21 +101,21 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: "#/components/schemas/Login"
       responses:
-        '200':
+        "200":
           description: ログイン成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthToken'
-        '401':
+                $ref: "#/components/schemas/AuthToken"
+        "401":
           description: 認証失敗
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  
+                $ref: "#/components/schemas/Error"
+
   # ゲーム関連エンドポイント
   /games:
     get:
@@ -123,14 +123,14 @@ paths:
         - games
       summary: 利用可能なゲーム一覧を取得
       responses:
-        '200':
+        "200":
           description: ゲーム一覧
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Game'
+                  $ref: "#/components/schemas/Game"
     post:
       tags:
         - games
@@ -142,26 +142,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GameCreation'
+              $ref: "#/components/schemas/GameCreation"
       responses:
-        '201':
+        "201":
           description: ゲーム作成成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-        '400':
+                $ref: "#/components/schemas/Game"
+        "400":
           description: 不正なリクエスト
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}:
     get:
@@ -177,24 +177,24 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: ゲーム情報
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-        '401':
+                $ref: "#/components/schemas/Game"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/join:
     post:
@@ -210,30 +210,30 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: ゲーム参加成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-        '400':
+                $ref: "#/components/schemas/Game"
+        "400":
           description: 満室などの参加不可状態
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/leave:
     post:
@@ -249,24 +249,24 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: ゲーム退出成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-        '401':
+                $ref: "#/components/schemas/Game"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/start:
     post:
@@ -282,36 +282,36 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: ゲーム開始成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Game'
-        '400':
+                $ref: "#/components/schemas/Game"
+        "400":
           description: 開始条件を満たしていない
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: 権限がありません（オーナーではない）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/vote:
     post:
@@ -331,32 +331,32 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/VoteAction'
+              $ref: "#/components/schemas/VoteAction"
       responses:
-        '200':
+        "200":
           description: 投票成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActionResult'
-        '400':
+                $ref: "#/components/schemas/ActionResult"
+        "400":
           description: 不正なリクエスト（投票不可状態など）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームまたは対象プレイヤーが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/attack:
     post:
@@ -376,38 +376,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AttackAction'
+              $ref: "#/components/schemas/AttackAction"
       responses:
-        '200':
+        "200":
           description: 襲撃アクション成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActionResult'
-        '400':
+                $ref: "#/components/schemas/ActionResult"
+        "400":
           description: 不正なリクエスト（襲撃不可状態など）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: 人狼役職ではありません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームまたは対象プレイヤーが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/divine:
     post:
@@ -427,38 +427,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/DivineAction'
+              $ref: "#/components/schemas/DivineAction"
       responses:
-        '200':
+        "200":
           description: 占いアクション成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DivineResult'
-        '400':
+                $ref: "#/components/schemas/DivineResult"
+        "400":
           description: 不正なリクエスト（占い不可状態など）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: 占い師役職ではありません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームまたは対象プレイヤーが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/guard:
     post:
@@ -478,38 +478,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/GuardAction'
+              $ref: "#/components/schemas/GuardAction"
       responses:
-        '200':
+        "200":
           description: 護衛アクション成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ActionResult'
-        '400':
+                $ref: "#/components/schemas/ActionResult"
+        "400":
           description: 不正なリクエスト（護衛不可状態など）
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: 狩人役職ではありません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームまたは対象プレイヤーが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
   /games/{gameId}/chat:
     get:
@@ -538,33 +538,33 @@ paths:
             format: date-time
           description: この時間以降のメッセージを取得
       responses:
-        '200':
+        "200":
           description: チャットメッセージ一覧
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ChatMessage'
-        '401':
+                  $ref: "#/components/schemas/ChatMessage"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: チャンネルへのアクセス権限がありません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-    
+                $ref: "#/components/schemas/Error"
+
     post:
       tags:
         - chat
@@ -582,38 +582,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChatMessagePost'
+              $ref: "#/components/schemas/ChatMessagePost"
       responses:
-        '201':
+        "201":
           description: メッセージ送信成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChatMessage'
-        '400':
+                $ref: "#/components/schemas/ChatMessage"
+        "400":
           description: 不正なリクエスト
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '401':
+                $ref: "#/components/schemas/Error"
+        "401":
           description: 認証エラー
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '403':
+                $ref: "#/components/schemas/Error"
+        "403":
           description: チャンネルへの投稿権限がありません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
+                $ref: "#/components/schemas/Error"
+        "404":
           description: ゲームが見つかりません
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
 
 components:
   securitySchemes:
@@ -642,7 +642,7 @@ components:
           type: string
           format: password
           minLength: 8
-          
+
     User:
       type: object
       properties:
@@ -658,8 +658,8 @@ components:
           type: string
           format: date-time
         stats:
-          $ref: '#/components/schemas/UserStats'
-          
+          $ref: "#/components/schemas/UserStats"
+
     UserStats:
       type: object
       properties:
@@ -674,7 +674,7 @@ components:
           type: integer
         werewolfWins:
           type: integer
-          
+
     Login:
       type: object
       required:
@@ -687,7 +687,7 @@ components:
         password:
           type: string
           format: password
-          
+
     AuthToken:
       type: object
       properties:
@@ -697,8 +697,8 @@ components:
           type: string
           format: date-time
         user:
-          $ref: '#/components/schemas/User'
-          
+          $ref: "#/components/schemas/User"
+
     # ゲーム関連
     GameCreation:
       type: object
@@ -718,8 +718,8 @@ components:
           type: string
           description: オプションのゲームパスワード
         settings:
-          $ref: '#/components/schemas/GameSettings'
-          
+          $ref: "#/components/schemas/GameSettings"
+
     Game:
       type: object
       properties:
@@ -729,7 +729,7 @@ components:
         name:
           type: string
         owner:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
         hasPassword:
           type: boolean
         maxPlayers:
@@ -742,12 +742,12 @@ components:
         players:
           type: array
           items:
-            $ref: '#/components/schemas/GamePlayer'
+            $ref: "#/components/schemas/GamePlayer"
         createdAt:
           type: string
           format: date-time
         settings:
-          $ref: '#/components/schemas/GameSettings'
+          $ref: "#/components/schemas/GameSettings"
         currentPhase:
           type: string
           enum: [DAY_DISCUSSION, DAY_VOTE, NIGHT, GAME_OVER]
@@ -766,8 +766,8 @@ components:
         gameEvents:
           type: array
           items:
-            $ref: '#/components/schemas/GameEvent'
-          
+            $ref: "#/components/schemas/GameEvent"
+
     GameSettings:
       type: object
       properties:
@@ -784,8 +784,8 @@ components:
           default: 60
           description: 投票フェーズの制限時間（秒）
         roles:
-          $ref: '#/components/schemas/RoleSettings'
-          
+          $ref: "#/components/schemas/RoleSettings"
+
     RoleSettings:
       type: object
       properties:
@@ -801,7 +801,7 @@ components:
         mediumCount:
           type: integer
           default: 0
-            
+
     GamePlayer:
       type: object
       properties:
@@ -822,7 +822,7 @@ components:
         deathCause:
           type: string
           enum: [WEREWOLF_ATTACK, EXECUTION, NONE]
-          
+
     GameEvent:
       type: object
       properties:
@@ -842,7 +842,7 @@ components:
         timestamp:
           type: string
           format: date-time
-          
+
     # アクション関連
     VoteAction:
       type: object
@@ -852,7 +852,7 @@ components:
         targetPlayerId:
           type: string
           format: uuid
-          
+
     AttackAction:
       type: object
       required:
@@ -861,7 +861,7 @@ components:
         targetPlayerId:
           type: string
           format: uuid
-          
+
     DivineAction:
       type: object
       required:
@@ -870,7 +870,7 @@ components:
         targetPlayerId:
           type: string
           format: uuid
-          
+
     GuardAction:
       type: object
       required:
@@ -879,7 +879,7 @@ components:
         targetPlayerId:
           type: string
           format: uuid
-          
+
     ActionResult:
       type: object
       properties:
@@ -887,7 +887,7 @@ components:
           type: boolean
         message:
           type: string
-          
+
     DivineResult:
       type: object
       properties:
@@ -902,7 +902,7 @@ components:
           type: string
         isWerewolf:
           type: boolean
-          
+
     # チャット関連
     ChatMessagePost:
       type: object
@@ -917,7 +917,7 @@ components:
           type: string
           enum: [village, werewolf]
           default: village
-          
+
     ChatMessage:
       type: object
       properties:
@@ -928,7 +928,7 @@ components:
           type: string
           format: uuid
         sender:
-          $ref: '#/components/schemas/User'
+          $ref: "#/components/schemas/User"
         message:
           type: string
         channel:
@@ -937,7 +937,7 @@ components:
         timestamp:
           type: string
           format: date-time
-          
+
     # エラー
     Error:
       type: object

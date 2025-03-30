@@ -29,5 +29,5 @@ export interface Login {
 export interface AuthToken {
   token: string;
   expiresAt: string;
-  user: Omit<User, 'password'>;
+  user: Omit<User, "password">;
 }

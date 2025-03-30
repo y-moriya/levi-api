@@ -1,9 +1,5 @@
 import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import {
-  AuthResponse,
-  UserResponse,
-  GameResponse,
-} from "./types.ts";
+import { AuthResponse, GameResponse, UserResponse } from "./types.ts";
 import { logger } from "../../utils/logger.ts";
 
 // テスト用のサーバーポート
@@ -21,9 +17,9 @@ class TestServer {
   async start(honoApp: Hono) {
     // 既存のサーバーを確実に停止
     await this.stop();
-    
+
     this.controller = new AbortController();
-    
+
     // テストサーバーを起動
     const handler = honoApp.fetch;
     const server = Deno.serve({
@@ -37,7 +33,7 @@ class TestServer {
     this.shutdownPromise = server.finished;
 
     // サーバーが起動するまで少し待つ
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise((resolve) => setTimeout(resolve, 100));
     return server;
   }
 
@@ -87,12 +83,12 @@ export async function apiRequest(
 export async function consumeResponse<T>(response: Response): Promise<T> {
   try {
     const data = await response.json();
-    
+
     if (!response.ok) {
       const err = new Error(`HTTP error! status: ${response.status}`);
-      logger.error('HTTP error response', err, { 
+      logger.error("HTTP error response", err, {
         status: response.status,
-        data 
+        data,
       });
       // エラーにレスポンスデータを追加
       Object.assign(err, { response: data });
@@ -101,21 +97,21 @@ export async function consumeResponse<T>(response: Response): Promise<T> {
 
     // レスポンスの型に基づいて検証
     if (isActionResponse(data)) {
-      if (typeof data.success !== 'boolean') {
-        const err = new Error('Invalid ActionResponse: success property must be boolean');
-        logger.error('Invalid response', err, { data });
+      if (typeof data.success !== "boolean") {
+        const err = new Error("Invalid ActionResponse: success property must be boolean");
+        logger.error("Invalid response", err, { data });
         throw err;
       }
-      if (typeof data.message !== 'string') {
-        const err = new Error('Invalid ActionResponse: message property must be string');
-        logger.error('Invalid response', err, { data });
+      if (typeof data.message !== "string") {
+        const err = new Error("Invalid ActionResponse: message property must be string");
+        logger.error("Invalid response", err, { data });
         throw err;
       }
     }
     return data as T;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
-    logger.error('Failed to consume response', err);
+    logger.error("Failed to consume response", err);
     throw error;
   }
 }
@@ -124,9 +120,9 @@ export async function consumeResponse<T>(response: Response): Promise<T> {
 function isActionResponse(data: unknown): boolean {
   return (
     data !== null &&
-    typeof data === 'object' &&
-    'success' in data &&
-    'message' in data
+    typeof data === "object" &&
+    "success" in data &&
+    "message" in data
   );
 }
 

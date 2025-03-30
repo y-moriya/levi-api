@@ -1,8 +1,4 @@
-import {
-  assertEquals,
-  assertNotEquals,
-  assertRejects,
-} from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
 import * as gamePhase from "../services/game-phase.ts";
@@ -59,7 +55,7 @@ Deno.test({
     assertEquals(game.players[0].playerId, user1.id);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -71,10 +67,10 @@ Deno.test({
         await gameModel.createGame(testGameData, "non-existent-id");
       },
       Error,
-      "Owner not found"
+      "Owner not found",
     );
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -92,7 +88,7 @@ Deno.test({
     assertEquals(game.settings.roles.mediumCount, 0);
 
     cleanupTest();
-  }
+  },
 });
 
 // Game Joining Tests
@@ -109,7 +105,7 @@ Deno.test({
     assertEquals(joinedGame.players[1].username, testUser2.username);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -121,10 +117,10 @@ Deno.test({
         await gameModel.joinGame("non-existent-id", user2.id);
       },
       Error,
-      "Game not found"
+      "Game not found",
     );
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -158,10 +154,10 @@ Deno.test({
         await gameModel.joinGame(game.id, extraUser.id);
       },
       Error,
-      "Game is full"
+      "Game is full",
     );
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -176,10 +172,10 @@ Deno.test({
         await gameModel.joinGame(game.id, user2.id);
       },
       Error,
-      "Player already in game"
+      "Player already in game",
     );
     cleanupTest();
-  }
+  },
 });
 
 // Game Leaving Tests
@@ -196,7 +192,7 @@ Deno.test({
     assertEquals(updatedGame.players[0].playerId, user1.id);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -211,14 +207,14 @@ Deno.test({
         await gameModel.leaveGame(game.id, user1.id);
       },
       Error,
-      "Game deleted as owner left"
+      "Game deleted as owner left",
     );
 
     const deletedGame = gameModel.getGameById(game.id);
     assertEquals(deletedGame, undefined);
 
     cleanupTest();
-  }
+  },
 });
 
 // Game Listing Tests
@@ -228,12 +224,12 @@ Deno.test({
     await setupTest();
     const game1 = await gameModel.createGame({
       ...testGameData,
-      name: "Game 1"
+      name: "Game 1",
     }, user1.id);
 
     const game2 = await gameModel.createGame({
       ...testGameData,
-      name: "Game 2"
+      name: "Game 2",
     }, user2.id);
 
     const games = gameModel.getAllGames();
@@ -243,7 +239,7 @@ Deno.test({
     assertEquals(games[1].id, game2.id);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -253,7 +249,7 @@ Deno.test({
     const games = gameModel.getAllGames();
     assertEquals(games.length, 0);
     cleanupTest();
-  }
+  },
 });
 
 // Game Retrieval Tests
@@ -269,7 +265,7 @@ Deno.test({
     assertEquals(retrievedGame?.name, testGameData.name);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -279,7 +275,7 @@ Deno.test({
     const game = gameModel.getGameById("non-existent-id");
     assertEquals(game, undefined);
     cleanupTest();
-  }
+  },
 });
 
 // Game Starting Tests
@@ -289,7 +285,7 @@ Deno.test({
     await setupTest();
     const game = await gameModel.createGame({
       ...testGameData,
-      maxPlayers: 6
+      maxPlayers: 6,
     }, user1.id);
 
     // Add enough players for minimum requirements
@@ -309,10 +305,10 @@ Deno.test({
     assertEquals(startedGame.currentDay, 1);
     assertEquals(startedGame.currentPhase, "DAY_DISCUSSION");
     assertNotEquals(startedGame.phaseEndTime, null);
-    assertEquals(startedGame.players.every(p => p.role !== undefined), true);
+    assertEquals(startedGame.players.every((p) => p.role !== undefined), true);
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -326,11 +322,11 @@ Deno.test({
         await gameModel.startGame(game.id, user2.id);
       },
       Error,
-      "Only the game owner can start the game"
+      "Only the game owner can start the game",
     );
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -340,7 +336,7 @@ Deno.test({
     // まず5人以上のプレイヤーでゲームを作成
     const game = await gameModel.createGame({
       ...testGameData,
-      maxPlayers: 6
+      maxPlayers: 6,
     }, user1.id);
 
     // 5人のプレイヤーを追加
@@ -363,11 +359,11 @@ Deno.test({
         await gameModel.startGame(game.id, user1.id);
       },
       Error,
-      "Game is not in waiting state"
+      "Game is not in waiting state",
     );
 
     cleanupTest();
-  }
+  },
 });
 
 Deno.test({
@@ -376,7 +372,7 @@ Deno.test({
     await setupTest();
     const game = await gameModel.createGame({
       ...testGameData,
-      maxPlayers: 6
+      maxPlayers: 6,
     }, user1.id);
 
     // Add enough players
@@ -397,10 +393,10 @@ Deno.test({
       SEER: 0,
       BODYGUARD: 0,
       MEDIUM: 0,
-      VILLAGER: 0
+      VILLAGER: 0,
     };
 
-    startedGame.players.forEach(player => {
+    startedGame.players.forEach((player) => {
       if (player.role) {
         roleCount[player.role]++;
       }
@@ -410,13 +406,16 @@ Deno.test({
     assertEquals(roleCount.SEER, startedGame.settings.roles.seerCount);
     assertEquals(roleCount.BODYGUARD, startedGame.settings.roles.bodyguardCount);
     assertEquals(roleCount.MEDIUM, startedGame.settings.roles.mediumCount);
-    assertEquals(roleCount.VILLAGER, startedGame.players.length - (
-      startedGame.settings.roles.werewolfCount +
-      startedGame.settings.roles.seerCount +
-      startedGame.settings.roles.bodyguardCount +
-      startedGame.settings.roles.mediumCount
-    ));
+    assertEquals(
+      roleCount.VILLAGER,
+      startedGame.players.length - (
+        startedGame.settings.roles.werewolfCount +
+        startedGame.settings.roles.seerCount +
+        startedGame.settings.roles.bodyguardCount +
+        startedGame.settings.roles.mediumCount
+      ),
+    );
 
     cleanupTest();
-  }
+  },
 });

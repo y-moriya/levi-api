@@ -1,4 +1,4 @@
-import { User } from './user.ts';
+import { User } from "./user.ts";
 
 export interface GameCreation {
   name: string;
@@ -10,7 +10,7 @@ export interface GameCreation {
 export interface Game {
   id: string;
   name: string;
-  owner: Omit<User, 'password'>;
+  owner: Omit<User, "password">;
   hasPassword: boolean;
   maxPlayers: number;
   currentPlayers: number;
@@ -29,14 +29,14 @@ export interface Game {
   [key: `guard_${number}`]: Map<string, string>;
 }
 
-export type GameStatus = 'WAITING' | 'IN_PROGRESS' | 'FINISHED';
-export type GamePhase = 'DAY_DISCUSSION' | 'DAY_VOTE' | 'NIGHT' | 'GAME_OVER';
-export type Winner = 'VILLAGERS' | 'WEREWOLVES' | 'NONE';
-export type Role = 'VILLAGER' | 'WEREWOLF' | 'SEER' | 'BODYGUARD' | 'MEDIUM';
-export type DeathCause = 'WEREWOLF_ATTACK' | 'EXECUTION' | 'NONE';
+export type GameStatus = "WAITING" | "IN_PROGRESS" | "FINISHED";
+export type GamePhase = "DAY_DISCUSSION" | "DAY_VOTE" | "NIGHT" | "GAME_OVER";
+export type Winner = "VILLAGERS" | "WEREWOLVES" | "NONE";
+export type Role = "VILLAGER" | "WEREWOLF" | "SEER" | "BODYGUARD" | "MEDIUM";
+export type DeathCause = "WEREWOLF_ATTACK" | "EXECUTION" | "NONE";
 
 // アクションの種類
-export type ActionType = 'VOTE' | 'ATTACK' | 'DIVINE' | 'GUARD';
+export type ActionType = "VOTE" | "ATTACK" | "DIVINE" | "GUARD";
 
 // ベースアクション
 export interface GameAction {
@@ -51,22 +51,22 @@ export interface GameAction {
 
 // 投票アクション
 export interface VoteAction extends GameAction {
-  type: 'VOTE';
+  type: "VOTE";
 }
 
 // 襲撃アクション
 export interface AttackAction extends GameAction {
-  type: 'ATTACK';
+  type: "ATTACK";
 }
 
 // 占いアクション
 export interface DivineAction extends GameAction {
-  type: 'DIVINE';
+  type: "DIVINE";
 }
 
 // 護衛アクション
 export interface GuardAction extends GameAction {
-  type: 'GUARD';
+  type: "GUARD";
 }
 
 // アクション結果のベース
@@ -116,7 +116,7 @@ export interface GameEvent {
   id: string;
   day: number;
   phase: GamePhase;
-  type: 'PHASE_CHANGE' | 'GAME_END';
+  type: "PHASE_CHANGE" | "GAME_END";
   description: string;
   timestamp: string;
 }

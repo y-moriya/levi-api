@@ -1,7 +1,7 @@
-import { User, UserRegistration, Login, AuthToken } from '../types/user.ts';
-import { hashPassword, comparePassword } from '../utils/password.ts';
-import { createJwt } from '../utils/jwt.ts';
-import { config } from '../config.ts';
+import { AuthToken, Login, User, UserRegistration } from "../types/user.ts";
+import { comparePassword, hashPassword } from "../utils/password.ts";
+import { createJwt } from "../utils/jwt.ts";
+import { config } from "../config.ts";
 
 // インメモリユーザーストレージ
 const users: Map<string, User> = new Map();
@@ -13,13 +13,13 @@ export const resetStore = () => {
 
 export const register = async (data: UserRegistration): Promise<User> => {
   // メールアドレスの重複チェック
-  if (Array.from(users.values()).some(user => user.email === data.email)) {
-    throw new Error('Email already exists');
+  if (Array.from(users.values()).some((user) => user.email === data.email)) {
+    throw new Error("Email already exists");
   }
 
   const hashedPassword = await hashPassword(data.password);
   const userId = crypto.randomUUID();
-  
+
   const user: User = {
     id: userId,
     username: data.username,
@@ -31,8 +31,8 @@ export const register = async (data: UserRegistration): Promise<User> => {
       gamesWon: 0,
       winRatio: 0,
       villagerWins: 0,
-      werewolfWins: 0
-    }
+      werewolfWins: 0,
+    },
   };
 
   users.set(userId, user);
@@ -41,14 +41,14 @@ export const register = async (data: UserRegistration): Promise<User> => {
 };
 
 export const login = async (data: Login): Promise<AuthToken> => {
-  const user = Array.from(users.values()).find(u => u.email === data.email);
+  const user = Array.from(users.values()).find((u) => u.email === data.email);
   if (!user) {
-    throw new Error('Invalid credentials');
+    throw new Error("Invalid credentials");
   }
 
   const isValid = await comparePassword(data.password, user.password);
   if (!isValid) {
-    throw new Error('Invalid credentials');
+    throw new Error("Invalid credentials");
   }
 
   const token = await createJwt({ sub: user.id });
@@ -58,14 +58,14 @@ export const login = async (data: Login): Promise<AuthToken> => {
   return {
     token,
     expiresAt,
-    user: userWithoutPassword
+    user: userWithoutPassword,
   };
 };
 
-export const getUserById = (userId: string): Omit<User, 'password'> | undefined => {
+export const getUserById = (userId: string): Omit<User, "password"> | undefined => {
   const user = users.get(userId);
   if (!user) return undefined;
-  
+
   const { password: _password, ...userWithoutPassword } = user;
   return userWithoutPassword;
 };

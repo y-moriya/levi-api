@@ -4,12 +4,12 @@ export const config = {
   port: parseInt(Deno.env.get("PORT") || "8080"),
   jwt: {
     secret: Deno.env.get("JWT_SECRET") || "fallback-secret-key-do-not-use-in-production",
-    expiresIn: "24h"
+    expiresIn: "24h",
   },
   password: {
-    saltRounds: 10
+    saltRounds: 10,
   },
   logging: {
-    level: Deno.env.get("LOG_LEVEL") || "info"
-  }
+    level: Deno.env.get("LOG_LEVEL") || "info",
+  },
 };

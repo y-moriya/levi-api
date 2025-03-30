@@ -10,10 +10,10 @@ export const hashPassword = async (password: string): Promise<string> => {
   const encoder = new TextEncoder();
   const salt = crypto.randomUUID();
   const passwordData = encoder.encode(password + salt);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", passwordData);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
   // salt+hashの形式で保存
   return `${salt}:${hashHex}`;
 };
@@ -23,17 +23,17 @@ export const hashPassword = async (password: string): Promise<string> => {
  * テスト環境用に最適化されています
  */
 export const comparePassword = async (password: string, hashWithSalt: string): Promise<boolean> => {
-  const [salt, storedHash] = hashWithSalt.split(':');
-  
+  const [salt, storedHash] = hashWithSalt.split(":");
+
   if (!salt || !storedHash) {
     return false;
   }
-  
+
   const encoder = new TextEncoder();
   const passwordData = encoder.encode(password + salt);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordData);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", passwordData);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
-  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
   return timingSafeEqual(storedHash, hashHex);
 };

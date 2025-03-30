@@ -1,5 +1,5 @@
 import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { vote, attack, divine, guard } from "../controllers/actions.ts";
+import { attack, divine, guard, vote } from "../controllers/actions.ts";
 import { authMiddleware } from "../middleware/auth.ts";
 import { createValidationMiddleware } from "../middleware/validation.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
@@ -11,7 +11,7 @@ router.use("*", authMiddleware);
 
 // アクション用のバリデーション
 const actionSchema = z.object({
-  targetPlayerId: z.string().uuid({ message: "Invalid target player ID format" })
+  targetPlayerId: z.string().uuid({ message: "Invalid target player ID format" }),
 });
 
 const actionValidation = createValidationMiddleware(actionSchema);

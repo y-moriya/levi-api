@@ -1,9 +1,6 @@
-import {
-  assertEquals,
-  assertNotEquals,
-} from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { apiRequest, consumeResponse, testServer, createAuthenticatedUser } from "../helpers/api.ts";
-import { UserResponse, GameResponse, GameListResponse } from "../helpers/types.ts";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { apiRequest, consumeResponse, createAuthenticatedUser, testServer } from "../helpers/api.ts";
+import { GameListResponse, GameResponse, UserResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as gameModel from "../../models/game.ts";
 import * as authService from "../../services/auth.ts";
@@ -50,7 +47,7 @@ Deno.test({
   async fn() {
     await setupTests();
     await cleanupTests();
-  }
+  },
 });
 
 // Game Listing Tests
@@ -65,7 +62,7 @@ Deno.test({
     assertEquals(games.length, 0);
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -75,13 +72,13 @@ Deno.test({
     // Create two games
     const game1Response = await apiRequest("POST", "/games", {
       name: "Game 1",
-      maxPlayers: 5
+      maxPlayers: 5,
     }, ownerAuth.token);
     await consumeResponse<GameResponse>(game1Response);
 
     const game2Response = await apiRequest("POST", "/games", {
       name: "Game 2",
-      maxPlayers: 5
+      maxPlayers: 5,
     }, ownerAuth.token);
     await consumeResponse<GameResponse>(game2Response);
 
@@ -94,7 +91,7 @@ Deno.test({
     assertEquals(games[1].name, "Game 2");
 
     await cleanupTests();
-  }
+  },
 });
 
 // Game Creation Tests
@@ -118,7 +115,7 @@ Deno.test({
     assertEquals(game.currentPlayers, 1);
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -142,7 +139,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -164,7 +161,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 // Game Joining Tests
@@ -174,7 +171,7 @@ Deno.test({
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
       name: "Test Game",
-      maxPlayers: 5
+      maxPlayers: 5,
     }, ownerAuth.token);
     const newGame = await consumeResponse<GameResponse>(createResponse);
     const gameId = newGame.id;
@@ -188,7 +185,7 @@ Deno.test({
     assertEquals(game.players[1].playerId, playerAuth.user.id);
 
     await cleanupTests();
-  }
+  },
 });
 
 // Game Leaving Tests
@@ -198,7 +195,7 @@ Deno.test({
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
       name: "Test Game",
-      maxPlayers: 5
+      maxPlayers: 5,
     }, ownerAuth.token);
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
@@ -217,7 +214,7 @@ Deno.test({
     assertEquals(updatedGame.players[0].playerId, ownerAuth.user.id);
 
     await cleanupTests();
-  }
+  },
 });
 
 // Game Starting Tests
@@ -227,7 +224,7 @@ Deno.test({
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
       name: "Test Game",
-      maxPlayers: 6
+      maxPlayers: 6,
     }, ownerAuth.token);
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
@@ -251,10 +248,10 @@ Deno.test({
     assertEquals(startedGame.currentDay, 1);
     assertEquals(startedGame.currentPhase, "DAY_DISCUSSION");
     assertNotEquals(startedGame.phaseEndTime, null);
-    assertEquals(startedGame.players.every(p => p.role !== undefined), true);
+    assertEquals(startedGame.players.every((p) => p.role !== undefined), true);
 
     await cleanupTests();
-  }
+  },
 });
 
 // Game Actions Tests
@@ -264,7 +261,7 @@ Deno.test({
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
       name: "Test Game",
-      maxPlayers: 6
+      maxPlayers: 6,
     }, ownerAuth.token);
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
@@ -305,14 +302,14 @@ Deno.test({
     // Start game
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse<GameResponse>(startResponse);
-    
+
     // Initialize game with roles for testing
     const gameInstance = gameModel.getGameById(gameId)!;
-    gameInstance.currentPhase = "DAY_VOTE";  // フェーズを投票フェーズに設定
-    gameInstance.players.find(p => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
-    gameInstance.players.find(p => p.playerId === seerAuth.user.id)!.role = "SEER";
-    gameInstance.players.find(p => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
-    gameInstance.players.find(p => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.currentPhase = "DAY_VOTE"; // フェーズを投票フェーズに設定
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 
     // Test voting
     const voteResponse = await apiRequest("POST", `/games/${gameId}/vote`, {
@@ -324,7 +321,7 @@ Deno.test({
     assertEquals(voteResult.success, true);
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -333,7 +330,7 @@ Deno.test({
     await setupTests();
     const createResponse = await apiRequest("POST", "/games", {
       name: "Test Game",
-      maxPlayers: 6
+      maxPlayers: 6,
     }, ownerAuth.token);
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
@@ -383,10 +380,10 @@ Deno.test({
     // Start game and set up roles
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse<GameResponse>(startResponse);
-    
+
     const gameInstance = gameModel.getGameById(gameId)!;
-    gameInstance.players.find(p => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
-    gameInstance.players.find(p => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 
     // Test attack during night
     gameInstance.currentPhase = "NIGHT";
@@ -399,5 +396,5 @@ Deno.test({
     assertEquals(attackResult.success, true);
 
     await cleanupTests();
-  }
+  },
 });

@@ -1,9 +1,6 @@
-import {
-  assertEquals,
-  assertNotEquals,
-} from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, testServer } from "../helpers/api.ts";
-import { UserResponse, AuthResponse } from "../helpers/types.ts";
+import { AuthResponse, UserResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as authService from "../../services/auth.ts";
 
@@ -29,7 +26,7 @@ Deno.test({
   async fn() {
     await setupTests();
     await cleanupTests();
-  }
+  },
 });
 
 // Registration Tests
@@ -46,7 +43,7 @@ Deno.test({
     assertNotEquals(user.id, undefined);
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -68,7 +65,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -91,7 +88,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 // Login Tests
@@ -114,7 +111,7 @@ Deno.test({
     assertNotEquals(auth.token, undefined);
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -138,7 +135,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -158,7 +155,7 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });
 
 Deno.test({
@@ -178,5 +175,5 @@ Deno.test({
     }
 
     await cleanupTests();
-  }
+  },
 });

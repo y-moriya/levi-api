@@ -1,6 +1,6 @@
-import { config } from '../config.ts';
+import { config } from "../config.ts";
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
@@ -22,32 +22,32 @@ class Logger {
 
   private formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): string {
     const timestamp = new Date().toISOString();
-    const contextStr = context ? ` ${JSON.stringify(context)}` : '';
+    const contextStr = context ? ` ${JSON.stringify(context)}` : "";
     return `[${timestamp}] ${level.toUpperCase()}: ${message}${contextStr}`;
   }
 
   debug(message: string, context?: Record<string, unknown>): void {
-    if (this.shouldLog('debug')) {
-      console.debug(this.formatMessage('debug', message, context));
+    if (this.shouldLog("debug")) {
+      console.debug(this.formatMessage("debug", message, context));
     }
   }
 
   info(message: string, context?: Record<string, unknown>): void {
-    if (this.shouldLog('info')) {
-      console.info(this.formatMessage('info', message, context));
+    if (this.shouldLog("info")) {
+      console.info(this.formatMessage("info", message, context));
     }
   }
 
   warn(message: string, context?: Record<string, unknown>): void {
-    if (this.shouldLog('warn')) {
-      console.warn(this.formatMessage('warn', message, context));
+    if (this.shouldLog("warn")) {
+      console.warn(this.formatMessage("warn", message, context));
     }
   }
 
   error(message: string, error?: Error, context?: Record<string, unknown>): void {
-    if (this.shouldLog('error')) {
+    if (this.shouldLog("error")) {
       const errorContext = error ? { ...context, error: error.message, stack: error.stack } : context;
-      console.error(this.formatMessage('error', message, errorContext));
+      console.error(this.formatMessage("error", message, errorContext));
     }
   }
 }

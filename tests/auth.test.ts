@@ -1,8 +1,4 @@
-import {
-  assertEquals,
-  assertNotEquals,
-  assertRejects,
-} from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import * as authService from "../services/auth.ts";
 import { verifyJwt } from "../utils/jwt.ts";
 
@@ -29,7 +25,7 @@ Deno.test({
     assertEquals(user.username, testUser.username);
     assertEquals(user.email, testUser.email);
     assertNotEquals(user.id, undefined);
-  }
+  },
 });
 
 Deno.test({
@@ -37,15 +33,15 @@ Deno.test({
   async fn() {
     setupTest();
     await authService.register(testUser);
-    
+
     await assertRejects(
       async () => {
         await authService.register(testUser);
       },
       Error,
-      "Email already exists"
+      "Email already exists",
     );
-  }
+  },
 });
 
 // Login Tests
@@ -62,11 +58,11 @@ Deno.test({
 
     assertEquals(result.user.email, testUser.email);
     assertNotEquals(result.token, undefined);
-    
+
     // Verify JWT token
     const payload = await verifyJwt(result.token);
     assertNotEquals(payload.sub, undefined);
-  }
+  },
 });
 
 Deno.test({
@@ -83,9 +79,9 @@ Deno.test({
         });
       },
       Error,
-      "Invalid credentials"
+      "Invalid credentials",
     );
-  }
+  },
 });
 
 Deno.test({
@@ -100,7 +96,7 @@ Deno.test({
         });
       },
       Error,
-      "Invalid credentials"
+      "Invalid credentials",
     );
-  }
+  },
 });

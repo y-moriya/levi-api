@@ -1,7 +1,4 @@
-import {
-  assertEquals,
-  assertNotEquals,
-} from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals, assertNotEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
@@ -28,7 +25,7 @@ async function setupTest() {
   ];
 
   const users = await Promise.all(
-    testUsers.map(user => authService.register(user))
+    testUsers.map((user) => authService.register(user)),
   );
 
   // テストゲームの作成
@@ -70,7 +67,7 @@ Deno.test({
     game.currentPhase = "DAY_VOTE";
     const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
     assertEquals(result.success, true);
-  }
+  },
 });
 
 Deno.test({
@@ -80,7 +77,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -91,7 +88,7 @@ Deno.test({
     villager.isAlive = false;
     const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -102,7 +99,7 @@ Deno.test({
     werewolf.isAlive = false;
     const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 // Attack Action Tests
@@ -113,7 +110,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
     assertEquals(result.success, true);
-  }
+  },
 });
 
 Deno.test({
@@ -123,7 +120,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleAttackAction(game, villager.playerId, seer.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -133,7 +130,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleAttackAction(game, werewolf.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -143,7 +140,7 @@ Deno.test({
     game.currentPhase = "DAY_DISCUSSION";
     const result = gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 // Divine Action Tests
@@ -155,7 +152,7 @@ Deno.test({
     const result = gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
     assertEquals(result.success, true);
     assertEquals(result.isWerewolf, true);
-  }
+  },
 });
 
 Deno.test({
@@ -165,7 +162,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleDivineAction(game, villager.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -176,7 +173,7 @@ Deno.test({
     const result = gameActions.handleDivineAction(game, seer.playerId, villager.playerId);
     assertEquals(result.success, true);
     assertEquals(result.isWerewolf, false);
-  }
+  },
 });
 
 Deno.test({
@@ -186,7 +183,7 @@ Deno.test({
     game.currentPhase = "DAY_DISCUSSION";
     const result = gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 // Guard Action Tests
@@ -197,7 +194,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
     assertEquals(result.success, true);
-  }
+  },
 });
 
 Deno.test({
@@ -207,7 +204,7 @@ Deno.test({
     game.currentPhase = "NIGHT";
     const result = gameActions.handleGuardAction(game, villager.playerId, seer.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -218,7 +215,7 @@ Deno.test({
     villager.isAlive = false;
     const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 Deno.test({
@@ -228,7 +225,7 @@ Deno.test({
     game.currentPhase = "DAY_DISCUSSION";
     const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
     assertEquals(result.success, false);
-  }
+  },
 });
 
 // Phase Actions Processing Tests
@@ -244,33 +241,33 @@ Deno.test({
 
     // 投票のランダム割り当てを処理
     gameActions.processPhaseActions(game);
-    
+
     // game-logicの投票結果処理を実行
     const voteKey = `vote_${game.currentDay}` as const;
     const votes = getActionMap(game, voteKey);
     const voteCount = new Map<string, number>();
-    
+
     // 投票を集計
     for (const [_, targetId] of votes) {
       voteCount.set(targetId, (voteCount.get(targetId) || 0) + 1);
     }
-    
+
     // 最多得票者を処刑
     const maxVotes = Math.max(...voteCount.values());
     const executedPlayers = Array.from(voteCount.entries())
       .filter(([_, count]) => count === maxVotes)
       .map(([playerId]) => playerId);
-    
+
     if (executedPlayers.length > 0) {
       const executedPlayerId = executedPlayers[Math.floor(Math.random() * executedPlayers.length)];
-      const executedPlayer = game.players.find(p => p.playerId === executedPlayerId)!;
+      const executedPlayer = game.players.find((p) => p.playerId === executedPlayerId)!;
       executedPlayer.isAlive = false;
       executedPlayer.deathCause = "EXECUTION";
     }
 
     assertEquals(werewolf.isAlive, false);
     assertEquals(werewolf.deathCause, "EXECUTION");
-  }
+  },
 });
 
 Deno.test({
@@ -278,7 +275,7 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    
+
     // 人狼が村人を攻撃
     gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
     // 護衛が村人を守る
@@ -287,7 +284,7 @@ Deno.test({
     gameActions.processPhaseActions(game);
     assertEquals(villager.isAlive, true);
     assertEquals(villager.deathCause, "NONE");
-  }
+  },
 });
 
 Deno.test({
@@ -296,8 +293,8 @@ Deno.test({
     await setupTest();
     game.currentPhase = "NIGHT";
     gameActions.processPhaseActions(game);
-    
+
     const actions = gameActions.getGameActions(game.id);
     assertNotEquals(actions, undefined);
-  }
+  },
 });

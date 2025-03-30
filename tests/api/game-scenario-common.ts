@@ -1,5 +1,5 @@
 import { UserResponse } from "../helpers/types.ts";
-import { testServer, createAuthenticatedUser } from "../helpers/api.ts";
+import { createAuthenticatedUser, testServer } from "../helpers/api.ts";
 import * as gameModel from "../../models/game.ts";
 import * as authService from "../../services/auth.ts";
 import * as gamePhase from "../../services/game-phase.ts";
@@ -65,7 +65,7 @@ export async function setupScenarioTest(): Promise<TestUsers> {
     werewolfAuth,
     seerAuth,
     bodyguardAuth,
-    villagerAuth
+    villagerAuth,
   };
 }
 
@@ -79,18 +79,18 @@ export async function cleanupScenarioTest() {
     for (const _game of games) {
       gameActions.resetGameActions();
     }
-    
+
     // ゲームとユーザーストアをリセット
     gameModel.resetGames();
     authService.resetStore();
 
     // サーバーを停止し、すべての接続が閉じられるのを待つ
     await testServer.stop();
-    
+
     // 少し待機してリソースが完全に解放されるのを確実にする
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise((resolve) => setTimeout(resolve, 200));
   } catch (error) {
-    console.error('Error during test cleanup:', error);
+    console.error("Error during test cleanup:", error);
     throw error;
   }
 }

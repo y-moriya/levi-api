@@ -1,5 +1,5 @@
-import { Game } from '../../types/game.ts';
-import { User } from '../../types/user.ts';
+import { Game } from "../../types/game.ts";
+import { User } from "../../types/user.ts";
 
 export interface ApiError {
   code: string;
@@ -7,7 +7,7 @@ export interface ApiError {
   details?: Record<string, unknown>;
 }
 
-export type UserResponse = Omit<User, 'password'>;
+export type UserResponse = Omit<User, "password">;
 export interface AuthResponse {
   token: string;
   expiresAt: string;

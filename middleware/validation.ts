@@ -1,66 +1,66 @@
-import { Context, Next, MiddlewareHandler } from "https://deno.land/x/hono@v3.11.7/mod.ts";
+import { Context, MiddlewareHandler, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 // バリデーション用のzodスキーマ定義
 const userRegistrationSchema = z.object({
   username: z.string()
-    .min(3, { message: 'Username must be between 3 and 20 characters' })
-    .max(20, { message: 'Username must be between 3 and 20 characters' }),
+    .min(3, { message: "Username must be between 3 and 20 characters" })
+    .max(20, { message: "Username must be between 3 and 20 characters" }),
   email: z.string()
-    .email({ message: 'Invalid email format' }),
+    .email({ message: "Invalid email format" }),
   password: z.string()
-    .min(8, { message: 'Password must be at least 8 characters' })
+    .min(8, { message: "Password must be at least 8 characters" }),
 });
 
 const loginSchema = z.object({
   email: z.string()
-    .email({ message: 'Invalid email format' }),
+    .email({ message: "Invalid email format" }),
   password: z.string()
-    .min(1, { message: 'Password is required' })
+    .min(1, { message: "Password is required" }),
 });
 
 const gameSettingsSchema = z.object({
   dayTimeSeconds: z.number()
-    .min(60, { message: 'Day time must be at least 60 seconds' })
+    .min(60, { message: "Day time must be at least 60 seconds" })
     .optional()
     .default(300),
   nightTimeSeconds: z.number()
-    .min(30, { message: 'Night time must be at least 30 seconds' })
+    .min(30, { message: "Night time must be at least 30 seconds" })
     .optional()
     .default(180),
   voteTimeSeconds: z.number()
-    .min(30, { message: 'Vote time must be at least 30 seconds' })
+    .min(30, { message: "Vote time must be at least 30 seconds" })
     .optional()
     .default(60),
   roles: z.object({
     werewolfCount: z.number()
-      .min(1, { message: 'At least 1 werewolf is required' })
+      .min(1, { message: "At least 1 werewolf is required" })
       .optional()
       .default(2),
     seerCount: z.number()
-      .min(0, { message: 'Seer count cannot be negative' })
+      .min(0, { message: "Seer count cannot be negative" })
       .optional()
       .default(1),
     bodyguardCount: z.number()
-      .min(0, { message: 'Bodyguard count cannot be negative' })
+      .min(0, { message: "Bodyguard count cannot be negative" })
       .optional()
       .default(1),
     mediumCount: z.number()
-      .min(0, { message: 'Medium count cannot be negative' })
+      .min(0, { message: "Medium count cannot be negative" })
       .optional()
-      .default(0)
-  }).optional().default({})
+      .default(0),
+  }).optional().default({}),
 }).optional().default({});
 
 const gameCreationSchema = z.object({
   name: z.string()
-    .min(3, { message: 'Game name must be between 3 and 30 characters' })
-    .max(30, { message: 'Game name must be between 3 and 30 characters' }),
+    .min(3, { message: "Game name must be between 3 and 30 characters" })
+    .max(30, { message: "Game name must be between 3 and 30 characters" }),
   maxPlayers: z.number()
-    .min(3, { message: 'Maximum players must be between 3 and 20' })
-    .max(20, { message: 'Maximum players must be between 3 and 20' }),
+    .min(3, { message: "Maximum players must be between 3 and 20" })
+    .max(20, { message: "Maximum players must be between 3 and 20" }),
   password: z.string().optional(),
-  settings: gameSettingsSchema
+  settings: gameSettingsSchema,
 });
 
 export const createValidationMiddleware = (schema: z.ZodType): MiddlewareHandler => {
@@ -75,7 +75,7 @@ export const createValidationMiddleware = (schema: z.ZodType): MiddlewareHandler
         return c.json({
           code: "VALIDATION_ERROR",
           message: "Invalid request body",
-          errors: error.errors.map(err => err.message)
+          errors: error.errors.map((err) => err.message),
         }, 400);
       }
       throw error;

@@ -3,7 +3,7 @@ import { apiRequest, consumeResponse } from "../helpers/api.ts";
 import * as gameModel from "../../models/game.ts";
 import * as gameLogic from "../../services/game-logic.ts";
 import * as gameActions from "../../services/game-actions.ts";
-import { setupScenarioTest, cleanupScenarioTest, TestUsers } from "./game-scenario-common.ts";
+import { cleanupScenarioTest, setupScenarioTest, TestUsers } from "./game-scenario-common.ts";
 import { GameResponse } from "../helpers/types.ts";
 
 let gameId: string;
@@ -19,7 +19,7 @@ Deno.test({
     // 1. ゲームの作成
     const createResponse = await apiRequest("POST", "/games", {
       name: "Village Victory Scenario",
-      maxPlayers: 5
+      maxPlayers: 5,
     }, ownerAuth.token);
     const game = await consumeResponse<GameResponse>(createResponse);
     gameId = game.id;
@@ -41,11 +41,11 @@ Deno.test({
 
     // 役職の割り当て（テスト用に固定）
     const gameInstance = gameModel.getGameById(gameId)!;
-    gameInstance.players.find(p => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
-    gameInstance.players.find(p => p.playerId === seerAuth.user.id)!.role = "SEER";
-    gameInstance.players.find(p => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
-    gameInstance.players.find(p => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
-    gameInstance.players.find(p => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
 
     // Day 1: 昼フェーズから開始
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
@@ -60,7 +60,7 @@ Deno.test({
     // 全員が人狼に投票
     for (const player of [ownerAuth, seerAuth, bodyguardAuth, villagerAuth]) {
       const voteResponse = await apiRequest("POST", `/games/${gameId}/vote`, {
-        targetPlayerId: werewolfAuth.user.id
+        targetPlayerId: werewolfAuth.user.id,
       }, player.token);
       const voteResult = await consumeResponse<{ success: boolean }>(voteResponse);
       assertEquals(voteResult.success, true);
@@ -69,7 +69,7 @@ Deno.test({
     // ゲームフェーズの進行（投票の処理を含む）
     gameLogic.handlePhaseEnd(gameInstance);
 
-    const werewolfPlayer = gameInstance.players.find(p => p.playerId === werewolfAuth.user.id)!;
+    const werewolfPlayer = gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!;
     assertEquals(werewolfPlayer.isAlive, false);
     assertEquals(werewolfPlayer.deathCause, "EXECUTION");
 
@@ -78,5 +78,5 @@ Deno.test({
     assertEquals(gameInstance.winner, "VILLAGERS");
 
     await cleanupScenarioTest();
-  }
+  },
 });
