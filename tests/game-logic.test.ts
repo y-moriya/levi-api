@@ -1,4 +1,4 @@
-import { assertEquals, assertNotEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import * as gameLogic from "../services/game-logic.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";

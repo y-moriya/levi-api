@@ -26,9 +26,9 @@ app.notFound((c: Context) => {
 
 // ヘルスチェック
 app.get("/v1/health", (c: Context) => {
-  c.status(200)
+  c.status(200);
   return c.json({
-    status: "OK"
+    status: "OK",
   });
 });
 

@@ -48,7 +48,7 @@ class TestServer {
           }
         },
         1000,
-        10 
+        10,
       );
 
       if (!isReady) {
@@ -86,11 +86,11 @@ class TestServer {
               await fetch(`${BASE_URL}/health`);
               return false; // サーバーがまだ応答する場合
             } catch {
-              return true;  // サーバーが停止している場合
+              return true; // サーバーが停止している場合
             }
           },
           1000,
-          10
+          10,
         );
       }
     }
