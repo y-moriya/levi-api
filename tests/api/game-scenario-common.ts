@@ -6,6 +6,9 @@ import * as gamePhase from "../../services/game-phase.ts";
 import * as gameActions from "../../services/game-actions.ts";
 import app from "../../main.ts";
 
+// サーバー状態を追跡
+let isServerRunning = false;
+
 export interface AuthenticatedUser {
   token: string;
   user: UserResponse;
@@ -20,53 +23,52 @@ export interface TestUsers {
 }
 
 export async function setupScenarioTest(): Promise<TestUsers> {
-  // Reset stores
-  gameModel.resetGames();
-  authService.resetStore();
-  // Reset game actions
-  gameActions.resetGameActions();
+  try {
+    // Reset stores
+    gameModel.resetGames();
+    authService.resetStore();
+    gameActions.resetGameActions();
 
-  // Start test server
-  await testServer.start(app);
+    // サーバーが実行中でない場合のみ起動
+    if (!isServerRunning) {
+      await testServer.start(app);
+      isServerRunning = true;
+    }
 
-  // Create authenticated users with specific roles
-  const ownerAuth = await createAuthenticatedUser({
-    username: "owner",
-    email: `owner${Date.now()}@example.com`,
-    password: "password123",
-  });
+    // Create authenticated users with specific roles
+    const [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth] = await Promise.all([
+      createAuthenticatedUser({
+        username: "owner",
+        email: `owner${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "werewolf",
+        email: `werewolf${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "seer",
+        email: `seer${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "bodyguard",
+        email: `bodyguard${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "villager",
+        email: `villager${Date.now()}@example.com`,
+        password: "password123",
+      }),
+    ]);
 
-  const werewolfAuth = await createAuthenticatedUser({
-    username: "werewolf",
-    email: `werewolf${Date.now()}@example.com`,
-    password: "password123",
-  });
-
-  const seerAuth = await createAuthenticatedUser({
-    username: "seer",
-    email: `seer${Date.now()}@example.com`,
-    password: "password123",
-  });
-
-  const bodyguardAuth = await createAuthenticatedUser({
-    username: "bodyguard",
-    email: `bodyguard${Date.now()}@example.com`,
-    password: "password123",
-  });
-
-  const villagerAuth = await createAuthenticatedUser({
-    username: "villager",
-    email: `villager${Date.now()}@example.com`,
-    password: "password123",
-  });
-
-  return {
-    ownerAuth,
-    werewolfAuth,
-    seerAuth,
-    bodyguardAuth,
-    villagerAuth,
-  };
+    return { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth };
+  } catch (error) {
+    console.error("Failed to setup scenario test:", error);
+    throw error;
+  }
 }
 
 export async function cleanupScenarioTest() {
@@ -75,20 +77,13 @@ export async function cleanupScenarioTest() {
     gamePhase.clearAllTimers();
 
     // Clean up games and game actions
-    const games = gameModel.getAllGames();
-    for (const _game of games) {
-      gameActions.resetGameActions();
-    }
+    gameActions.resetGameActions();
 
     // ゲームとユーザーストアをリセット
     gameModel.resetGames();
     authService.resetStore();
 
-    // サーバーを停止し、すべての接続が閉じられるのを待つ
-    await testServer.stop();
-
-    // 少し待機してリソースが完全に解放されるのを確実にする
-    await new Promise((resolve) => setTimeout(resolve, 200));
+    // サーバーは停止せず、再利用
   } catch (error) {
     console.error("Error during test cleanup:", error);
     throw error;

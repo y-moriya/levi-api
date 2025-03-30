@@ -23,6 +23,9 @@ interface TestUsers {
 let gameId: string;
 let users: TestUsers;
 
+// サーバー状態を追跡
+let isServerRunning = false;
+
 // セットアップとクリーンアップ
 async function setupTests() {
   // Reset stores
@@ -31,39 +34,40 @@ async function setupTests() {
   gamePhase.clearAllTimers();
 
   try {
-    // Start test server
-    await testServer.start(app);
+    // サーバーが実行中でない場合のみ起動
+    if (!isServerRunning) {
+      await testServer.start(app);
+      isServerRunning = true;
+    }
 
-    // Create test users
-    const ownerAuth = await createAuthenticatedUser({
-      username: "owner",
-      email: `owner${Date.now()}@example.com`,
-      password: "password123",
-    });
-
-    const werewolfAuth = await createAuthenticatedUser({
-      username: "werewolf",
-      email: `werewolf${Date.now()}@example.com`,
-      password: "password123",
-    });
-
-    const seerAuth = await createAuthenticatedUser({
-      username: "seer",
-      email: `seer${Date.now()}@example.com`,
-      password: "password123",
-    });
-
-    const bodyguardAuth = await createAuthenticatedUser({
-      username: "bodyguard",
-      email: `bodyguard${Date.now()}@example.com`,
-      password: "password123",
-    });
-
-    const villagerAuth = await createAuthenticatedUser({
-      username: "villager",
-      email: `villager${Date.now()}@example.com`,
-      password: "password123",
-    });
+    // Create test users in parallel
+    const [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth] = await Promise.all([
+      createAuthenticatedUser({
+        username: "owner",
+        email: `owner${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "werewolf",
+        email: `werewolf${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "seer",
+        email: `seer${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "bodyguard",
+        email: `bodyguard${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "villager",
+        email: `villager${Date.now()}@example.com`,
+        password: "password123",
+      }),
+    ]);
 
     users = { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth };
   } catch (error) {
@@ -79,7 +83,10 @@ async function cleanupTests() {
     for (const game of games) {
       gamePhase.clearPhaseTimer(game.id);
     }
-    await testServer.stop();
+    
+    // リセットするだけで、サーバーは停止しない
+    gameModel.resetGames();
+    authService.resetStore();
   } catch (error) {
     console.error("Failed to cleanup tests:", error);
     throw error;

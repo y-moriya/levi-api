@@ -261,11 +261,13 @@ export async function waitForCondition(
 export async function waitForGamePhase(
   game: Game,
   phase: GamePhase,
-  timeout = 5000,
+  timeout = 2000,
+  interval = 50,
 ): Promise<boolean> {
   return await waitForCondition(
     () => game.currentPhase === phase,
     timeout,
+    interval
   );
 }
 
@@ -275,7 +277,8 @@ export async function waitForGamePhase(
  */
 export async function waitForActionInitialization(
   gameId: string,
-  timeout = 5000,
+  timeout = 2000,
+  interval = 50,
 ): Promise<boolean> {
   return await waitForCondition(
     () => {
@@ -283,5 +286,6 @@ export async function waitForActionInitialization(
       return actions !== undefined;
     },
     timeout,
+    interval
   );
 }

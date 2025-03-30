@@ -10,11 +10,17 @@ const validUser = {
   password: "password123",
 };
 
+// サーバー状態を追跡
+let isServerRunning = false;
+
 // テストサーバーのセットアップとクリーンアップ
 async function setupTests() {
   authService.resetStore();
   try {
-    await testServer.start(app);
+    if (!isServerRunning) {
+      await testServer.start(app);
+      isServerRunning = true;
+    }
   } catch (error) {
     console.error("Failed to start test server:", error);
     throw error;
@@ -23,9 +29,10 @@ async function setupTests() {
 
 async function cleanupTests() {
   try {
-    await testServer.stop();
+    // サーバーは停止せず、再利用する
+    authService.resetStore();
   } catch (error) {
-    console.error("Failed to stop test server:", error);
+    console.error("Failed during test cleanup:", error);
     throw error;
   }
 }

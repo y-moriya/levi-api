@@ -9,6 +9,9 @@ import * as gamePhase from "../../services/game-phase.ts";
 let ownerAuth: { token: string; user: UserResponse };
 let playerAuth: { token: string; user: UserResponse };
 
+// サーバー状態を追跡
+let isServerRunning = false;
+
 // セットアップとクリーンアップ
 async function setupTests() {
   // Reset stores
@@ -17,21 +20,28 @@ async function setupTests() {
   gamePhase.clearAllTimers();
 
   try {
-    // Start test server
-    await testServer.start(app);
+    // サーバーが実行中でない場合のみ起動
+    if (!isServerRunning) {
+      await testServer.start(app);
+      isServerRunning = true;
+    }
 
     // Create authenticated users
-    ownerAuth = await createAuthenticatedUser({
-      username: "gameowner",
-      email: `owner${Date.now()}@example.com`,
-      password: "password123",
-    });
+    const [owner, player] = await Promise.all([
+      createAuthenticatedUser({
+        username: "gameowner",
+        email: `owner${Date.now()}@example.com`,
+        password: "password123",
+      }),
+      createAuthenticatedUser({
+        username: "gameplayer",
+        email: `player${Date.now()}@example.com`,
+        password: "password123",
+      }),
+    ]);
 
-    playerAuth = await createAuthenticatedUser({
-      username: "gameplayer",
-      email: `player${Date.now()}@example.com`,
-      password: "password123",
-    });
+    ownerAuth = owner;
+    playerAuth = player;
   } catch (error) {
     console.error("Failed to setup tests:", error);
     throw error;
@@ -45,7 +55,10 @@ async function cleanupTests() {
     for (const game of games) {
       gamePhase.clearPhaseTimer(game.id);
     }
-    await testServer.stop();
+    
+    // リセットするだけで、サーバーは停止しない
+    gameModel.resetGames();
+    authService.resetStore();
   } catch (error) {
     console.error("Failed to cleanup tests:", error);
     throw error;
