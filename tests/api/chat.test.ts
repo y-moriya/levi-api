@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse } from "../helpers/api.ts";
-import { AuthenticatedUser, setupScenarioTest, cleanupScenarioTest } from "./game-scenario-common.ts";
-import { ChatMessage, ChatError } from "../../types/chat.ts";
+import { AuthenticatedUser, cleanupScenarioTest, setupScenarioTest } from "./game-scenario-common.ts";
+import { ChatError, ChatMessage } from "../../types/chat.ts";
 import * as gameModel from "../../models/game.ts";
 import * as chatService from "../../services/chat.ts";
 
@@ -39,7 +39,7 @@ Deno.test({
     // ゲーム開始
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse(startResponse);
-    
+
     // メッセージの送信
     const sendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
       channel: "GLOBAL",
@@ -83,7 +83,7 @@ Deno.test({
     // ゲーム開始と役職の設定
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse(startResponse);
-    
+
     const gameInstance = gameModel.getGameById(gameId)!;
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
@@ -112,12 +112,22 @@ Deno.test({
     assertEquals((villagerSendError as Error & { response: ChatError }).response.code, "CHANNEL_ACCESS_DENIED");
 
     // 村人のメッセージ取得（空配列が返るはず）
-    const villagerGetResponse = await apiRequest("GET", `/chat/${gameId}/messages/WEREWOLF`, undefined, villagerAuth.token);
+    const villagerGetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/WEREWOLF`,
+      undefined,
+      villagerAuth.token,
+    );
     const villagerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(villagerGetResponse);
     assertEquals(villagerGetResult.messages.length, 0);
 
     // 人狼のメッセージ取得（メッセージが見えるはず）
-    const werewolfGetResponse = await apiRequest("GET", `/chat/${gameId}/messages/WEREWOLF`, undefined, werewolfAuth.token);
+    const werewolfGetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/WEREWOLF`,
+      undefined,
+      werewolfAuth.token,
+    );
     const werewolfGetResult = await consumeResponse<{ messages: ChatMessage[] }>(werewolfGetResponse);
     assertEquals(werewolfGetResult.messages.length, 1);
     assertEquals(werewolfGetResult.messages[0].content, "Secret message");

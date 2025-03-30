@@ -1,4 +1,4 @@
-import { ChatMessage, ChatChannel } from "../types/chat.ts";
+import { ChatChannel, ChatMessage } from "../types/chat.ts";
 import { Game } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
 
@@ -25,7 +25,7 @@ export function getGameMessages(
   game: Game,
 ): ChatMessage[] {
   const messages = gameMessages.get(gameId) || [];
-  
+
   // プレイヤーが人狼かどうかを確認
   const player = game.players.find((p) => p.playerId === playerId);
   const isWerewolf = player?.role === "WEREWOLF";

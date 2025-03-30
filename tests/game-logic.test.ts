@@ -123,17 +123,17 @@ Deno.test({
     testGame.players[2].role = "SEER";
     testGame.players[3].role = "BODYGUARD";
     testGame.players[4].role = "VILLAGER";
-    
+
     // Test DAY_DISCUSSION to DAY_VOTE
     testGame.currentPhase = "DAY_DISCUSSION";
     gameLogic.handlePhaseEnd(testGame);
     assertEquals(testGame.currentPhase, "DAY_VOTE");
-    
+
     // Test DAY_VOTE to NIGHT
     testGame.currentPhase = "DAY_VOTE";
     gameLogic.handlePhaseEnd(testGame);
     assertEquals(testGame.currentPhase, "NIGHT");
-    
+
     // Test NIGHT to DAY_DISCUSSION (next day)
     testGame.currentPhase = "NIGHT";
     gameLogic.handlePhaseEnd(testGame);
@@ -149,14 +149,14 @@ Deno.test({
   name: "assignRoles - should assign roles according to game settings",
   async fn() {
     await setupTest();
-    
+
     // Reset all roles
-    testGame.players.forEach(player => {
+    testGame.players.forEach((player) => {
       player.role = undefined;
     });
-    
+
     gameLogic.assignRoles(testGame);
-    
+
     const roleCount = {
       WEREWOLF: 0,
       SEER: 0,
@@ -165,7 +165,7 @@ Deno.test({
       MEDIUM: 0,
     } as Record<Role, number>;
 
-    testGame.players.forEach(player => {
+    testGame.players.forEach((player) => {
       if (player.role) {
         roleCount[player.role]++;
       }
@@ -182,7 +182,7 @@ Deno.test({
         testGame.settings.roles.seerCount +
         testGame.settings.roles.bodyguardCount +
         testGame.settings.roles.mediumCount
-      )
+      ),
     );
 
     cleanupTest();

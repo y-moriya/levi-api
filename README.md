@@ -1,6 +1,7 @@
 # Levi API - Werewolf Game REST API
 
-A RESTful API implementation of the Werewolf (Mafia) game built with Deno and Hono framework. This project implements an in-memory game state management system with essential game functionalities.
+A RESTful API implementation of the Werewolf (Mafia) game built with Deno and Hono framework. This project implements an
+in-memory game state management system with essential game functionalities.
 
 ## 🚀 Tech Stack
 
