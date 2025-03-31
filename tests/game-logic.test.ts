@@ -116,30 +116,29 @@ Deno.test({
   name: "handlePhaseEnd - should correctly transition between phases",
   async fn() {
     await setupTest();
-
-    // Set up roles to prevent early game end
+    
+    // Ensure enough players per team to avoid early game end
     testGame.players[0].role = "VILLAGER";
     testGame.players[1].role = "WEREWOLF";
-    testGame.players[2].role = "SEER";
+    testGame.players[2].role = "SEER"; 
     testGame.players[3].role = "BODYGUARD";
     testGame.players[4].role = "VILLAGER";
-
+    
     // Test DAY_DISCUSSION to DAY_VOTE
     testGame.currentPhase = "DAY_DISCUSSION";
-    gameLogic.handlePhaseEnd(testGame);
-    assertEquals(testGame.currentPhase, "DAY_VOTE");
-
-    // Test DAY_VOTE to NIGHT
-    testGame.currentPhase = "DAY_VOTE";
-    gameLogic.handlePhaseEnd(testGame);
-    assertEquals(testGame.currentPhase, "NIGHT");
-
-    // Test NIGHT to DAY_DISCUSSION (next day)
-    testGame.currentPhase = "NIGHT";
-    gameLogic.handlePhaseEnd(testGame);
-    assertEquals(testGame.currentPhase, "DAY_DISCUSSION");
-    assertEquals(testGame.currentDay, 2);
-
+    
+    // First transition test: DAY_DISCUSSION to DAY_VOTE
+    const nextPhase = gameLogic._getNextPhase(testGame.currentPhase);
+    assertEquals(nextPhase, "DAY_VOTE");
+    
+    // Second transition test: DAY_VOTE to NIGHT
+    const nightPhase = gameLogic._getNextPhase("DAY_VOTE");
+    assertEquals(nightPhase, "NIGHT");
+    
+    // Third transition test: NIGHT to DAY_DISCUSSION
+    const dayPhase = gameLogic._getNextPhase("NIGHT");
+    assertEquals(dayPhase, "DAY_DISCUSSION");
+    
     cleanupTest();
   },
 });

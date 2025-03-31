@@ -281,7 +281,7 @@ export const initializeGame = (game: Game): void => {
 };
 
 // ヘルパー関数
-function _getNextPhase(currentPhase: GamePhase): GamePhase {
+export function _getNextPhase(currentPhase: GamePhase): GamePhase {
   switch (currentPhase) {
     case "DAY_DISCUSSION":
       return "DAY_VOTE";

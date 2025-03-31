@@ -2,10 +2,13 @@ import { Context } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import { logger } from "../utils/logger.ts";
+import { GameError } from "../types/error.ts";
+import { SupportedLanguage, getMessage } from "../utils/messages.ts";
 
 export const vote = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const userId = c.get("userId");
+  const lang = c.get("lang") as SupportedLanguage;
 
   try {
     const data = await c.req.json();
@@ -16,16 +19,24 @@ export const vote = async (c: Context) => {
     });
 
     if (!data.targetPlayerId) {
-      logger.warn("Missing targetPlayerId in request", { gameId, playerId: userId });
-      return c.json({ code: "INVALID_REQUEST", message: "targetPlayerId is required" }, 400);
+      throw new GameError(
+        "INVALID_REQUEST",
+        getMessage("INVALID_REQUEST", lang),
+        "WARN",
+        { gameId, playerId: userId }
+      );
     }
 
     const targetPlayerId = data.targetPlayerId;
 
     const game = gameModel.getGameById(gameId);
     if (!game) {
-      logger.error("Game not found", undefined, { gameId });
-      return c.json({ code: "GAME_NOT_FOUND", message: "Game not found" }, 404);
+      throw new GameError(
+        "GAME_NOT_FOUND",
+        getMessage("GAME_NOT_FOUND", lang),
+        "WARN",
+        { gameId }
+      );
     }
 
     logger.info("Vote request received", {
@@ -46,58 +57,113 @@ export const vote = async (c: Context) => {
 
     if (!result.success) {
       if (result.message.includes("投票フェーズではありません")) {
-        logger.warn("Invalid phase for voting", {
-          gameId,
-          currentPhase: game.currentPhase,
-          requestedBy: userId,
-        });
-        return c.json({ code: "INVALID_PHASE", message: result.message }, 400);
+        throw new GameError(
+          "INVALID_PHASE",
+          getMessage("INVALID_PHASE", lang),
+          "WARN",
+          { gameId, currentPhase: game.currentPhase, playerId: userId }
+        );
       }
-      return c.json({ code: "VOTE_ERROR", message: result.message }, 400);
+      throw new GameError(
+        "VOTE_ERROR",
+        result.message,
+        "WARN",
+        { gameId, playerId: userId, targetPlayerId }
+      );
     }
     return c.json(result, 200);
   } catch (error: unknown) {
-    const err = error as Error;
-    logger.error("Vote failed", err, {
-      gameId,
-      playerId: userId,
-    });
-    return c.json({ code: "VOTE_ERROR", message: err.message }, 400);
+    if (!(error instanceof GameError)) {
+      logger.error("Vote failed", error as Error, {
+        gameId,
+        playerId: userId,
+      });
+      throw new GameError(
+        "VOTE_ERROR",
+        getMessage("VOTE_ERROR", lang),
+        "ERROR",
+        { gameId, playerId: userId }
+      );
+    }
+    throw error;
   }
 };
 
 export const attack = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const userId = c.get("userId");
-  const data = await c.req.json();
-  const targetPlayerId = data.targetPlayerId;
+  const lang = c.get("lang") as SupportedLanguage;
 
   try {
+    const data = await c.req.json();
+    if (!data.targetPlayerId) {
+      throw new GameError(
+        "INVALID_REQUEST",
+        getMessage("INVALID_REQUEST", lang),
+        "WARN",
+        { gameId, playerId: userId }
+      );
+    }
+    
+    const targetPlayerId = data.targetPlayerId;
+
     const game = gameModel.getGameById(gameId);
     if (!game) {
-      return c.json({ code: "GAME_NOT_FOUND", message: "Game not found" }, 404);
+      throw new GameError(
+        "GAME_NOT_FOUND",
+        getMessage("GAME_NOT_FOUND", lang),
+        "WARN",
+        { gameId }
+      );
     }
+    
     const result = await gameActions.handleAttackAction(game, userId, targetPlayerId);
     if (!result.success) {
       if (result.message.includes("人狼以外は襲撃できません")) {
-        return c.json({ code: "NOT_WEREWOLF", message: result.message }, 403);
+        throw new GameError(
+          "NOT_WEREWOLF",
+          getMessage("NOT_WEREWOLF", lang),
+          "WARN",
+          { gameId, playerId: userId }
+        );
       }
       if (result.message.includes("夜フェーズではありません")) {
-        return c.json({ code: "INVALID_PHASE", message: result.message }, 400);
+        throw new GameError(
+          "INVALID_PHASE",
+          getMessage("INVALID_PHASE", lang),
+          "WARN",
+          { gameId, currentPhase: game.currentPhase, playerId: userId }
+        );
       }
-      return c.json({ code: "ATTACK_ERROR", message: result.message }, 400);
+      throw new GameError(
+        "ATTACK_ERROR",
+        result.message,
+        "WARN",
+        { gameId, playerId: userId, targetPlayerId }
+      );
     }
     return c.json(result, 200);
   } catch (error: unknown) {
-    const err = error as Error;
-    logger.warn("Attack failed", { gameId, playerId: userId, error: err.message });
-    return c.json({ code: "ATTACK_ERROR", message: err.message }, 400);
+    if (!(error instanceof GameError)) {
+      logger.error("Attack failed", error as Error, {
+        gameId,
+        playerId: userId,
+      });
+      throw new GameError(
+        "ATTACK_ERROR",
+        getMessage("ATTACK_ERROR", lang),
+        "ERROR",
+        { gameId, playerId: userId }
+      );
+    }
+    throw error;
   }
 };
 
 export const divine = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const userId = c.get("userId");
+  const lang = c.get("lang") as SupportedLanguage;
 
   try {
     const data = await c.req.json();
@@ -108,16 +174,24 @@ export const divine = async (c: Context) => {
     });
 
     if (!data.targetPlayerId) {
-      logger.warn("Missing targetPlayerId in divine request", { gameId, playerId: userId });
-      return c.json({ code: "INVALID_REQUEST", message: "targetPlayerId is required" }, 400);
+      throw new GameError(
+        "INVALID_REQUEST",
+        getMessage("INVALID_REQUEST", lang),
+        "WARN",
+        { gameId, playerId: userId }
+      );
     }
 
     const targetPlayerId = data.targetPlayerId;
 
     const game = gameModel.getGameById(gameId);
     if (!game) {
-      logger.error("Game not found for divine action", undefined, { gameId });
-      return c.json({ code: "GAME_NOT_FOUND", message: "Game not found" }, 404);
+      throw new GameError(
+        "GAME_NOT_FOUND",
+        getMessage("GAME_NOT_FOUND", lang),
+        "WARN",
+        { gameId }
+      );
     }
 
     logger.info("Divine request received", {
@@ -137,52 +211,114 @@ export const divine = async (c: Context) => {
     });
 
     if (!result.success) {
-      if (result.message.includes("夜フェーズではありません")) {
-        logger.warn("Invalid phase for divine", {
-          gameId,
-          currentPhase: game.currentPhase,
-          requestedBy: userId,
-        });
-        return c.json({ code: "INVALID_PHASE", message: result.message }, 400);
+      if (result.message.includes("占い師以外は占いできません")) {
+        throw new GameError(
+          "NOT_SEER",
+          getMessage("NOT_SEER", lang),
+          "WARN",
+          { gameId, playerId: userId }
+        );
       }
-      return c.json({ code: "DIVINE_ERROR", message: result.message }, 400);
+      if (result.message.includes("夜フェーズではありません")) {
+        throw new GameError(
+          "INVALID_PHASE",
+          getMessage("INVALID_PHASE", lang),
+          "WARN",
+          { gameId, currentPhase: game.currentPhase, playerId: userId }
+        );
+      }
+      throw new GameError(
+        "DIVINE_ERROR",
+        result.message,
+        "WARN",
+        { gameId, playerId: userId, targetPlayerId }
+      );
     }
     return c.json(result, 200);
   } catch (error: unknown) {
-    const err = error as Error;
-    logger.error("Divine action failed", err, {
-      gameId,
-      playerId: userId,
-    });
-    return c.json({ code: "DIVINE_ERROR", message: err.message }, 400);
+    if (!(error instanceof GameError)) {
+      logger.error("Divine action failed", error as Error, {
+        gameId,
+        playerId: userId,
+      });
+      throw new GameError(
+        "DIVINE_ERROR",
+        getMessage("DIVINE_ERROR", lang),
+        "ERROR",
+        { gameId, playerId: userId }
+      );
+    }
+    throw error;
   }
 };
 
 export const guard = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const userId = c.get("userId");
-  const data = await c.req.json();
-  const targetPlayerId = data.targetPlayerId;
+  const lang = c.get("lang") as SupportedLanguage;
 
   try {
+    const data = await c.req.json();
+    if (!data.targetPlayerId) {
+      throw new GameError(
+        "INVALID_REQUEST",
+        getMessage("INVALID_REQUEST", lang),
+        "WARN",
+        { gameId, playerId: userId }
+      );
+    }
+    
+    const targetPlayerId = data.targetPlayerId;
+
     const game = gameModel.getGameById(gameId);
     if (!game) {
-      return c.json({ code: "GAME_NOT_FOUND", message: "Game not found" }, 404);
+      throw new GameError(
+        "GAME_NOT_FOUND",
+        getMessage("GAME_NOT_FOUND", lang),
+        "WARN",
+        { gameId }
+      );
     }
+    
     const result = await gameActions.handleGuardAction(game, userId, targetPlayerId);
     if (!result.success) {
       if (result.message.includes("狩人以外は護衛できません")) {
-        return c.json({ code: "NOT_BODYGUARD", message: result.message }, 403);
+        throw new GameError(
+          "NOT_BODYGUARD",
+          getMessage("NOT_BODYGUARD", lang),
+          "WARN",
+          { gameId, playerId: userId }
+        );
       }
       if (result.message.includes("夜フェーズではありません")) {
-        return c.json({ code: "INVALID_PHASE", message: result.message }, 400);
+        throw new GameError(
+          "INVALID_PHASE",
+          getMessage("INVALID_PHASE", lang),
+          "WARN",
+          { gameId, currentPhase: game.currentPhase, playerId: userId }
+        );
       }
-      return c.json({ code: "GUARD_ERROR", message: result.message }, 400);
+      throw new GameError(
+        "GUARD_ERROR",
+        result.message,
+        "WARN",
+        { gameId, playerId: userId, targetPlayerId }
+      );
     }
     return c.json(result, 200);
   } catch (error: unknown) {
-    const err = error as Error;
-    logger.warn("Guard failed", { gameId, playerId: userId, error: err.message });
-    return c.json({ code: "GUARD_ERROR", message: err.message }, 400);
+    if (!(error instanceof GameError)) {
+      logger.error("Guard action failed", error as Error, {
+        gameId,
+        playerId: userId,
+      });
+      throw new GameError(
+        "GUARD_ERROR",
+        getMessage("GUARD_ERROR", lang),
+        "ERROR",
+        { gameId, playerId: userId }
+      );
+    }
+    throw error;
   }
 };
