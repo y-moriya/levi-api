@@ -1,8 +1,8 @@
 import { Context, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { GameError, APIError, ErrorSeverity, ErrorCode } from "../types/error.ts";
+import { GameError, APIError, ErrorSeverity, ErrorCode, ErrorCategory, ErrorContext } from "../types/error.ts";
 import { logger } from "../utils/logger.ts";
 import { config } from "../config.ts";
-import { setRequestId } from "../utils/context.ts";
+import { setRequestId, getRequestId } from "../utils/context.ts";
 
 // エラーコードとHTTPステータスコードのマッピング
 const errorStatusMap: Record<string, number> = {
@@ -38,84 +38,76 @@ function generateRequestId(): string {
 
 // エラーハンドリングミドルウェア
 export const errorHandler = async (c: Context, next: Next) => {
+  // パフォーマンス測定開始
+  logger.startTimer(`request-${c.req.path}`);
+  
   const requestId = generateRequestId();
   setRequestId(c, requestId);
 
   try {
     await next();
+    
+    // 正常レスポンス時はパフォーマンス測定終了
+    logger.endTimer(`request-${c.req.path}`, {
+      path: c.req.path,
+      method: c.req.method,
+      statusCode: c.res.status,
+      requestId
+    });
   } catch (error: unknown) {
-    // ログ出力のためにエラーを記録
-    logger.error("Error caught by error handler middleware", error instanceof Error ? error : undefined);
+    // エラーコンテキスト情報の生成
+    const errorContext: ErrorContext = {
+      requestPath: c.req.path,
+      requestMethod: c.req.method,
+      operationName: `${c.req.method} ${c.req.path}`,
+    };
+    
+    // エラーの変換（すでにGameErrorの場合もコンテキスト情報を追加）
+    const gameError = GameError.fromError(error, "INTERNAL_SERVER_ERROR", errorContext);
+    
+    // ステータスコードの決定
+    const status = errorStatusMap[gameError.code] || 500;
 
-    let apiError: APIError;
-    let status = 500; // デフォルトは500 Internal Server Error
-    let code: ErrorCode = "INTERNAL_SERVER_ERROR";
-    let severity: ErrorSeverity = "ERROR";
-    let details: Record<string, unknown> | undefined;
-
-    // GameErrorの場合はそのコードとシビリティを使用
-    if (error instanceof GameError) {
-      // コードに基づいてステータスコードを決定
-      status = errorStatusMap[error.code] || 500;
-      code = error.code;
-      severity = error.severity;
-      details = config.env === "production" ? undefined : {
-        stack: error.stack,
-        ...(error.details || {})
-      };
-    } else {
-      // GameErrorでない場合の処理
-      const message = error instanceof Error ? error.message : String(error);
-      
-      // エラーメッセージに基づくステータスコード判定
-      if (message.includes("このメールアドレスは既に登録") || message.includes("Email already exists")) {
-        status = 400;
-        code = "EMAIL_EXISTS";
-        severity = "WARN";
-      } 
-      // バリデーションエラー
-      else if (message.includes("リクエストデータが無効") || message.includes("validation") || message.includes("Invalid")) {
-        status = 400;
-        code = "VALIDATION_ERROR";
-        severity = "WARN";
+    // パフォーマンス測定終了（エラー時）
+    logger.endTimer(`request-${c.req.path}`, {
+      path: c.req.path,
+      method: c.req.method,
+      statusCode: status,
+      errorCode: gameError.code,
+      requestId
+    });
+    
+    // エラーログ出力
+    logger.logWithSeverity(
+      `HTTP ${status} エラー: ${gameError.code} - ${gameError.message}`,
+      gameError.severity,
+      gameError,
+      {
+        requestId,
+        errorCode: gameError.code,
+        errorCategory: gameError.category,
+        statusCode: status,
+        path: c.req.path,
+        method: c.req.method
       }
-      // 認証エラー
-      else if (message.includes("無効なメール") || message.includes("パスワード") || message.includes("credentials")) {
-        status = 401;
-        code = "INVALID_CREDENTIALS";
-        severity = "WARN";
-      }
-      // リソース不存在エラー
-      else if (message.includes("見つかりません") || message.includes("not found")) {
-        status = 404;
-        code = "NOT_FOUND";
-        severity = "WARN";
-      }
-
-      details = config.env === "production" ? undefined : {
-        stack: error instanceof Error ? error.stack : undefined
-      };
-    }
-
-    // APIエラーレスポンスを構築
-    apiError = {
-      code,
-      message: error instanceof Error ? error.message : String(error),
-      severity,
+    );
+    
+    // 開発環境でのみ詳細情報を含める
+    const details = config.env === "production" ? undefined : {
+      stack: gameError.stack,
+      context: gameError.context,
+      ...(gameError.details || {})
+    };
+    
+    // APIエラーレスポンスを返却
+    return c.json({
+      code: gameError.code,
+      message: gameError.message,
+      severity: gameError.severity,
+      category: gameError.category,
       timestamp: new Date().toISOString(),
       requestId,
       details
-    };
-
-    // ロギング
-    logger.error(`HTTP ${status} error: ${code}`, error instanceof Error ? error : undefined, {
-      errorCode: code,
-      errorMessage: error instanceof Error ? error.message : String(error),
-      statusCode: status,
-      requestIdentifier: requestId
-    });
-
-    // エラーレスポンスを返却
-    return c.json(apiError, status);
+    }, status);
   }
 };

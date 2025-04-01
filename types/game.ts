@@ -116,7 +116,7 @@ export interface GameEvent {
   id: string;
   day: number;
   phase: GamePhase;
-  type: "PHASE_CHANGE" | "GAME_END";
+  type: "PHASE_CHANGE" | "GAME_END" | "PLAYER_DEATH";
   description: string;
   timestamp: string;
 }

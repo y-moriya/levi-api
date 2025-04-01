@@ -10,7 +10,7 @@ import { errorHandler } from "./middleware/error.ts";
 import { SupportedLanguage, getMessage } from "./utils/messages.ts";
 import { config } from "./config.ts";
 import { getLang, getRequestId, setLang } from "./utils/context.ts";
-import { GameError } from "./types/error.ts";
+import { GameError, ErrorContext } from "./types/error.ts";
 
 const app = new Hono();
 
@@ -65,12 +65,27 @@ app.route("/v1/actions", actions);
 // 404ハンドラ
 app.notFound((c: Context) => {
   const lang = getLang(c);
+  const requestId = getRequestId(c);
+  
+  // リクエストID生成（存在しない場合）
+  const actualRequestId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  
+  // 404エラーをログに記録
+  logger.warn(`HTTP 404 エラー: リソースが見つかりません - ${c.req.path}`, {
+    path: c.req.path,
+    method: c.req.method,
+    requestId: actualRequestId,
+    errorCode: "NOT_FOUND",
+    errorCategory: "RES" // ResourceカテゴリのNOT_FOUND
+  });
+  
   return c.json({
     code: "NOT_FOUND",
-    message: "Not Found",
+    message: getMessage("NOT_FOUND", lang as SupportedLanguage),
     severity: "INFO",
+    category: "RES", // ResourceカテゴリのNOT_FOUND
     timestamp: new Date().toISOString(),
-    requestId: getRequestId(c)
+    requestId: actualRequestId
   }, 404);
 });
 
@@ -88,37 +103,48 @@ app.get("/v1/health", (c: Context) => {
 app.onError((err, c) => {
   const requestId = getRequestId(c);
   const lang = getLang(c);
-  let status = 500; // デフォルトは内部サーバーエラー
-  let code = "INTERNAL_SERVER_ERROR";
-  let severity = "ERROR";
-  let details;
   
-  // GameErrorの場合は詳細情報を取得
-  if (err instanceof GameError) {
-    code = err.code;
-    severity = err.severity;
-    details = config.env === "production" ? undefined : {
-      stack: err.stack,
-      ...(err.details || {})
-    };
-    // エラーコードに基づいてステータスコードを設定
-    status = errorStatusMap[err.code] || 500;
-  } else {
-    details = config.env === "production" ? undefined : {
-      stack: err.stack
-    };
-  }
+  // エラーコンテキスト情報の生成
+  const errorContext: ErrorContext = {
+    requestPath: c.req.path,
+    requestMethod: c.req.method,
+    operationName: `${c.req.method} ${c.req.path}`,
+  };
   
-  logger.error(`HTTP ${status} error: ${code}`, err, { 
-    requestId, 
-    errorCode: code,
-    errorMessage: err.message 
-  });
+  // GameErrorに変換
+  const gameError = GameError.fromError(err, "INTERNAL_SERVER_ERROR", errorContext);
   
+  // ステータスコードの決定
+  const status = errorStatusMap[gameError.code] || 500;
+  
+  // エラーログ出力
+  logger.logWithSeverity(
+    `グローバルエラーハンドラ: HTTP ${status} エラー: ${gameError.code} - ${gameError.message}`,
+    gameError.severity,
+    gameError,
+    {
+      requestId,
+      errorCode: gameError.code,
+      errorCategory: gameError.category,
+      statusCode: status,
+      path: c.req.path,
+      method: c.req.method
+    }
+  );
+  
+  // 詳細情報（本番環境では含めない）
+  const details = config.env === "production" ? undefined : {
+    stack: gameError.stack,
+    context: gameError.context,
+    ...(gameError.details || {})
+  };
+  
+  // APIエラーレスポンスを返却
   return c.json({
-    code,
-    message: err.message,
-    severity,
+    code: gameError.code,
+    message: gameError.message,
+    severity: gameError.severity,
+    category: gameError.category,
     timestamp: new Date().toISOString(),
     requestId,
     details

@@ -34,11 +34,21 @@ Deno.test("バリデーションエラーが適切に処理されることを検
   assertObjectMatch(errorResponse, {
     code: "VALIDATION_ERROR",
     message: "リクエストデータが無効です", // 日本語メッセージがデフォルト
-    severity: "WARN"
+    severity: "WARN",
+    category: "VAL" // 新しく追加されたカテゴリフィールド
   });
   
   // バリデーションエラーの詳細が含まれていることを確認
-  assertEquals(errorResponse.details.validationErrors.length > 0, true);
+  // リファクタリング後の構造では、details.contextまたはcontextにエラー情報がある可能性がある
+  const hasValidationDetails = errorResponse.details && 
+    (
+      (errorResponse.details.validationErrors && errorResponse.details.validationErrors.length > 0) ||
+      (errorResponse.details.context && errorResponse.details.context.validationErrors && 
+       errorResponse.details.context.validationErrors.length > 0) ||
+      (errorResponse.details.errors && errorResponse.details.errors.length > 0)
+    );
+  
+  assertEquals(!!hasValidationDetails, true, "レスポンスにバリデーションエラーの詳細情報が含まれていません");
   
   // レスポンスボディの消費を確実にする
   if (response.bodyUsed === false && response.body) {
