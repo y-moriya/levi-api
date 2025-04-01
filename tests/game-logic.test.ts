@@ -8,12 +8,12 @@ import { Game, Role } from "../types/game.ts";
 let testGame: Game;
 
 async function setupTest() {
-  // Reset game state
+  // ゲーム状態のリセット
   gameModel.resetGames();
   authService.resetStore();
   gamePhase.clearAllTimers();
 
-  // Create test users
+  // テストユーザーの作成
   const users = await Promise.all([
     authService.register({
       username: "owner",
@@ -42,18 +42,18 @@ async function setupTest() {
     }),
   ]);
 
-  // Create test game
+  // テストゲームの作成
   testGame = await gameModel.createGame({
     name: "Test Game",
     maxPlayers: 5,
   }, users[0].id);
 
-  // Add players to game
+  // プレイヤーをゲームに追加
   for (let i = 1; i < users.length; i++) {
     await gameModel.joinGame(testGame.id, users[i].id);
   }
 
-  // Initialize game without scheduling timers
+  // タイマーのスケジュールなしでゲームを初期化
   testGame.status = "IN_PROGRESS";
   testGame.currentDay = 1;
   testGame.currentPhase = "DAY_DISCUSSION";
@@ -64,19 +64,19 @@ function cleanupTest() {
   gamePhase.clearAllTimers();
 }
 
-// Game end condition tests
+// ゲーム終了条件のテスト
 Deno.test({
-  name: "checkGameEnd - should detect villager victory when all werewolves are dead",
+  name: "checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する",
   async fn() {
     await setupTest();
-    // Set up roles
+    // 役職の設定
     testGame.players[0].role = "VILLAGER";
     testGame.players[1].role = "WEREWOLF";
     testGame.players[2].role = "SEER";
     testGame.players[3].role = "BODYGUARD";
     testGame.players[4].role = "VILLAGER";
 
-    // Kill werewolf
+    // 人狼を死亡させる
     testGame.players[1].isAlive = false;
 
     const result = gameLogic.checkGameEnd(testGame);
@@ -88,17 +88,17 @@ Deno.test({
 });
 
 Deno.test({
-  name: "checkGameEnd - should detect werewolf victory when werewolves equal or outnumber villagers",
+  name: "checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する",
   async fn() {
     await setupTest();
-    // Set up roles
+    // 役職の設定
     testGame.players[0].role = "WEREWOLF";
     testGame.players[1].role = "WEREWOLF";
     testGame.players[2].role = "VILLAGER";
     testGame.players[3].role = "VILLAGER";
     testGame.players[4].role = "SEER";
 
-    // Kill villagers and seer
+    // 村人と占い師を死亡させる
     testGame.players[2].isAlive = false;
     testGame.players[3].isAlive = false;
     testGame.players[4].isAlive = false;
@@ -111,31 +111,31 @@ Deno.test({
   },
 });
 
-// Phase transition tests
+// フェーズ移行のテスト
 Deno.test({
-  name: "handlePhaseEnd - should correctly transition between phases",
+  name: "handlePhaseEnd - フェーズ間の移行が正しく行われるか",
   async fn() {
     await setupTest();
     
-    // Ensure enough players per team to avoid early game end
+    // ゲーム終了を避けるために各陣営に十分なプレイヤーを確保
     testGame.players[0].role = "VILLAGER";
     testGame.players[1].role = "WEREWOLF";
     testGame.players[2].role = "SEER"; 
     testGame.players[3].role = "BODYGUARD";
     testGame.players[4].role = "VILLAGER";
     
-    // Test DAY_DISCUSSION to DAY_VOTE
+    // DAY_DISCUSSIONからDAY_VOTEへのテスト
     testGame.currentPhase = "DAY_DISCUSSION";
     
-    // First transition test: DAY_DISCUSSION to DAY_VOTE
+    // 最初の移行テスト: DAY_DISCUSSIONからDAY_VOTEへ
     const nextPhase = gameLogic._getNextPhase(testGame.currentPhase);
     assertEquals(nextPhase, "DAY_VOTE");
     
-    // Second transition test: DAY_VOTE to NIGHT
+    // 2番目の移行テスト: DAY_VOTEからNIGHTへ
     const nightPhase = gameLogic._getNextPhase("DAY_VOTE");
     assertEquals(nightPhase, "NIGHT");
     
-    // Third transition test: NIGHT to DAY_DISCUSSION
+    // 3番目の移行テスト: NIGHTからDAY_DISCUSSIONへ
     const dayPhase = gameLogic._getNextPhase("NIGHT");
     assertEquals(dayPhase, "DAY_DISCUSSION");
     
@@ -143,13 +143,13 @@ Deno.test({
   },
 });
 
-// Role assignment tests
+// 役職割り当てのテスト
 Deno.test({
-  name: "assignRoles - should assign roles according to game settings",
+  name: "assignRoles - ゲーム設定に従って役職が割り当てられるか",
   async fn() {
     await setupTest();
 
-    // Reset all roles
+    // すべての役職をリセット
     testGame.players.forEach((player) => {
       player.role = undefined;
     });

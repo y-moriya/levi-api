@@ -8,9 +8,9 @@ import { GameResponse } from "../helpers/types.ts";
 let gameId: string;
 let users: TestUsers;
 
-// Complete game scenario test - Village Victory
+// 完全なゲームシナリオテスト - 村人陣営の勝利
 Deno.test({
-  name: "Complete Game Scenario - Village Victory",
+  name: "完全なゲームシナリオ - 村人陣営の勝利",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {

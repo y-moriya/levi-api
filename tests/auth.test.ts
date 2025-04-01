@@ -16,9 +16,9 @@ function setupTest() {
   authService.resetStore();
 }
 
-// Registration Tests
+// 登録テスト
 Deno.test({
-  name: "Registration - should register a new user successfully",
+  name: "登録 - 新規ユーザーの登録が正常に行われる",
   async fn() {
     setupTest();
     const user = await authService.register(testUser);
@@ -29,7 +29,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Registration - should not allow duplicate email registration",
+  name: "登録 - メールアドレスの重複登録を許可しない",
   async fn() {
     setupTest();
     await authService.register(testUser);
@@ -44,9 +44,9 @@ Deno.test({
   },
 });
 
-// Login Tests
+// ログインテスト
 Deno.test({
-  name: "Login - should login successfully with correct credentials",
+  name: "ログイン - 正しい認証情報でログイン成功",
   async fn() {
     setupTest();
     await authService.register(testUser);
@@ -59,14 +59,14 @@ Deno.test({
     assertEquals(result.user.email, testUser.email);
     assertNotEquals(result.token, undefined);
 
-    // Verify JWT token
+    // JWTトークンの検証
     const payload = await verifyJwt(result.token);
     assertNotEquals(payload.sub, undefined);
   },
 });
 
 Deno.test({
-  name: "Login - should fail with incorrect password",
+  name: "ログイン - 不正なパスワードでログイン失敗",
   async fn() {
     setupTest();
     await authService.register(testUser);
@@ -85,7 +85,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Login - should fail with non-existent email",
+  name: "ログイン - 存在しないメールアドレスでログイン失敗",
   async fn() {
     setupTest();
     await assertRejects(

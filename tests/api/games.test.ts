@@ -67,7 +67,7 @@ async function cleanupTests() {
 
 // サーバーセットアップのテスト
 Deno.test({
-  name: "Games API Server Setup",
+  name: "ゲームAPI - サーバーセットアップ",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -76,9 +76,9 @@ Deno.test({
   },
 });
 
-// Game Listing Tests
+// ゲーム一覧表示のテスト
 Deno.test({
-  name: "Games Listing - should return empty array when no games exist",
+  name: "ゲーム一覧 - ゲームが存在しない場合、空の配列を返す",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -94,12 +94,12 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Games Listing - should return list of all games",
+  name: "ゲーム一覧 - すべてのゲームのリストを返す",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
     await setupTests();
-    // Create two games
+    // 2つのゲームを作成
     const game1Response = await apiRequest("POST", "/games", {
       name: "Game 1",
       maxPlayers: 5,
@@ -124,9 +124,9 @@ Deno.test({
   },
 });
 
-// Game Creation Tests
+// ゲーム作成のテスト
 Deno.test({
-  name: "Game Creation - should create a new game successfully",
+  name: "ゲーム作成 - 新しいゲームを正常に作成できるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -151,7 +151,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Creation - should validate game creation input",
+  name: "ゲーム作成 - 入力データのバリデーションが行われるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -166,10 +166,13 @@ Deno.test({
     const response = await apiRequest("POST", "/games", invalidGameData, token);
     try {
       await consumeResponse(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       assertEquals(response.status, 400);
-      assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+      
+      // エラーオブジェクトを安全に処理するように修正
+      const errorObj = error as { response?: { code?: string } };
+      assertEquals(errorObj.response?.code, "VALIDATION_ERROR");
     }
 
     await cleanupTests();
@@ -177,7 +180,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Creation - should require authentication",
+  name: "ゲーム作成 - 認証が必要であることを確認する",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -190,19 +193,22 @@ Deno.test({
     const response = await apiRequest("POST", "/games", gameData);
     try {
       await consumeResponse(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       assertEquals(response.status, 401);
-      assertEquals((error as Error & { response: { code: string } }).response.code, "UNAUTHORIZED");
+      
+      // エラーオブジェクトを安全に処理するように修正
+      const errorObj = error as { response?: { code?: string } };
+      assertEquals(errorObj.response?.code, "UNAUTHORIZED");
     }
 
     await cleanupTests();
   },
 });
 
-// Game Joining Tests
+// ゲーム参加のテスト
 Deno.test({
-  name: "Game Joining - should allow a player to join a game",
+  name: "ゲーム参加 - プレイヤーがゲームに参加できるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -226,9 +232,9 @@ Deno.test({
   },
 });
 
-// Game Leaving Tests
+// ゲーム退出のテスト
 Deno.test({
-  name: "Game Leaving - should allow a player to leave a game",
+  name: "ゲーム退出 - プレイヤーがゲームから退出できるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -240,11 +246,11 @@ Deno.test({
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
 
-    // Have player join the game
+    // プレイヤーをゲームに参加させる
     const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, playerAuth.token);
     await consumeResponse<GameResponse>(joinResponse);
 
-    // Test leaving game
+    // ゲーム退出をテスト
     const leaveResponse = await apiRequest("POST", `/games/${gameId}/leave`, undefined, playerAuth.token);
     const updatedGame = await consumeResponse<GameResponse>(leaveResponse);
 
@@ -257,9 +263,9 @@ Deno.test({
   },
 });
 
-// Game Starting Tests
+// ゲーム開始のテスト
 Deno.test({
-  name: "Game Starting - should start game successfully",
+  name: "ゲーム開始 - ゲームを正常に開始できるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -271,7 +277,7 @@ Deno.test({
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
 
-    // Add enough players for minimum requirements
+    // 最小人数要件を満たすために十分なプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const player = await createAuthenticatedUser({
         username: `player${i + 3}`,
@@ -296,9 +302,9 @@ Deno.test({
   },
 });
 
-// Game Actions Tests
+// ゲームアクションのテスト
 Deno.test({
-  name: "Game Actions - Voting",
+  name: "ゲームアクション - 投票機能",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -310,7 +316,7 @@ Deno.test({
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
 
-    // Create and add players with specific roles
+    // 特定の役職を持つプレイヤーを作成して追加
     const werewolfAuth = await createAuthenticatedUser({
       username: "werewolf",
       email: `werewolf${Date.now()}@example.com`,
@@ -343,11 +349,11 @@ Deno.test({
     const joinVillagerResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, villagerAuth.token);
     await consumeResponse<GameResponse>(joinVillagerResponse);
 
-    // Start game
+    // ゲーム開始
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse<GameResponse>(startResponse);
 
-    // Initialize game with roles for testing
+    // テスト用に役職を割り当て
     const gameInstance = gameModel.getGameById(gameId)!;
     gameInstance.currentPhase = "DAY_VOTE"; // フェーズを投票フェーズに設定
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
@@ -355,7 +361,7 @@ Deno.test({
     gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 
-    // Test voting
+    // 投票をテスト
     const voteResponse = await apiRequest("POST", `/games/${gameId}/vote`, {
       targetPlayerId: werewolfAuth.user.id,
     }, villagerAuth.token);
@@ -369,7 +375,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Actions - Attack",
+  name: "ゲームアクション - 襲撃機能",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -381,7 +387,7 @@ Deno.test({
     const game = await consumeResponse<GameResponse>(createResponse);
     const gameId = game.id;
 
-    // Create and add players with specific roles
+    // 特定の役職を持つプレイヤーを作成して追加
     const werewolfAuth = await createAuthenticatedUser({
       username: "werewolf",
       email: `werewolf${Date.now()}@example.com`,
@@ -398,7 +404,7 @@ Deno.test({
     const joinVillagerResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, villagerAuth.token);
     await consumeResponse<GameResponse>(joinVillagerResponse);
 
-    // Add more players to meet the minimum requirement
+    // 最小人数要件を満たすために追加のプレイヤーを追加
     const player3Auth = await createAuthenticatedUser({
       username: "player3",
       email: `player3_${Date.now()}@example.com`,
@@ -423,7 +429,7 @@ Deno.test({
     const joinPlayer5Response = await apiRequest("POST", `/games/${gameId}/join`, undefined, player5Auth.token);
     await consumeResponse<GameResponse>(joinPlayer5Response);
 
-    // Start game and set up roles
+    // ゲーム開始と役職の設定
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse<GameResponse>(startResponse);
 
@@ -431,7 +437,7 @@ Deno.test({
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 
-    // Test attack during night
+    // 夜間の襲撃をテスト
     gameInstance.currentPhase = "NIGHT";
     const attackResponse = await apiRequest("POST", `/games/${gameId}/attack`, {
       targetPlayerId: villagerAuth.user.id,

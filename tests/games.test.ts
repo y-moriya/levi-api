@@ -41,7 +41,7 @@ function cleanupTest() {
 }
 
 Deno.test({
-  name: "Game Creation - should create a new game successfully",
+  name: "ゲーム作成 - 新しいゲームを正常に作成できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -59,7 +59,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Creation - should fail when owner does not exist",
+  name: "ゲーム作成 - オーナーが存在しない場合は失敗するか",
   async fn() {
     await setupTest();
     await assertRejects(
@@ -74,7 +74,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Creation - should create game with default settings",
+  name: "ゲーム作成 - デフォルト設定でゲームを作成できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -91,9 +91,9 @@ Deno.test({
   },
 });
 
-// Game Joining Tests
+// ゲーム参加のテスト
 Deno.test({
-  name: "Game Joining - should allow a player to join a game",
+  name: "ゲーム参加 - プレイヤーがゲームに参加できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -109,7 +109,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Joining - should not allow joining a non-existent game",
+  name: "ゲーム参加 - 存在しないゲームには参加できないか",
   async fn() {
     await setupTest();
     await assertRejects(
@@ -124,12 +124,12 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Joining - should not allow joining a full game",
+  name: "ゲーム参加 - 満員のゲームには参加できないか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
 
-    // Fill up the game with unique users
+    // 一意のユーザーでゲームを満員にする
     const additionalUsers = [];
     for (let i = 2; i <= testGameData.maxPlayers; i++) {
       const testUser = {
@@ -142,7 +142,7 @@ Deno.test({
       await gameModel.joinGame(game.id, user.id);
     }
 
-    // Try to add one more player
+    // もう一人プレイヤーを追加しようとする
     const extraUser = await authService.register({
       username: "extra",
       email: `extra_${Date.now()}@example.com`,
@@ -161,7 +161,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Joining - should not allow joining twice",
+  name: "ゲーム参加 - 同じプレイヤーが二回参加できないか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -178,9 +178,9 @@ Deno.test({
   },
 });
 
-// Game Leaving Tests
+// ゲーム退出のテスト
 Deno.test({
-  name: "Game Leaving - should allow a player to leave a game",
+  name: "ゲーム退出 - プレイヤーがゲームから退出できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -196,7 +196,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Leaving - should delete the game when owner leaves",
+  name: "ゲーム退出 - オーナーが退出した場合、ゲームが削除されるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -217,9 +217,9 @@ Deno.test({
   },
 });
 
-// Game Listing Tests
+// ゲーム一覧のテスト
 Deno.test({
-  name: "Game Listing - should return all created games",
+  name: "ゲーム一覧 - 作成されたすべてのゲームを返すか",
   async fn() {
     await setupTest();
     const game1 = await gameModel.createGame({
@@ -243,7 +243,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Listing - should return empty array when no games exist",
+  name: "ゲーム一覧 - ゲームが存在しない場合は空の配列を返すか",
   async fn() {
     await setupTest();
     const games = gameModel.getAllGames();
@@ -252,9 +252,9 @@ Deno.test({
   },
 });
 
-// Game Retrieval Tests
+// ゲーム取得のテスト
 Deno.test({
-  name: "Game Retrieval - should return game by id",
+  name: "ゲーム取得 - IDによってゲームを取得できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -269,7 +269,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Retrieval - should return undefined for non-existent game",
+  name: "ゲーム取得 - 存在しないゲームの場合はundefinedを返すか",
   async fn() {
     await setupTest();
     const game = gameModel.getGameById("non-existent-id");
@@ -278,9 +278,9 @@ Deno.test({
   },
 });
 
-// Game Starting Tests
+// ゲーム開始のテスト
 Deno.test({
-  name: "Game Starting - should start game successfully",
+  name: "ゲーム開始 - ゲームを正常に開始できるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame({
@@ -288,7 +288,7 @@ Deno.test({
       maxPlayers: 6,
     }, user1.id);
 
-    // Add enough players for minimum requirements
+    // 最小要件を満たすのに十分なプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const testUser = {
         username: `player${i + 3}`,
@@ -312,7 +312,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Starting - should not allow non-owner to start game",
+  name: "ゲーム開始 - オーナー以外がゲームを開始できないか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
@@ -330,7 +330,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Starting - should not allow starting a game in progress",
+  name: "ゲーム開始 - 進行中のゲームを開始できないか",
   async fn() {
     await setupTest();
     // まず5人以上のプレイヤーでゲームを作成
@@ -367,7 +367,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Game Starting - should assign roles correctly",
+  name: "ゲーム開始 - 役職が正しく割り当てられるか",
   async fn() {
     await setupTest();
     const game = await gameModel.createGame({
@@ -375,7 +375,7 @@ Deno.test({
       maxPlayers: 6,
     }, user1.id);
 
-    // Add enough players
+    // 十分なプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const testUser = {
         username: `player${i + 3}`,

@@ -59,9 +59,9 @@ async function setupTest() {
   gameActions.initializeGameActions(game.id);
 }
 
-// Vote Action Tests
+// 投票アクションのテスト
 Deno.test({
-  name: "Vote Actions - should allow voting during vote phase",
+  name: "投票アクション - 投票フェーズ中は投票が許可されるべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_VOTE";
@@ -71,7 +71,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Vote Actions - should not allow voting during other phases",
+  name: "投票アクション - 他のフェーズでは投票が許可されるべきではない",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -81,7 +81,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Vote Actions - should not allow dead players to vote",
+  name: "投票アクション - 死亡したプレイヤーは投票できないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_VOTE";
@@ -92,7 +92,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Vote Actions - should not allow voting for dead players",
+  name: "投票アクション - 死亡したプレイヤーへの投票は許可されるべきではない",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_VOTE";
@@ -102,9 +102,9 @@ Deno.test({
   },
 });
 
-// Attack Action Tests
+// 襲撃アクションのテスト
 Deno.test({
-  name: "Attack Actions - should allow werewolf to attack during night",
+  name: "襲撃アクション - 人狼は夜間に襲撃できるべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -114,7 +114,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Attack Actions - should not allow non-werewolf to attack",
+  name: "襲撃アクション - 人狼以外は襲撃できないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -124,7 +124,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Attack Actions - should not allow attacking werewolf",
+  name: "襲撃アクション - 人狼は他の人狼を襲撃できないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -134,7 +134,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Attack Actions - should not allow attacking during day",
+  name: "襲撃アクション - 昼間は襲撃できないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
@@ -143,9 +143,9 @@ Deno.test({
   },
 });
 
-// Divine Action Tests
+// 占いアクションのテスト
 Deno.test({
-  name: "Divine Actions - should allow seer to divine during night",
+  name: "占いアクション - 占い師は夜間に占いができるべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -156,7 +156,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Divine Actions - should not allow non-seer to divine",
+  name: "占いアクション - 占い師以外は占いができないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -166,7 +166,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Divine Actions - should correctly identify non-werewolf",
+  name: "占いアクション - 人狼でないプレイヤーを正しく識別するべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -177,7 +177,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Divine Actions - should not allow divination during day",
+  name: "占いアクション - 昼間は占いができないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
@@ -186,9 +186,9 @@ Deno.test({
   },
 });
 
-// Guard Action Tests
+// 護衛アクションのテスト
 Deno.test({
-  name: "Guard Actions - should allow bodyguard to guard during night",
+  name: "護衛アクション - 狩人は夜間に護衛ができるべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -198,7 +198,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Guard Actions - should not allow non-bodyguard to guard",
+  name: "護衛アクション - 狩人以外は護衛ができないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -208,7 +208,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Guard Actions - should not allow guarding dead players",
+  name: "護衛アクション - 死亡したプレイヤーは護衛できないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -219,7 +219,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Guard Actions - should not allow guarding during day",
+  name: "護衛アクション - 昼間は護衛ができないべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
@@ -228,9 +228,9 @@ Deno.test({
   },
 });
 
-// Phase Actions Processing Tests
+// フェーズアクション処理のテスト
 Deno.test({
-  name: "Phase Actions Processing - should process vote results correctly",
+  name: "フェーズアクション処理 - 投票結果が正しく処理されるべき",
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_VOTE";
@@ -271,7 +271,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Phase Actions Processing - should handle guard protection",
+  name: "フェーズアクション処理 - 護衛の保護を処理するべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
@@ -288,7 +288,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Phase Actions Processing - should handle random actions for inactive players",
+  name: "フェーズアクション処理 - 非アクティブプレイヤーのランダムアクションを処理するべき",
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";

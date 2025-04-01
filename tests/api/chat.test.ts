@@ -95,7 +95,7 @@ async function cleanupTests() {
 
 // チャットAPIのテスト
 Deno.test({
-  name: "Chat API - Server Setup",
+  name: "チャットAPI - サーバーセットアップ",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -105,7 +105,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Chat - Send and receive messages in global channel",
+  name: "チャット - グローバルチャンネルでメッセージの送受信",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -151,7 +151,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Chat - Werewolf channel access control",
+  name: "チャット - 人狼チャンネルのアクセス制御",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {

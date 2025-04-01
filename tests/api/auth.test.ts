@@ -39,7 +39,7 @@ async function cleanupTests() {
 
 // サーバーセットアップのテスト
 Deno.test({
-  name: "API Server Setup",
+  name: "認証API - サーバーセットアップ",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -48,9 +48,9 @@ Deno.test({
   },
 });
 
-// Registration Tests
+// ユーザー登録のテスト
 Deno.test({
-  name: "Registration - should register a new user successfully",
+  name: "ユーザー登録 - 新規ユーザーを正常に登録できるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -68,20 +68,20 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Registration - should not allow duplicate email registration",
+  name: "ユーザー登録 - 同じメールアドレスでの重複登録を許可しないか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
     await setupTests();
-    // First registration
+    // 最初の登録
     const response1 = await apiRequest("POST", "/auth/register", validUser);
     await consumeResponse<UserResponse>(response1);
 
-    // Attempt duplicate registration
+    // 重複登録の試み
     const response2 = await apiRequest("POST", "/auth/register", validUser);
     try {
       await consumeResponse<UserResponse>(response2);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response2.status, 400);
@@ -96,7 +96,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Registration - should validate user registration input",
+  name: "ユーザー登録 - 入力データのバリデーションが行われるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -110,7 +110,7 @@ Deno.test({
     const response = await apiRequest("POST", "/auth/register", invalidUser);
     try {
       await consumeResponse<UserResponse>(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);
@@ -124,14 +124,14 @@ Deno.test({
   },
 });
 
-// Login Tests
+// ログインのテスト
 Deno.test({
-  name: "Login - should login successfully with correct credentials",
+  name: "ログイン - 正しい認証情報で正常にログインできるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
     await setupTests();
-    // Register a user first
+    // まずユーザーを登録
     const registerResponse = await apiRequest("POST", "/auth/register", validUser);
     await consumeResponse<UserResponse>(registerResponse);
 
@@ -150,12 +150,12 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Login - should fail with incorrect password",
+  name: "ログイン - 不正なパスワードでログイン失敗するか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
     await setupTests();
-    // Register a user first
+    // まずユーザーを登録
     const registerResponse = await apiRequest("POST", "/auth/register", validUser);
     await consumeResponse<UserResponse>(registerResponse);
 
@@ -165,7 +165,7 @@ Deno.test({
     });
     try {
       await consumeResponse<AuthResponse>(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
@@ -180,7 +180,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Login - should fail with non-existent email",
+  name: "ログイン - 存在しないメールアドレスでログイン失敗するか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -191,7 +191,7 @@ Deno.test({
     });
     try {
       await consumeResponse<AuthResponse>(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
@@ -206,7 +206,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "Login - should validate login input",
+  name: "ログイン - 入力データのバリデーションが行われるか",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
@@ -217,7 +217,7 @@ Deno.test({
     });
     try {
       await consumeResponse<AuthResponse>(response);
-      throw new Error("Expected an error but got success");
+      throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);

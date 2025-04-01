@@ -8,9 +8,9 @@ import { ActionResponse, DivineActionResponse, GameResponse } from "../helpers/t
 let gameId: string;
 let users: TestUsers;
 
-// Complete game scenario test - Werewolf Victory
+// 完全なゲームシナリオテスト - 人狼陣営の勝利
 Deno.test({
-  name: "Complete Game Scenario - Werewolf Victory",
+  name: "完全なゲームシナリオ - 人狼陣営の勝利",
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
