@@ -64,7 +64,7 @@ app.route("/v1/actions", actions);
 
 // 404ハンドラ
 app.notFound((c: Context) => {
-  const lang = getLang(c);
+  const _lang = getLang(c);
   const requestId = getRequestId(c);
   
   // リクエストID生成（存在しない場合）
@@ -81,7 +81,7 @@ app.notFound((c: Context) => {
   
   return c.json({
     code: "NOT_FOUND",
-    message: getMessage("NOT_FOUND", lang as SupportedLanguage),
+    message: getMessage("NOT_FOUND", _lang as SupportedLanguage),
     severity: "INFO",
     category: "RES", // ResourceカテゴリのNOT_FOUND
     timestamp: new Date().toISOString(),
@@ -102,7 +102,7 @@ app.get("/v1/health", (c: Context) => {
 // グローバルエラーハンドラ
 app.onError((err, c) => {
   const requestId = getRequestId(c);
-  const lang = getLang(c);
+  const _lang = getLang(c);
   
   // エラーコンテキスト情報の生成
   const errorContext: ErrorContext = {

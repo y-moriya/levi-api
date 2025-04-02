@@ -3,7 +3,7 @@ import * as authService from "../services/auth.ts";
 import { Login, UserRegistration } from "../types/user.ts";
 import { logger } from "../utils/logger.ts";
 import { GameError } from "../types/error.ts";
-import { SupportedLanguage, getMessage } from "../utils/messages.ts";
+import { getMessage } from "../utils/messages.ts";
 import { getLang, getValidatedBody } from "../utils/context.ts";
 
 // シンプルなバリデーション関数

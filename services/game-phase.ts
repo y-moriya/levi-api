@@ -4,7 +4,7 @@ import { checkGameEnd } from "./game-logic.ts";
 import { advancePhase } from "./game-logic.ts";
 
 // アクション用のユーティリティ関数
-function getActionMap(
+export function getActionMap(
   game: Game,
   key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}`,
 ): Map<string, string> {

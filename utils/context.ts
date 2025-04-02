@@ -44,7 +44,7 @@ export async function getValidatedBody<T>(
     const body = await c.req.json();
     return await Promise.resolve(validator(body));
   } catch (error) {
-    const lang = getLang(c);
+    const _lang = getLang(c);
     throw new GameError(
       "VALIDATION_ERROR", 
       "リクエストデータが無効です", 

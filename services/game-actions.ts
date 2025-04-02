@@ -477,3 +477,28 @@ export function getAttackDistribution(game: Game): Map<string, number> {
 export function getGameActions(gameId: string) {
   return actionCache.get(gameId);
 }
+
+/**
+ * アクションを提出する（テスト互換性のためのラッパー関数）
+ */
+export function submitAction(
+  game: Game, 
+  playerId: string, 
+  targetId: string, 
+  actionType: "vote" | "attack" | "divine" | "guard"
+): ActionResult | DivineResult {
+  logger.info("Action submitted", { gameId: game.id, playerId, targetId, actionType });
+  
+  switch (actionType) {
+    case "vote":
+      return handleVoteAction(game, playerId, targetId);
+    case "attack":
+      return handleAttackAction(game, playerId, targetId);
+    case "divine":
+      return handleDivineAction(game, playerId, targetId);
+    case "guard":
+      return handleGuardAction(game, playerId, targetId);
+    default:
+      return { success: false, message: `不明なアクションタイプ: ${actionType}` };
+  }
+}

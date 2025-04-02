@@ -33,10 +33,10 @@ async function setupTest() {
 }
 
 // テストの後処理用の関数
-function cleanupTest() {
+async function cleanupTest() {
   const games = gameModel.getAllGames();
   for (const game of games) {
-    gamePhase.clearPhaseTimer(game.id);
+    await gamePhase.clearPhaseTimer(game.id);
   }
 }
 
@@ -55,7 +55,7 @@ Deno.test({
     assertEquals(game.players[0].playerId, user1.id);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -67,10 +67,10 @@ Deno.test({
         await gameModel.createGame(testGameData, "non-existent-id");
       },
       Error,
-      "Owner not found",
+      "Owner not found"
     );
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -88,7 +88,7 @@ Deno.test({
     assertEquals(game.settings.roles.mediumCount, 0);
 
     cleanupTest();
-  },
+  }
 });
 
 // ゲーム参加のテスト
@@ -105,7 +105,7 @@ Deno.test({
     assertEquals(joinedGame.players[1].username, testUser2.username);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -117,10 +117,10 @@ Deno.test({
         await gameModel.joinGame("non-existent-id", user2.id);
       },
       Error,
-      "Game not found",
+      "Game not found"
     );
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -154,10 +154,10 @@ Deno.test({
         await gameModel.joinGame(game.id, extraUser.id);
       },
       Error,
-      "Game is full",
+      "Game is full"
     );
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -172,10 +172,10 @@ Deno.test({
         await gameModel.joinGame(game.id, user2.id);
       },
       Error,
-      "Player already in game",
+      "Player already in game"
     );
     cleanupTest();
-  },
+  }
 });
 
 // ゲーム退出のテスト
@@ -192,7 +192,7 @@ Deno.test({
     assertEquals(updatedGame.players[0].playerId, user1.id);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -207,14 +207,14 @@ Deno.test({
         await gameModel.leaveGame(game.id, user1.id);
       },
       Error,
-      "Game deleted as owner left",
+      "Game deleted as owner left"
     );
 
     const deletedGame = gameModel.getGameById(game.id);
     assertEquals(deletedGame, undefined);
 
     cleanupTest();
-  },
+  }
 });
 
 // ゲーム一覧のテスト
@@ -239,7 +239,7 @@ Deno.test({
     assertEquals(games[1].id, game2.id);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -249,7 +249,7 @@ Deno.test({
     const games = gameModel.getAllGames();
     assertEquals(games.length, 0);
     cleanupTest();
-  },
+  }
 });
 
 // ゲーム取得のテスト
@@ -265,7 +265,7 @@ Deno.test({
     assertEquals(retrievedGame?.name, testGameData.name);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -275,7 +275,7 @@ Deno.test({
     const game = gameModel.getGameById("non-existent-id");
     assertEquals(game, undefined);
     cleanupTest();
-  },
+  }
 });
 
 // ゲーム開始のテスト
@@ -308,7 +308,7 @@ Deno.test({
     assertEquals(startedGame.players.every((p) => p.role !== undefined), true);
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -322,11 +322,11 @@ Deno.test({
         await gameModel.startGame(game.id, user2.id);
       },
       Error,
-      "Only the game owner can start the game",
+      "Only the game owner can start the game"
     );
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -359,11 +359,11 @@ Deno.test({
         await gameModel.startGame(game.id, user1.id);
       },
       Error,
-      "Game is not in waiting state",
+      "Game is not in waiting state"
     );
 
     cleanupTest();
-  },
+  }
 });
 
 Deno.test({
@@ -413,9 +413,9 @@ Deno.test({
         startedGame.settings.roles.seerCount +
         startedGame.settings.roles.bodyguardCount +
         startedGame.settings.roles.mediumCount
-      ),
+      )
     );
 
     cleanupTest();
-  },
+  }
 });

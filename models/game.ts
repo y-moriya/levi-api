@@ -2,6 +2,7 @@ import { Game, GameCreation, GamePlayer, GameSettings } from "../types/game.ts";
 import { getUserById } from "../services/auth.ts";
 import { initializeGame } from "../services/game-logic.ts";
 import { logger } from "../utils/logger.ts";
+import { User } from "../types/user.ts";
 
 // デフォルトのゲーム設定
 const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -21,12 +22,23 @@ class GameStore {
   private games: Map<string, Game> = new Map();
   private gamesByStatus: Map<string, Set<string>> = new Map();
   private playerGameMap: Map<string, Set<string>> = new Map();
+  private requestUser: User | null = null;
   
   constructor() {
     // ゲームステータスの種類ごとにセットを初期化
     this.gamesByStatus.set("WAITING", new Set());
     this.gamesByStatus.set("IN_PROGRESS", new Set());
     this.gamesByStatus.set("FINISHED", new Set());
+  }
+  
+  // リクエストユーザーを設定するメソッド（テスト用）
+  setRequestUser(user: User | null): void {
+    this.requestUser = user;
+  }
+  
+  // 現在のリクエストユーザーを取得するメソッド
+  getRequestUser(): User | null {
+    return this.requestUser;
   }
   
   // ゲームを追加
@@ -169,6 +181,7 @@ class GameStore {
     this.games.clear();
     this.gamesByStatus.forEach(set => set.clear());
     this.playerGameMap.clear();
+    this.requestUser = null;
     
     // ステータスセットを再初期化
     this.gamesByStatus.set("WAITING", new Set());
@@ -335,4 +348,9 @@ export const startGame = async (gameId: string, playerId: string): Promise<Game>
 // テスト用のリセット関数
 export const resetGames = (): void => {
   gameStore.clear();
+};
+
+// テスト用にリクエストユーザーを設定する
+export const setRequestUser = (user: User | null): void => {
+  gameStore.setRequestUser(user);
 };

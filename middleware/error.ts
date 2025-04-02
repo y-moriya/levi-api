@@ -1,8 +1,8 @@
 import { Context, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { GameError, APIError, ErrorSeverity, ErrorCode, ErrorCategory, ErrorContext } from "../types/error.ts";
+import { GameError, ErrorContext } from "../types/error.ts";
 import { logger } from "../utils/logger.ts";
 import { config } from "../config.ts";
-import { setRequestId, getRequestId } from "../utils/context.ts";
+import { setRequestId } from "../utils/context.ts";
 
 // エラーコードとHTTPステータスコードのマッピング
 const errorStatusMap: Record<string, number> = {

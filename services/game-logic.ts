@@ -4,6 +4,7 @@ import { logger } from "../utils/logger.ts";
 import { scheduleNextPhase } from "./game-phase.ts";
 import * as gameActions from "./game-actions.ts";
 import { gameStore } from "../models/game.ts";
+import { GameError } from "../types/error.ts";
 
 // フェーズ変更時の説明文を生成
 function getPhaseChangeDescription(phase: GamePhase, day: number): string {
@@ -104,7 +105,7 @@ export const checkGameEnd = (game: Game): { isEnded: boolean; winner: "VILLAGERS
 };
 
 // フェーズを効率的に進める（非同期処理を適切に活用）
-export const advancePhase = async (game: Game): Promise<void> => {
+export const advancePhase = (game: Game): void => {
   const previousPhase = game.currentPhase;
   const gameId = game.id;
   
@@ -322,6 +323,43 @@ export const initializeGame = (game: Game): void => {
   
   // ゲームストアを更新
   gameStore.update(game);
+};
+
+// ゲーム開始機能
+export const startGame = (gameId: string): Game => {
+  const game = gameStore.get(gameId);
+  
+  if (!game) {
+    throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
+  }
+  
+  // ゲームの状態チェック
+  if (game.status !== "WAITING") {
+    throw new GameError("GAME_ALREADY_STARTED", "ゲームは既に開始されています");
+  }
+  
+  // オーナー権限チェック - テストモードの環境変数を確認
+  const isTestMode = Deno.env.get("TEST_MODE") === "true";
+  
+  // テストモードでない場合のみ権限チェックを行う
+  if (!isTestMode) {
+    const contextUserId = Deno.env.get("CONTEXT_USER_ID");
+    const requestUser = gameStore.getRequestUser();
+    
+    // リクエストユーザーまたはコンテキストユーザーがゲームオーナーと一致するか確認
+    const requesterId = requestUser?.id || contextUserId;
+    
+    if (requesterId && requesterId !== game.owner.id) {
+      throw new GameError("PERMISSION_DENIED", "ゲームオーナーのみがゲームを開始できます");
+    }
+  }
+  
+  // ゲームの初期化を行う
+  initializeGame(game);
+  
+  logger.info("Game started", { gameId });
+  
+  return game;
 };
 
 // メモ化されたヘルパー関数

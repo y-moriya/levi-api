@@ -27,13 +27,13 @@ async function setupTests() {
   }
 }
 
-async function cleanupTests() {
+function cleanupTests() {
   try {
     // サーバーは停止せず、再利用する
     authService.resetStore();
-  } catch (error) {
-    console.error("Failed during test cleanup:", error);
-    throw error;
+  } catch (_error) {
+    console.error("Failed during test cleanup:");
+    throw _error;
   }
 }
 
@@ -82,10 +82,10 @@ Deno.test({
     try {
       await consumeResponse<UserResponse>(response2);
       throw new Error("予想されるエラーが発生しませんでした");
-    } catch (error) {
+    } catch (_error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response2.status, 400);
-      // assertEquals((error as Error & { response: { code: string } }).response.code, "EMAIL_EXISTS");
+      // assertEquals((_error as Error & { response: { code: string } }).response.code, "EMAIL_EXISTS");
       
       // エラーが発生することだけを確認
       assertNotEquals(response2.status, 201);
@@ -111,10 +111,10 @@ Deno.test({
     try {
       await consumeResponse<UserResponse>(response);
       throw new Error("予想されるエラーが発生しませんでした");
-    } catch (error) {
+    } catch (_error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);
-      // assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+      // assertEquals((_error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
       
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 201);
@@ -166,10 +166,10 @@ Deno.test({
     try {
       await consumeResponse<AuthResponse>(response);
       throw new Error("予想されるエラーが発生しませんでした");
-    } catch (error) {
+    } catch (_error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
-      // assertEquals((error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
+      // assertEquals((_error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
       
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);
@@ -192,10 +192,10 @@ Deno.test({
     try {
       await consumeResponse<AuthResponse>(response);
       throw new Error("予想されるエラーが発生しませんでした");
-    } catch (error) {
+    } catch (_error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
-      // assertEquals((error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
+      // assertEquals((_error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
       
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);
@@ -218,10 +218,10 @@ Deno.test({
     try {
       await consumeResponse<AuthResponse>(response);
       throw new Error("予想されるエラーが発生しませんでした");
-    } catch (error) {
+    } catch (_error) {
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);
-      // assertEquals((error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
+      // assertEquals((_error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
       
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);

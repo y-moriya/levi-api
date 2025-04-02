@@ -71,7 +71,7 @@ export async function setupScenarioTest(): Promise<TestUsers> {
   }
 }
 
-export async function cleanupScenarioTest() {
+export function cleanupScenarioTest() {
   try {
     // すべてのフェーズタイマーをクリア
     gamePhase.clearAllTimers();

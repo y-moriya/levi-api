@@ -3,7 +3,7 @@ import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
 import { Game, GamePlayer } from "../types/game.ts";
-import { getActionMap } from "../services/game-logic.ts";
+import { getActionMap } from "../services/game-phase.ts";
 
 let game: Game;
 let villager: GamePlayer;

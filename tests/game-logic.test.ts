@@ -2,19 +2,30 @@ import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import * as gameLogic from "../services/game-logic.ts";
 import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
-import * as gamePhase from "../services/game-phase.ts";
 import { Game, Role } from "../types/game.ts";
+import { User } from "../types/user.ts";
+import { 
+  setupTest, 
+  cleanupTest, 
+  assignTestRoles, 
+  setPlayerAliveStatus, 
+  withQuietLogs,
+  assertions
+} from "./helpers/test-helpers.ts";
+import { gameFixtures } from "./helpers/fixtures.ts";
+import { createMockGame } from "./helpers/mocks.ts";
 
 let testGame: Game;
+let testUsers: User[];
 
-async function setupTest() {
-  // ゲーム状態のリセット
-  gameModel.resetGames();
-  authService.resetStore();
-  gamePhase.clearAllTimers();
-
+/**
+ * テスト用のゲーム環境をセットアップする
+ */
+async function setupGameLogicTest() {
+  await setupTest();
+  
   // テストユーザーの作成
-  const users = await Promise.all([
+  testUsers = await Promise.all([
     authService.register({
       username: "owner",
       email: "owner@test.com",
@@ -44,85 +55,68 @@ async function setupTest() {
 
   // テストゲームの作成
   testGame = await gameModel.createGame({
-    name: "Test Game",
+    name: "テストゲーム",
     maxPlayers: 5,
-  }, users[0].id);
+  }, testUsers[0].id);
 
   // プレイヤーをゲームに追加
-  for (let i = 1; i < users.length; i++) {
-    await gameModel.joinGame(testGame.id, users[i].id);
+  for (let i = 1; i < testUsers.length; i++) {
+    await gameModel.joinGame(testGame.id, testUsers[i].id);
   }
 
   // タイマーのスケジュールなしでゲームを初期化
   testGame.status = "IN_PROGRESS";
   testGame.currentDay = 1;
   testGame.currentPhase = "DAY_DISCUSSION";
-  gameLogic.assignRoles(testGame);
-}
-
-function cleanupTest() {
-  gamePhase.clearAllTimers();
 }
 
 // ゲーム終了条件のテスト
 Deno.test({
   name: "checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する",
-  async fn() {
-    await setupTest();
-    // 役職の設定
-    testGame.players[0].role = "VILLAGER";
-    testGame.players[1].role = "WEREWOLF";
-    testGame.players[2].role = "SEER";
-    testGame.players[3].role = "BODYGUARD";
-    testGame.players[4].role = "VILLAGER";
-
+  fn: withQuietLogs(async () => {
+    await setupGameLogicTest();
+    
+    // 役職の設定 - フィクスチャーを使用
+    assignTestRoles(testGame, gameFixtures.fivePlayerRoles.standard);
+    
     // 人狼を死亡させる
-    testGame.players[1].isAlive = false;
+    setPlayerAliveStatus(testGame, { 1: false });
 
     const result = gameLogic.checkGameEnd(testGame);
     assertEquals(result.isEnded, true);
-    assertEquals(result.winner, "VILLAGERS");
+    assertions.assertGameWinner(result, "VILLAGERS");
 
     cleanupTest();
-  },
+  }),
 });
 
 Deno.test({
   name: "checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する",
-  async fn() {
-    await setupTest();
-    // 役職の設定
-    testGame.players[0].role = "WEREWOLF";
-    testGame.players[1].role = "WEREWOLF";
-    testGame.players[2].role = "VILLAGER";
-    testGame.players[3].role = "VILLAGER";
-    testGame.players[4].role = "SEER";
-
-    // 村人と占い師を死亡させる
-    testGame.players[2].isAlive = false;
-    testGame.players[3].isAlive = false;
-    testGame.players[4].isAlive = false;
+  fn: withQuietLogs(async () => {
+    await setupGameLogicTest();
+    
+    // 役職の設定 - フィクスチャーを使用
+    assignTestRoles(testGame, gameFixtures.fivePlayerRoles.werewolfHeavy);
+    
+    // 村人と占い師と狩人を死亡させる
+    setPlayerAliveStatus(testGame, { 2: false, 3: false, 4: false });
 
     const result = gameLogic.checkGameEnd(testGame);
     assertEquals(result.isEnded, true);
-    assertEquals(result.winner, "WEREWOLVES");
+    assertions.assertGameWinner(result, "WEREWOLVES");
 
     cleanupTest();
-  },
+  }),
 });
 
 // フェーズ移行のテスト
 Deno.test({
   name: "handlePhaseEnd - フェーズ間の移行が正しく行われるか",
-  async fn() {
-    await setupTest();
+  fn: withQuietLogs(async () => {
+    await setupGameLogicTest();
     
-    // ゲーム終了を避けるために各陣営に十分なプレイヤーを確保
-    testGame.players[0].role = "VILLAGER";
-    testGame.players[1].role = "WEREWOLF";
-    testGame.players[2].role = "SEER"; 
-    testGame.players[3].role = "BODYGUARD";
-    testGame.players[4].role = "VILLAGER";
+    // 役職の設定 - フィクスチャーを使用
+    assignTestRoles(testGame, gameFixtures.fivePlayerRoles.standard);
     
     // DAY_DISCUSSIONからDAY_VOTEへのテスト
     testGame.currentPhase = "DAY_DISCUSSION";
@@ -140,14 +134,14 @@ Deno.test({
     assertEquals(dayPhase, "DAY_DISCUSSION");
     
     cleanupTest();
-  },
+  }),
 });
 
 // 役職割り当てのテスト
 Deno.test({
   name: "assignRoles - ゲーム設定に従って役職が割り当てられるか",
-  async fn() {
-    await setupTest();
+  fn: withQuietLogs(async () => {
+    await setupGameLogicTest();
 
     // すべての役職をリセット
     testGame.players.forEach((player) => {
@@ -185,5 +179,58 @@ Deno.test({
     );
 
     cleanupTest();
+  }),
+});
+
+// モックを使った高速なテスト
+Deno.test({
+  name: "ゲーム終了条件 - 村人が全滅した場合の人狼勝利",
+  fn: () => {
+    // モックゲームを使用して、セットアップ処理を省略
+    const mockGame = createMockGame({
+      status: "IN_PROGRESS",
+      currentDay: 2,
+      currentPhase: "NIGHT",
+      players: [
+        { playerId: "p1", username: "wolf1", role: "WEREWOLF", isAlive: true, deathCause: "NONE" },
+        { playerId: "p2", username: "wolf2", role: "WEREWOLF", isAlive: true, deathCause: "NONE" },
+        { playerId: "p3", username: "villager1", role: "VILLAGER", isAlive: false, deathCause: "WEREWOLF_ATTACK" },
+        { playerId: "p4", username: "seer", role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" },
+        { playerId: "p5", username: "bodyguard", role: "BODYGUARD", isAlive: false, deathCause: "EXECUTION" },
+      ],
+    });
+
+    // テスト実行
+    const result = gameLogic.checkGameEnd(mockGame);
+    
+    // アサーション
+    assertEquals(result.isEnded, true);
+    assertions.assertGameWinner(result, "WEREWOLVES");
+  },
+});
+
+Deno.test({
+  name: "ゲーム終了条件 - まだ両陣営が生存している場合はゲーム継続",
+  fn: () => {
+    // モックゲームを使用して、セットアップ処理を省略
+    const mockGame = createMockGame({
+      status: "IN_PROGRESS",
+      currentDay: 2,
+      currentPhase: "DAY_DISCUSSION",
+      players: [
+        { playerId: "p1", username: "wolf1", role: "WEREWOLF", isAlive: true, deathCause: "NONE" },
+        { playerId: "p2", username: "villager1", role: "VILLAGER", isAlive: true, deathCause: "NONE" },
+        { playerId: "p3", username: "villager2", role: "VILLAGER", isAlive: true, deathCause: "NONE" },
+        { playerId: "p4", username: "seer", role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" },
+        { playerId: "p5", username: "bodyguard", role: "BODYGUARD", isAlive: false, deathCause: "EXECUTION" },
+      ],
+    });
+
+    // テスト実行
+    const result = gameLogic.checkGameEnd(mockGame);
+    
+    // アサーション
+    assertEquals(result.isEnded, false);
+    assertions.assertGameWinner(result, null);
   },
 });

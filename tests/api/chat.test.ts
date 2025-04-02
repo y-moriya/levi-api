@@ -76,7 +76,7 @@ async function setupTests() {
   }
 }
 
-async function cleanupTests() {
+function cleanupTests() {
   try {
     // Clean up games and timers
     const games = gameModel.getAllGames();

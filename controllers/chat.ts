@@ -4,7 +4,7 @@ import * as chatService from "../services/chat.ts";
 import * as gameModel from "../models/game.ts";
 import { logger } from "../utils/logger.ts";
 import { GameError } from "../types/error.ts";
-import { SupportedLanguage, getMessage } from "../utils/messages.ts";
+import { getMessage } from "../utils/messages.ts";
 import { getLang } from "../utils/context.ts";
 
 export const sendMessage = async (c: Context) => {

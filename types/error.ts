@@ -20,6 +20,7 @@ export type ErrorCode =
   | 'TOKEN_EXPIRED'
   | 'TOKEN_INVALID'
   | 'UNAUTHORIZED'
+  | 'PERMISSION_DENIED'
   
   // バリデーション関連
   | 'VALIDATION_ERROR'
@@ -43,6 +44,10 @@ export type ErrorCode =
   // チャット関連
   | 'CHANNEL_ACCESS_DENIED'
   | 'INVALID_CHANNEL'
+  | 'INVALID_MESSAGE'
+  | 'PLAYER_NOT_IN_GAME'
+  | 'DEAD_PLAYER_CHAT'
+  | 'PHASE_CHAT_RESTRICTED'
   
   // アクション関連
   | 'VOTE_ERROR'
@@ -62,6 +67,7 @@ export const errorCategoryMap: Record<ErrorCode, ErrorCategory> = {
   TOKEN_EXPIRED: ErrorCategory.AUTH,
   TOKEN_INVALID: ErrorCategory.AUTH,
   UNAUTHORIZED: ErrorCategory.AUTH,
+  PERMISSION_DENIED: ErrorCategory.AUTH,
   
   // バリデーション関連
   VALIDATION_ERROR: ErrorCategory.VALIDATION,
@@ -85,6 +91,10 @@ export const errorCategoryMap: Record<ErrorCode, ErrorCategory> = {
   // チャット関連
   CHANNEL_ACCESS_DENIED: ErrorCategory.CHAT,
   INVALID_CHANNEL: ErrorCategory.CHAT,
+  INVALID_MESSAGE: ErrorCategory.CHAT,
+  PLAYER_NOT_IN_GAME: ErrorCategory.CHAT,
+  DEAD_PLAYER_CHAT: ErrorCategory.CHAT,
+  PHASE_CHAT_RESTRICTED: ErrorCategory.CHAT,
   
   // アクション関連
   VOTE_ERROR: ErrorCategory.ACTION,
@@ -105,6 +115,7 @@ export const defaultErrorSeverityMap: Record<ErrorCode, ErrorSeverity> = {
   TOKEN_EXPIRED: 'WARN',
   TOKEN_INVALID: 'WARN',
   UNAUTHORIZED: 'WARN',
+  PERMISSION_DENIED: 'WARN',
   
   // バリデーション関連 - 基本的にWARN
   VALIDATION_ERROR: 'WARN',
@@ -128,6 +139,10 @@ export const defaultErrorSeverityMap: Record<ErrorCode, ErrorSeverity> = {
   // チャット関連
   CHANNEL_ACCESS_DENIED: 'WARN',
   INVALID_CHANNEL: 'WARN',
+  INVALID_MESSAGE: 'WARN',
+  PLAYER_NOT_IN_GAME: 'WARN',
+  DEAD_PLAYER_CHAT: 'WARN',
+  PHASE_CHAT_RESTRICTED: 'WARN',
   
   // アクション関連
   VOTE_ERROR: 'WARN',
@@ -183,6 +198,7 @@ export interface ErrorContext {
 // カスタムエラークラス
 export class GameError extends Error {
   public readonly category: ErrorCategory;
+  public readonly statusCode: number;
   
   constructor(
     public readonly code: ErrorCode,
@@ -194,10 +210,67 @@ export class GameError extends Error {
     super(message);
     this.name = 'GameError';
     this.category = errorCategoryMap[code] || ErrorCategory.SYSTEM;
+    this.statusCode = this.getStatusCodeFromErrorCode(code);
     
     // スタックトレースの保持（Error.captureStackTrace の代わり）
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, GameError);
+    }
+  }
+
+  // エラーコードからHTTPステータスコードを取得するメソッド
+  private getStatusCodeFromErrorCode(code: ErrorCode): number {
+    switch (code) {
+      // 認証関連
+      case 'INVALID_CREDENTIALS':
+      case 'UNAUTHORIZED':
+      case 'TOKEN_EXPIRED':
+      case 'TOKEN_INVALID':
+        return 401;
+      
+      // 権限関連
+      case 'PERMISSION_DENIED':
+        return 403;
+      
+      // バリデーション関連
+      case 'VALIDATION_ERROR':
+      case 'INVALID_REQUEST':
+        return 400;
+      
+      // リソース関連
+      case 'NOT_FOUND':
+      case 'GAME_NOT_FOUND':
+        return 404;
+      
+      // 競合関連
+      case 'EMAIL_EXISTS':
+      case 'GAME_FULL':
+      case 'GAME_ALREADY_STARTED':
+        return 409;
+      
+      // ゲーム関連
+      case 'INVALID_PHASE':
+      case 'NOT_WEREWOLF':
+      case 'NOT_SEER':
+      case 'NOT_BODYGUARD':
+      case 'NOT_GAME_OWNER':
+      case 'OWNER_NOT_FOUND':
+      case 'JOIN_ERROR':
+      case 'LEAVE_ERROR':
+      case 'START_ERROR':
+      case 'GAME_DELETED':
+      case 'CHANNEL_ACCESS_DENIED':
+      case 'INVALID_CHANNEL':
+      case 'VOTE_ERROR':
+      case 'ATTACK_ERROR':
+      case 'DIVINE_ERROR':
+      case 'GUARD_ERROR':
+        return 400;
+      
+      // システムエラー
+      case 'INTERNAL_SERVER_ERROR':
+      default:
+        return 500;
     }
   }
 
@@ -239,7 +312,7 @@ export class GameError extends Error {
     
     // エラーメッセージに基づくコード判定
     let code = defaultCode;
-    let severity: ErrorSeverity = defaultErrorSeverityMap[code] || 'ERROR';
+    const severity: ErrorSeverity = defaultErrorSeverityMap[code] || 'ERROR';
     
     // エラーメッセージのパターンマッチングによるエラーコード推測
     if (message.includes("このメールアドレスは既に登録") || message.includes("Email already exists")) {

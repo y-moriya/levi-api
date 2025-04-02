@@ -64,7 +64,7 @@ class Logger {
   }
 
   // 追加: ファイルへのログ出力機能（将来拡張用）
-  private logToFile(formattedMessage: string) {
+  private logToFile(_formattedMessage: string) {
     // 現在は標準出力のみ使用
     // 将来的にファイルログを実装する場合はここに記述
   }

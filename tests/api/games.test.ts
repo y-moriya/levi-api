@@ -53,12 +53,12 @@ async function cleanupTests() {
     // Clean up games and timers
     const games = gameModel.getAllGames();
     for (const game of games) {
-      gamePhase.clearPhaseTimer(game.id);
+      await gamePhase.clearPhaseTimer(game.id);
     }
     
     // リセットするだけで、サーバーは停止しない
-    gameModel.resetGames();
-    authService.resetStore();
+    await gameModel.resetGames();
+    await authService.resetStore();
   } catch (error) {
     console.error("Failed to cleanup tests:", error);
     throw error;
