@@ -40,7 +40,7 @@ export function generateGameFixture(ownerIndex: number = 0) {
       },
       dayTimeSeconds: 60,
       nightTimeSeconds: 40,
-      voteTimeSeconds: 30
+      voteTimeSeconds: 30,
     },
   };
 }
@@ -72,16 +72,16 @@ export async function setupTestGame(playerCount: number = 5): Promise<{
   logger.debug("テストゲームのセットアップを開始");
   // 1. ユーザーの作成
   const users = await createTestUsers(playerCount);
-  
+
   // 2. ゲームの作成
   const gameData = generateGameFixture();
   const game = await gameModel.createGame(gameData, users[0].id);
-  
+
   // 3. プレイヤーの参加
   for (let i = 1; i < users.length; i++) {
     await gameModel.joinGame(game.id, users[i].id);
   }
-  
+
   logger.debug("テストゲームのセットアップ完了", { gameId: game.id, playerCount });
   return { game, users };
 }
@@ -136,7 +136,7 @@ export function resetTestState() {
  * @returns 役職を持つプレイヤーの配列
  */
 export function findPlayersByRole(game: Game, role: Role): GamePlayer[] {
-  return game.players.filter(player => player.role === role);
+  return game.players.filter((player) => player.role === role);
 }
 
 /**
@@ -146,7 +146,7 @@ export function findPlayersByRole(game: Game, role: Role): GamePlayer[] {
  * @returns 役職を持つプレイヤー（見つからない場合はundefined）
  */
 export function findFirstPlayerByRole(game: Game, role: Role): GamePlayer | undefined {
-  return game.players.find(player => player.role === role);
+  return game.players.find((player) => player.role === role);
 }
 
 /**
@@ -193,29 +193,33 @@ export const assertions = {
       assertEquals(game.winner, "NONE", "ゲームは勝者が決定していないはずです");
       return;
     }
-    
+
     assertNotEquals(game.winner, "NONE", "ゲームは勝者が決定しているはずです");
     assertEquals(game.winner, expectedWinner, `ゲームの勝者は${expectedWinner}のはずです`);
   },
-  
+
   /**
    * ゲームのフェーズを検証する
    */
   assertGamePhase(game: Game, expectedPhase: Game["currentPhase"]): void {
     assertEquals(game.currentPhase, expectedPhase, `ゲームのフェーズは${expectedPhase}のはずです`);
   },
-  
+
   /**
    * プレイヤーの役職を検証する
    */
   assertPlayerRole(player: GamePlayer, expectedRole: Role): void {
     assertEquals(player.role, expectedRole, `プレイヤーの役職は${expectedRole}のはずです`);
   },
-  
+
   /**
    * プレイヤーの生死状態を検証する
    */
   assertPlayerAliveStatus(player: GamePlayer, expectedIsAlive: boolean): void {
-    assertEquals(player.isAlive, expectedIsAlive, `プレイヤーの生死状態は${expectedIsAlive ? "生存" : "死亡"}のはずです`);
+    assertEquals(
+      player.isAlive,
+      expectedIsAlive,
+      `プレイヤーの生死状態は${expectedIsAlive ? "生存" : "死亡"}のはずです`,
+    );
   },
 };

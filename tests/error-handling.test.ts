@@ -7,11 +7,7 @@ import * as authService from "../services/auth.ts";
 import { Game } from "../types/game.ts";
 import { User } from "../types/user.ts";
 import { GameError } from "../types/error.ts";
-import { 
-  setupTest, 
-  cleanupTest, 
-  assignTestRoles
-} from "./helpers/test-helpers.ts";
+import { assignTestRoles, cleanupTest, setupTest } from "./helpers/test-helpers.ts";
 
 let testGame: Game;
 let testUsers: User[];
@@ -21,7 +17,7 @@ let testUsers: User[];
  */
 async function setupErrorHandlingTest() {
   await setupTest();
-  
+
   // テストユーザーの作成
   testUsers = await Promise.all([
     authService.register({
@@ -64,7 +60,7 @@ async function setupErrorHandlingTest() {
       },
       dayTimeSeconds: 60,
       nightTimeSeconds: 40,
-      voteTimeSeconds: 30
+      voteTimeSeconds: 30,
     },
   }, testUsers[0].id);
 
@@ -85,19 +81,19 @@ Deno.test({
   fn: async () => {
     try {
       await setupErrorHandlingTest();
-      
+
       // 明示的にテストモードをオフにする
       const originalTestMode = Deno.env.get("TEST_MODE");
       Deno.env.set("TEST_MODE", "false");
-      
+
       // オーナー以外がゲームを開始しようとする
       const originalOwnerId = testGame.owner.id;
       testGame.owner.id = testUsers[1].id;
-      
+
       // リクエストユーザーを設定（オーナーではないユーザー）
       const requestUser = { ...testUsers[0] };
       gameStore.setRequestUser(requestUser);
-      
+
       try {
         // エラーが発生することを期待
         await gameLogic.startGame(testGame.id);
@@ -110,11 +106,11 @@ Deno.test({
           throw new Error(`予期しないエラーメッセージ: ${error.message}`);
         }
       }
-      
+
       // 元の状態に戻す
       testGame.owner.id = originalOwnerId;
       gameStore.setRequestUser(null);
-      
+
       // 環境変数を元に戻す
       if (originalTestMode) {
         Deno.env.set("TEST_MODE", originalTestMode);
@@ -133,17 +129,17 @@ Deno.test({
   fn: async () => {
     try {
       await setupErrorHandlingTest();
-      
+
       // 明示的にテストモードをオフにする
       const originalTestMode = Deno.env.get("TEST_MODE");
       Deno.env.set("TEST_MODE", "false");
-      
+
       // ゲームを開始状態に設定
       testGame.status = "IN_PROGRESS";
-      
+
       // リクエストユーザーを設定（ゲームオーナー）
       gameStore.setRequestUser(testUsers[0]);
-      
+
       try {
         // 既に開始したゲームを再度開始しようとする
         await gameLogic.startGame(testGame.id);
@@ -156,10 +152,10 @@ Deno.test({
           throw new Error(`予期しないエラーメッセージ: ${error.message}`);
         }
       }
-      
+
       // クリーンアップ
       gameStore.setRequestUser(null);
-      
+
       // 環境変数を元に戻す
       if (originalTestMode) {
         Deno.env.set("TEST_MODE", originalTestMode);
@@ -178,13 +174,13 @@ Deno.test({
   fn: async () => {
     try {
       await setupErrorHandlingTest();
-      
+
       // 存在しないゲームIDを指定
       const nonExistentGameId = "non-existent-game-id";
-      
+
       // リクエストユーザーを設定（オーナー）
       gameStore.setRequestUser(testUsers[0]);
-      
+
       try {
         // 存在しないゲームを開始しようとする
         await gameLogic.startGame(nonExistentGameId);
@@ -212,43 +208,43 @@ Deno.test({
   fn: async () => {
     try {
       await setupErrorHandlingTest();
-      
+
       // ゲームを開始状態に設定
       testGame.status = "IN_PROGRESS";
       testGame.currentPhase = "NIGHT";
-      
+
       // 役職を割り当て（人狼1人、村人4人）
       assignTestRoles(testGame, {
         0: "WEREWOLF",
         1: "VILLAGER",
-        2: "VILLAGER", 
-        3: "VILLAGER", 
-        4: "VILLAGER"
+        2: "VILLAGER",
+        3: "VILLAGER",
+        4: "VILLAGER",
       });
-      
+
       // 人狼と村人のプレイヤーを見つける
       const werewolfPlayer = testGame.players.find((p) => p.role === "WEREWOLF");
       const villagerPlayer = testGame.players.find((p) => p.role === "VILLAGER");
-      
+
       if (!werewolfPlayer || !villagerPlayer) {
         throw new Error("プレイヤーの役職が正しく設定されていません");
       }
-      
+
       const werewolfId = werewolfPlayer.playerId;
       const villagerId = villagerPlayer.playerId;
-      
+
       // 元の役職を保存
       const originalRole = werewolfPlayer.role;
-      
+
       // テスト用に人狼のユーザーの役職を一時的に村人に変更
       werewolfPlayer.role = "VILLAGER";
-      
+
       // 直接返り値をチェック
       const result = await gameActions.handleAttackAction(testGame, werewolfId, villagerId);
       if (result.success || result.message !== "人狼以外は襲撃できません") {
         throw new Error(`予期しない結果: ${result.success}, ${result.message}`);
       }
-      
+
       // 元に戻す
       werewolfPlayer.role = originalRole;
     } finally {
@@ -263,31 +259,31 @@ Deno.test({
   fn: async () => {
     try {
       await setupErrorHandlingTest();
-      
+
       // ゲームを昼フェーズに設定
       testGame.status = "IN_PROGRESS";
       testGame.currentPhase = "DAY_VOTE";
-      
+
       // 役職を割り当て
       assignTestRoles(testGame, {
         0: "WEREWOLF",
         1: "SEER",
         2: "BODYGUARD",
         3: "VILLAGER",
-        4: "VILLAGER"
+        4: "VILLAGER",
       });
-      
+
       // 人狼と村人のプレイヤーを見つける
       const werewolfPlayer = testGame.players.find((p) => p.role === "WEREWOLF");
       const villagerPlayer = testGame.players.find((p) => p.role === "VILLAGER");
-      
+
       if (!werewolfPlayer || !villagerPlayer) {
         throw new Error("プレイヤーの役職が正しく設定されていません");
       }
-      
+
       const werewolfId = werewolfPlayer.playerId;
       const villagerId = villagerPlayer.playerId;
-      
+
       // 直接返り値をチェック
       const result = await gameActions.handleAttackAction(testGame, werewolfId, villagerId);
       if (result.success || result.message !== "夜フェーズではありません") {

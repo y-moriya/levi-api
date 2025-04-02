@@ -7,10 +7,10 @@ import chat from "./routes/chat.ts";
 import actions from "./routes/actions.ts";
 import { logger } from "./utils/logger.ts";
 import { errorHandler } from "./middleware/error.ts";
-import { SupportedLanguage, getMessage } from "./utils/messages.ts";
+import { getMessage, SupportedLanguage } from "./utils/messages.ts";
 import { config } from "./config.ts";
 import { getLang, getRequestId, setLang } from "./utils/context.ts";
-import { GameError, ErrorContext } from "./types/error.ts";
+import { ErrorContext, GameError } from "./types/error.ts";
 
 const app = new Hono();
 
@@ -66,26 +66,26 @@ app.route("/v1/actions", actions);
 app.notFound((c: Context) => {
   const _lang = getLang(c);
   const requestId = getRequestId(c);
-  
+
   // リクエストID生成（存在しない場合）
   const actualRequestId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  
+
   // 404エラーをログに記録
   logger.warn(`HTTP 404 エラー: リソースが見つかりません - ${c.req.path}`, {
     path: c.req.path,
     method: c.req.method,
     requestId: actualRequestId,
     errorCode: "NOT_FOUND",
-    errorCategory: "RES" // ResourceカテゴリのNOT_FOUND
+    errorCategory: "RES", // ResourceカテゴリのNOT_FOUND
   });
-  
+
   return c.json({
     code: "NOT_FOUND",
     message: getMessage("NOT_FOUND", _lang as SupportedLanguage),
     severity: "INFO",
     category: "RES", // ResourceカテゴリのNOT_FOUND
     timestamp: new Date().toISOString(),
-    requestId: actualRequestId
+    requestId: actualRequestId,
   }, 404);
 });
 
@@ -95,7 +95,7 @@ app.get("/v1/health", (c: Context) => {
   return c.json({
     status: "OK",
     version: config.version,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
@@ -103,20 +103,20 @@ app.get("/v1/health", (c: Context) => {
 app.onError((err, c) => {
   const requestId = getRequestId(c);
   const _lang = getLang(c);
-  
+
   // エラーコンテキスト情報の生成
   const errorContext: ErrorContext = {
     requestPath: c.req.path,
     requestMethod: c.req.method,
     operationName: `${c.req.method} ${c.req.path}`,
   };
-  
+
   // GameErrorに変換
   const gameError = GameError.fromError(err, "INTERNAL_SERVER_ERROR", errorContext);
-  
+
   // ステータスコードの決定
   const status = errorStatusMap[gameError.code] || 500;
-  
+
   // エラーログ出力
   logger.logWithSeverity(
     `グローバルエラーハンドラ: HTTP ${status} エラー: ${gameError.code} - ${gameError.message}`,
@@ -128,17 +128,17 @@ app.onError((err, c) => {
       errorCategory: gameError.category,
       statusCode: status,
       path: c.req.path,
-      method: c.req.method
-    }
+      method: c.req.method,
+    },
   );
-  
+
   // 詳細情報（本番環境では含めない）
   const details = config.env === "production" ? undefined : {
     stack: gameError.stack,
     context: gameError.context,
-    ...(gameError.details || {})
+    ...(gameError.details || {}),
   };
-  
+
   // APIエラーレスポンスを返却
   return c.json({
     code: gameError.code,
@@ -147,7 +147,7 @@ app.onError((err, c) => {
     category: gameError.category,
     timestamp: new Date().toISOString(),
     requestId,
-    details
+    details,
   }, status);
 });
 

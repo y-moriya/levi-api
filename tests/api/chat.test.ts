@@ -83,7 +83,7 @@ function cleanupTests() {
     for (const game of games) {
       gamePhase.clearPhaseTimer(game.id);
     }
-    
+
     // リセットするだけで、サーバーは停止しない
     gameModel.resetGames();
     authService.resetStore();
@@ -194,13 +194,13 @@ Deno.test({
       channel: "WEREWOLF",
       content: "Try to send secret",
     }, villagerAuth.token);
-    
+
     // エラー応答のステータスコードを検証（403 Forbiddenが返されることを期待）
     assertEquals(villagerSendResponse.status, 403, "Expected error response with status 403");
-    
+
     // テストコードではエラーの内容までは検証しない
     // エラーメッセージの内容が「アクセス権がない」旨を示していれば良い
-    
+
     // 村人のメッセージ取得（空配列が返るはず）
     const villagerGetResponse = await apiRequest(
       "GET",

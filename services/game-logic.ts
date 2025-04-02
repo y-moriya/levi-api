@@ -24,18 +24,18 @@ function getPhaseChangeDescription(phase: GamePhase, day: number): string {
 export const assignRoles = (game: Game): void => {
   const players = [...game.players];
   const settings = game.settings;
-  
+
   // 役職リストを効率的に作成
   const roles: Role[] = [];
-  
+
   // 特殊役職を一度に追加（配列操作を最小化）
   const specialRoles: Array<[Role, number]> = [
     ["WEREWOLF", settings.roles.werewolfCount],
     ["SEER", settings.roles.seerCount],
     ["BODYGUARD", settings.roles.bodyguardCount],
-    ["MEDIUM", settings.roles.mediumCount]
+    ["MEDIUM", settings.roles.mediumCount],
   ];
-  
+
   specialRoles.forEach(([role, count]) => {
     for (let i = 0; i < count; i++) {
       roles.push(role);
@@ -60,13 +60,13 @@ export const assignRoles = (game: Game): void => {
   }
 
   game.players = players;
-  
+
   // パフォーマンスメトリクスを記録
   const roleDistribution = countRoles(roles);
-  logger.info("Roles assigned to players", { 
-    gameId: game.id, 
+  logger.info("Roles assigned to players", {
+    gameId: game.id,
     playerCount: players.length,
-    roleDistribution
+    roleDistribution,
   });
 };
 
@@ -74,29 +74,29 @@ export const assignRoles = (game: Game): void => {
 export const checkGameEnd = (game: Game): { isEnded: boolean; winner: "VILLAGERS" | "WEREWOLVES" | "NONE" } => {
   // プレイヤーリストをメモリに一度だけロード
   const alivePlayers = game.players.filter((p) => p.isAlive);
-  
+
   // 生存プレイヤー数が少ない場合の高速パス
   if (alivePlayers.length === 0) {
     return { isEnded: true, winner: "VILLAGERS" }; // エッジケース
   }
-  
+
   // ロールカウントを一度に計算（複数回のフィルタリングを避ける）
   let aliveWerewolfCount = 0;
   let aliveVillagerCount = 0;
-  
-  alivePlayers.forEach(player => {
+
+  alivePlayers.forEach((player) => {
     if (player.role === "WEREWOLF") {
       aliveWerewolfCount++;
     } else {
       aliveVillagerCount++;
     }
   });
-  
+
   // 効率的な勝敗判定
   if (aliveWerewolfCount === 0) {
     return { isEnded: true, winner: "VILLAGERS" };
   }
-  
+
   if (aliveWerewolfCount >= aliveVillagerCount) {
     return { isEnded: true, winner: "WEREWOLVES" };
   }
@@ -108,7 +108,7 @@ export const checkGameEnd = (game: Game): { isEnded: boolean; winner: "VILLAGERS
 export const advancePhase = (game: Game): void => {
   const previousPhase = game.currentPhase;
   const gameId = game.id;
-  
+
   logger.info("Starting phase transition", {
     gameId,
     from: previousPhase,
@@ -121,7 +121,7 @@ export const advancePhase = (game: Game): void => {
   if (isEnded) {
     game.status = "FINISHED";
     game.winner = winner;
-    
+
     // ゲーム終了イベントを追加
     game.gameEvents.push({
       id: uuid(),
@@ -131,14 +131,14 @@ export const advancePhase = (game: Game): void => {
       description: `ゲームが終了しました。${winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
       timestamp: new Date().toISOString(),
     });
-    
+
     logger.info("Game ended", {
       gameId,
       winner,
       finalDay: game.currentDay,
       finalPhase: game.currentPhase,
     });
-    
+
     // ゲームストアを更新して変更を保存
     gameStore.update(game);
     return;
@@ -151,7 +151,7 @@ export const advancePhase = (game: Game): void => {
         gameId,
         nextPhase: "DAY_VOTE",
       });
-      
+
       game.currentPhase = "DAY_VOTE";
       game.phaseEndTime = new Date(Date.now() + game.settings.voteTimeSeconds * 1000).toISOString();
 
@@ -174,7 +174,7 @@ export const advancePhase = (game: Game): void => {
       if (voteEndCheck.isEnded) {
         game.status = "FINISHED";
         game.winner = voteEndCheck.winner;
-        
+
         // ゲーム終了イベントを追加
         game.gameEvents.push({
           id: uuid(),
@@ -184,12 +184,12 @@ export const advancePhase = (game: Game): void => {
           description: `ゲームが終了しました。${voteEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
           timestamp: new Date().toISOString(),
         });
-        
+
         logger.info("Game ended after voting", {
           gameId,
           winner: voteEndCheck.winner,
         });
-        
+
         // ゲームストアを更新して変更を保存
         gameStore.update(game);
         return;
@@ -208,7 +208,7 @@ export const advancePhase = (game: Game): void => {
         gameId,
         hasActions: !!gameActions.getGameActions(game.id),
       });
-      
+
       // 夜アクションの処理
       _processNightActions(game);
       gameActions.processPhaseActions(game);
@@ -218,7 +218,7 @@ export const advancePhase = (game: Game): void => {
       if (gameEndCheck.isEnded) {
         game.status = "FINISHED";
         game.winner = gameEndCheck.winner;
-        
+
         // ゲーム終了イベントを追加
         game.gameEvents.push({
           id: uuid(),
@@ -228,12 +228,12 @@ export const advancePhase = (game: Game): void => {
           description: `ゲームが終了しました。${gameEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
           timestamp: new Date().toISOString(),
         });
-        
+
         logger.info("Game ended after night actions", {
           gameId,
           winner: gameEndCheck.winner,
         });
-        
+
         // ゲームストアを更新して変更を保存
         gameStore.update(game);
         return;
@@ -264,7 +264,7 @@ export const advancePhase = (game: Game): void => {
     currentPhase: game.currentPhase,
     phaseEndTime: game.phaseEndTime,
   });
-  
+
   // ゲームストアを更新
   gameStore.update(game);
 };
@@ -310,17 +310,17 @@ export const initializeGame = (game: Game): void => {
   // 初期フェーズのタイマーを設定
   scheduleNextPhase(game);
 
-  logger.info("Game initialized", { 
-    gameId: game.id, 
+  logger.info("Game initialized", {
+    gameId: game.id,
     playerCount: game.players.length,
     settings: {
       dayTimeSeconds: game.settings.dayTimeSeconds,
       nightTimeSeconds: game.settings.nightTimeSeconds,
       voteTimeSeconds: game.settings.voteTimeSeconds,
-      roles: game.settings.roles
-    }
+      roles: game.settings.roles,
+    },
   });
-  
+
   // ゲームストアを更新
   gameStore.update(game);
 };
@@ -328,37 +328,37 @@ export const initializeGame = (game: Game): void => {
 // ゲーム開始機能
 export const startGame = (gameId: string): Game => {
   const game = gameStore.get(gameId);
-  
+
   if (!game) {
     throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
   }
-  
+
   // ゲームの状態チェック
   if (game.status !== "WAITING") {
     throw new GameError("GAME_ALREADY_STARTED", "ゲームは既に開始されています");
   }
-  
+
   // オーナー権限チェック - テストモードの環境変数を確認
   const isTestMode = Deno.env.get("TEST_MODE") === "true";
-  
+
   // テストモードでない場合のみ権限チェックを行う
   if (!isTestMode) {
     const contextUserId = Deno.env.get("CONTEXT_USER_ID");
     const requestUser = gameStore.getRequestUser();
-    
+
     // リクエストユーザーまたはコンテキストユーザーがゲームオーナーと一致するか確認
     const requesterId = requestUser?.id || contextUserId;
-    
+
     if (requesterId && requesterId !== game.owner.id) {
       throw new GameError("PERMISSION_DENIED", "ゲームオーナーのみがゲームを開始できます");
     }
   }
-  
+
   // ゲームの初期化を行う
   initializeGame(game);
-  
+
   logger.info("Game started", { gameId });
-  
+
   return game;
 };
 
@@ -367,7 +367,7 @@ const nextPhaseMap: Record<GamePhase, GamePhase> = {
   "DAY_DISCUSSION": "DAY_VOTE",
   "DAY_VOTE": "NIGHT",
   "NIGHT": "DAY_DISCUSSION",
-  "GAME_OVER": "DAY_DISCUSSION" // ゲーム終了後も次のゲームを考慮
+  "GAME_OVER": "DAY_DISCUSSION", // ゲーム終了後も次のゲームを考慮
 };
 
 export function _getNextPhase(currentPhase: GamePhase): GamePhase {
@@ -411,12 +411,12 @@ function validateRoleSettings(game: Game): void {
 // 最適化された役職カウント関数
 function countRoles(roles: Role[]): Record<Role, number> {
   const counts: Record<string, number> = {};
-  
+
   // 効率的な集計（一度の反復）
   for (const role of roles) {
     counts[role] = (counts[role] || 0) + 1;
   }
-  
+
   return counts as Record<Role, number>;
 }
 
@@ -424,7 +424,7 @@ function countRoles(roles: Role[]): Record<Role, number> {
 const _processVoteResults = (game: Game): void => {
   // 拡張機能を使用して投票分布を直接取得
   const voteDistribution = gameActions.getVoteDistribution(game);
-  
+
   if (voteDistribution.size === 0) {
     logger.warn("No votes to process", { gameId: game.id, day: game.currentDay });
     return;
@@ -450,7 +450,7 @@ const _processNightActions = (game: Game): void => {
 
   // 最適化された襲撃分布の取得
   const attackDistribution = gameActions.getAttackDistribution(game);
-  
+
   if (attackDistribution.size === 0) {
     return;
   }
@@ -554,7 +554,7 @@ export function handlePhaseEnd(game: Game): void {
   if (isEnded) {
     game.status = "FINISHED";
     game.winner = winner;
-    
+
     // ゲーム終了イベントを追加
     game.gameEvents.push({
       id: uuid(),
@@ -564,13 +564,13 @@ export function handlePhaseEnd(game: Game): void {
       description: `ゲームが終了しました。${winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
       timestamp: new Date().toISOString(),
     });
-    
+
     logger.info("Game ended during phase end", {
       gameId: game.id,
       winner,
       phase: game.currentPhase,
     });
-    
+
     // ゲームストアを更新
     gameStore.update(game);
     return;
@@ -609,7 +609,7 @@ export function handlePhaseEnd(game: Game): void {
     newPhase: game.currentPhase,
     currentDay: game.currentDay,
   });
-  
+
   // ゲームストアを更新
   gameStore.update(game);
 }

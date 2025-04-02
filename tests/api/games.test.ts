@@ -55,7 +55,7 @@ async function cleanupTests() {
     for (const game of games) {
       await gamePhase.clearPhaseTimer(game.id);
     }
-    
+
     // リセットするだけで、サーバーは停止しない
     await gameModel.resetGames();
     await authService.resetStore();
@@ -169,7 +169,7 @@ Deno.test({
       throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       assertEquals(response.status, 400);
-      
+
       // エラーオブジェクトを安全に処理するように修正
       const errorObj = error as { response?: { code?: string } };
       assertEquals(errorObj.response?.code, "VALIDATION_ERROR");
@@ -196,7 +196,7 @@ Deno.test({
       throw new Error("予想されるエラーが発生しませんでした");
     } catch (error) {
       assertEquals(response.status, 401);
-      
+
       // エラーオブジェクトを安全に処理するように修正
       const errorObj = error as { response?: { code?: string } };
       assertEquals(errorObj.response?.code, "UNAUTHORIZED");

@@ -12,15 +12,17 @@ const validateRegistration = (data: unknown): UserRegistration => {
   if (!data || typeof data !== "object") {
     throw new GameError("VALIDATION_ERROR", "Invalid request body", "WARN");
   }
-  
+
   const { username, email, password } = data as Record<string, unknown>;
-  
-  if (!username || typeof username !== "string" || 
-      !email || typeof email !== "string" || 
-      !password || typeof password !== "string") {
+
+  if (
+    !username || typeof username !== "string" ||
+    !email || typeof email !== "string" ||
+    !password || typeof password !== "string"
+  ) {
     throw new GameError("VALIDATION_ERROR", "Missing required fields", "WARN");
   }
-  
+
   return { username, email, password } as UserRegistration;
 };
 
@@ -28,14 +30,16 @@ const validateLogin = (data: unknown): Login => {
   if (!data || typeof data !== "object") {
     throw new GameError("VALIDATION_ERROR", "Invalid request body", "WARN");
   }
-  
+
   const { email, password } = data as Record<string, unknown>;
-  
-  if (!email || typeof email !== "string" || 
-      !password || typeof password !== "string") {
+
+  if (
+    !email || typeof email !== "string" ||
+    !password || typeof password !== "string"
+  ) {
     throw new GameError("VALIDATION_ERROR", "Missing required fields", "WARN");
   }
-  
+
   return { email, password } as Login;
 };
 
@@ -55,12 +59,12 @@ export const register = async (c: Context) => {
         "VALIDATION_ERROR",
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
-        { error: validationError instanceof Error ? validationError.message : "Unknown validation error" }
+        { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
       console.log("Created new validation GameError with code:", error.code);
       throw error;
     }
-    
+
     logger.info("Registering new user", { username: data.username, email: data.email });
 
     try {
@@ -74,7 +78,7 @@ export const register = async (c: Context) => {
             "EMAIL_EXISTS",
             getMessage("EMAIL_EXISTS", lang),
             "WARN",
-            { email: data.email }
+            { email: data.email },
           );
           console.log("Created EMAIL_EXISTS GameError with code:", emailError.code);
           throw emailError;
@@ -93,7 +97,7 @@ export const register = async (c: Context) => {
       "INTERNAL_SERVER_ERROR",
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
-      { originalError: error instanceof Error ? error.message : String(error) }
+      { originalError: error instanceof Error ? error.message : String(error) },
     );
     console.log("Created server GameError with code:", serverError.code);
     throw serverError;
@@ -104,7 +108,7 @@ export const login = async (c: Context) => {
   try {
     const lang = getLang(c);
     let data: Login;
-    
+
     try {
       data = await getValidatedBody<Login>(c, validateLogin);
     } catch (validationError) {
@@ -116,12 +120,12 @@ export const login = async (c: Context) => {
         "VALIDATION_ERROR",
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
-        { error: validationError instanceof Error ? validationError.message : "Unknown validation error" }
+        { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
       console.log("Created login validation GameError with code:", error.code);
       throw error;
     }
-    
+
     logger.info("User login attempt", { email: data.email });
 
     try {
@@ -135,7 +139,7 @@ export const login = async (c: Context) => {
             "INVALID_CREDENTIALS",
             getMessage("INVALID_CREDENTIALS", lang),
             "WARN",
-            { email: data.email }
+            { email: data.email },
           );
           console.log("Created INVALID_CREDENTIALS GameError with code:", credError.code);
           throw credError;
@@ -154,7 +158,7 @@ export const login = async (c: Context) => {
       "INTERNAL_SERVER_ERROR",
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
-      { originalError: error instanceof Error ? error.message : String(error) }
+      { originalError: error instanceof Error ? error.message : String(error) },
     );
     console.log("Created login server GameError with code:", serverError.code);
     throw serverError;

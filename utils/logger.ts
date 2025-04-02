@@ -43,21 +43,23 @@ class Logger {
     level: LogLevel,
     message: string,
     error?: Error,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): string {
     const timestamp = new Date().toISOString();
-    const errorInfo = error ? {
-      name: error.name,
-      message: error.message,
-      stack: config.env === "development" || config.env === "test" ? error.stack : undefined
-    } : undefined;
+    const errorInfo = error
+      ? {
+        name: error.name,
+        message: error.message,
+        stack: config.env === "development" || config.env === "test" ? error.stack : undefined,
+      }
+      : undefined;
 
     const logData = {
       timestamp,
       level: level.toUpperCase(),
       message,
       ...context,
-      ...(errorInfo && { error: errorInfo })
+      ...(errorInfo && { error: errorInfo }),
     };
 
     return JSON.stringify(logData);
@@ -108,7 +110,7 @@ class Logger {
   error(
     message: string,
     error?: Error,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): void {
     if (this.shouldLog("error")) {
       const formatted = this.formatMessage("error", message, error, context);
@@ -122,7 +124,7 @@ class Logger {
     message: string,
     severity: ErrorSeverity,
     error?: Error,
-    context?: Record<string, unknown>
+    context?: Record<string, unknown>,
   ): void {
     switch (severity) {
       case "FATAL":
@@ -166,9 +168,9 @@ class Logger {
       metric: {
         name: label,
         value: durationMs,
-        unit: "ms"
+        unit: "ms",
       },
-      ...context
+      ...context,
     });
 
     delete this.startTime[label];
@@ -181,9 +183,9 @@ class Logger {
    * @param context 追加コンテキスト情報
    */
   metric(metric: MetricData, context?: Record<string, unknown>): void {
-    this.info(`メトリクス: ${metric.name} = ${metric.value}${metric.unit || ''}`, {
+    this.info(`メトリクス: ${metric.name} = ${metric.value}${metric.unit || ""}`, {
       metric,
-      ...context
+      ...context,
     });
   }
 
@@ -195,7 +197,7 @@ class Logger {
   businessEvent(event: BusinessEvent, context?: Record<string, unknown>): void {
     this.info(`ビジネスイベント: ${event.type}`, {
       event,
-      ...context
+      ...context,
     });
   }
 }

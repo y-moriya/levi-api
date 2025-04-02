@@ -53,8 +53,7 @@ export function createMockGamePlayers(
       playerId: `player_${i}`,
       username: `mockPlayer${i}`,
       ...baseOverrides,
-    })
-  );
+    }));
 }
 
 /**
@@ -66,7 +65,7 @@ export function createMockGame(overrides: Partial<Game> = {}): Game {
   const playerCount = overrides.players?.length ?? 5;
   const players = overrides.players ?? createMockGamePlayers(playerCount);
   const mockUser = createMockUser();
-  
+
   return {
     id: `game_${Date.now()}`,
     name: "モックゲーム",
@@ -75,7 +74,7 @@ export function createMockGame(overrides: Partial<Game> = {}): Game {
       username: mockUser.username,
       email: mockUser.email,
       createdAt: mockUser.createdAt,
-      stats: mockUser.stats
+      stats: mockUser.stats,
     },
     hasPassword: false,
     players,
@@ -96,7 +95,7 @@ export function createMockGame(overrides: Partial<Game> = {}): Game {
       },
       dayTimeSeconds: 60,
       nightTimeSeconds: 40,
-      voteTimeSeconds: 30
+      voteTimeSeconds: 30,
     },
     createdAt: new Date().toISOString(),
     ...overrides,
@@ -117,11 +116,11 @@ export function createMockGameWithRoles(
   },
 ): Game {
   const totalPlayers = Object.values(roleCounts).reduce((sum, count) => sum + count, 0);
-  
+
   // プレイヤーの配列を作成
   const players: GamePlayer[] = [];
   let playerIndex = 0;
-  
+
   // 人狼を追加
   for (let i = 0; i < roleCounts.werewolf; i++, playerIndex++) {
     players.push(createMockGamePlayer({
@@ -130,7 +129,7 @@ export function createMockGameWithRoles(
       role: "WEREWOLF",
     }));
   }
-  
+
   // 占い師を追加
   for (let i = 0; i < roleCounts.seer; i++, playerIndex++) {
     players.push(createMockGamePlayer({
@@ -139,7 +138,7 @@ export function createMockGameWithRoles(
       role: "SEER",
     }));
   }
-  
+
   // 狩人を追加
   for (let i = 0; i < roleCounts.bodyguard; i++, playerIndex++) {
     players.push(createMockGamePlayer({
@@ -148,7 +147,7 @@ export function createMockGameWithRoles(
       role: "BODYGUARD",
     }));
   }
-  
+
   // 霊媒師を追加
   for (let i = 0; i < roleCounts.medium; i++, playerIndex++) {
     players.push(createMockGamePlayer({
@@ -157,7 +156,7 @@ export function createMockGameWithRoles(
       role: "MEDIUM",
     }));
   }
-  
+
   // 村人を追加
   for (let i = 0; i < roleCounts.villager; i++, playerIndex++) {
     players.push(createMockGamePlayer({
@@ -166,7 +165,7 @@ export function createMockGameWithRoles(
       role: "VILLAGER",
     }));
   }
-  
+
   return createMockGame({
     players,
     maxPlayers: totalPlayers,
@@ -179,7 +178,7 @@ export function createMockGameWithRoles(
       },
       dayTimeSeconds: 60,
       nightTimeSeconds: 40,
-      voteTimeSeconds: 30
+      voteTimeSeconds: 30,
     },
   });
 }
@@ -225,7 +224,7 @@ export class MockTimer {
   // 指定した時間分、時間を進める
   advanceTime(ms: number): void {
     this.currentTime += ms;
-    
+
     // タイムアウトが発生したコールバックを実行
     for (const [id, { callback, timeout }] of this.callbacks.entries()) {
       if (timeout <= this.currentTime) {
@@ -249,30 +248,30 @@ export class MockTimer {
  */
 export class MockLogger {
   logs: Array<{ level: string; message: string; data?: unknown }> = [];
-  
+
   debug(message: string, data?: unknown): void {
     this.logs.push({ level: "debug", message, data });
   }
-  
+
   info(message: string, data?: unknown): void {
     this.logs.push({ level: "info", message, data });
   }
-  
+
   warn(message: string, data?: unknown): void {
     this.logs.push({ level: "warn", message, data });
   }
-  
+
   error(message: string, error?: Error, data?: unknown): void {
     this.logs.push({ level: "error", message, data: { error, data } });
   }
-  
+
   // すべてのログをクリア
   clear(): void {
     this.logs = [];
   }
-  
+
   // 特定のレベルのログを取得
   getLogsByLevel(level: string): Array<{ level: string; message: string; data?: unknown }> {
-    return this.logs.filter(log => log.level === level);
+    return this.logs.filter((log) => log.level === level);
   }
 }

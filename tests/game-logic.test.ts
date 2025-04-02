@@ -4,13 +4,13 @@ import * as gameModel from "../models/game.ts";
 import * as authService from "../services/auth.ts";
 import { Game, Role } from "../types/game.ts";
 import { User } from "../types/user.ts";
-import { 
-  setupTest, 
-  cleanupTest, 
-  assignTestRoles, 
-  setPlayerAliveStatus, 
+import {
+  assertions,
+  assignTestRoles,
+  cleanupTest,
+  setPlayerAliveStatus,
+  setupTest,
   withQuietLogs,
-  assertions
 } from "./helpers/test-helpers.ts";
 import { gameFixtures } from "./helpers/fixtures.ts";
 import { createMockGame } from "./helpers/mocks.ts";
@@ -23,7 +23,7 @@ let testUsers: User[];
  */
 async function setupGameLogicTest() {
   await setupTest();
-  
+
   // テストユーザーの作成
   testUsers = await Promise.all([
     authService.register({
@@ -75,10 +75,10 @@ Deno.test({
   name: "checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する",
   fn: withQuietLogs(async () => {
     await setupGameLogicTest();
-    
+
     // 役職の設定 - フィクスチャーを使用
     assignTestRoles(testGame, gameFixtures.fivePlayerRoles.standard);
-    
+
     // 人狼を死亡させる
     setPlayerAliveStatus(testGame, { 1: false });
 
@@ -94,10 +94,10 @@ Deno.test({
   name: "checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する",
   fn: withQuietLogs(async () => {
     await setupGameLogicTest();
-    
+
     // 役職の設定 - フィクスチャーを使用
     assignTestRoles(testGame, gameFixtures.fivePlayerRoles.werewolfHeavy);
-    
+
     // 村人と占い師と狩人を死亡させる
     setPlayerAliveStatus(testGame, { 2: false, 3: false, 4: false });
 
@@ -114,25 +114,25 @@ Deno.test({
   name: "handlePhaseEnd - フェーズ間の移行が正しく行われるか",
   fn: withQuietLogs(async () => {
     await setupGameLogicTest();
-    
+
     // 役職の設定 - フィクスチャーを使用
     assignTestRoles(testGame, gameFixtures.fivePlayerRoles.standard);
-    
+
     // DAY_DISCUSSIONからDAY_VOTEへのテスト
     testGame.currentPhase = "DAY_DISCUSSION";
-    
+
     // 最初の移行テスト: DAY_DISCUSSIONからDAY_VOTEへ
     const nextPhase = gameLogic._getNextPhase(testGame.currentPhase);
     assertEquals(nextPhase, "DAY_VOTE");
-    
+
     // 2番目の移行テスト: DAY_VOTEからNIGHTへ
     const nightPhase = gameLogic._getNextPhase("DAY_VOTE");
     assertEquals(nightPhase, "NIGHT");
-    
+
     // 3番目の移行テスト: NIGHTからDAY_DISCUSSIONへ
     const dayPhase = gameLogic._getNextPhase("NIGHT");
     assertEquals(dayPhase, "DAY_DISCUSSION");
-    
+
     cleanupTest();
   }),
 });
@@ -202,7 +202,7 @@ Deno.test({
 
     // テスト実行
     const result = gameLogic.checkGameEnd(mockGame);
-    
+
     // アサーション
     assertEquals(result.isEnded, true);
     assertions.assertGameWinner(result, "WEREWOLVES");
@@ -228,7 +228,7 @@ Deno.test({
 
     // テスト実行
     const result = gameLogic.checkGameEnd(mockGame);
-    
+
     // アサーション
     assertEquals(result.isEnded, false);
     assertions.assertGameWinner(result, null);

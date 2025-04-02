@@ -3,7 +3,7 @@ import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import { logger } from "../utils/logger.ts";
 import { GameError } from "../types/error.ts";
-import { SupportedLanguage, getMessage } from "../utils/messages.ts";
+import { getMessage, SupportedLanguage } from "../utils/messages.ts";
 
 export const vote = async (c: Context) => {
   const gameId = c.req.param("gameId");
@@ -23,7 +23,7 @@ export const vote = async (c: Context) => {
         "INVALID_REQUEST",
         getMessage("INVALID_REQUEST", lang),
         "WARN",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
 
@@ -35,7 +35,7 @@ export const vote = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
 
@@ -61,14 +61,14 @@ export const vote = async (c: Context) => {
           "INVALID_PHASE",
           getMessage("INVALID_PHASE", lang),
           "WARN",
-          { gameId, currentPhase: game.currentPhase, playerId: userId }
+          { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
         "VOTE_ERROR",
         result.message,
         "WARN",
-        { gameId, playerId: userId, targetPlayerId }
+        { gameId, playerId: userId, targetPlayerId },
       );
     }
     return c.json(result, 200);
@@ -82,7 +82,7 @@ export const vote = async (c: Context) => {
         "VOTE_ERROR",
         getMessage("VOTE_ERROR", lang),
         "ERROR",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
     throw error;
@@ -101,10 +101,10 @@ export const attack = async (c: Context) => {
         "INVALID_REQUEST",
         getMessage("INVALID_REQUEST", lang),
         "WARN",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
-    
+
     const targetPlayerId = data.targetPlayerId;
 
     const game = gameModel.getGameById(gameId);
@@ -113,10 +113,10 @@ export const attack = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
-    
+
     const result = await gameActions.handleAttackAction(game, userId, targetPlayerId);
     if (!result.success) {
       if (result.message.includes("人狼以外は襲撃できません")) {
@@ -124,7 +124,7 @@ export const attack = async (c: Context) => {
           "NOT_WEREWOLF",
           getMessage("NOT_WEREWOLF", lang),
           "WARN",
-          { gameId, playerId: userId }
+          { gameId, playerId: userId },
         );
       }
       if (result.message.includes("夜フェーズではありません")) {
@@ -132,14 +132,14 @@ export const attack = async (c: Context) => {
           "INVALID_PHASE",
           getMessage("INVALID_PHASE", lang),
           "WARN",
-          { gameId, currentPhase: game.currentPhase, playerId: userId }
+          { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
         "ATTACK_ERROR",
         result.message,
         "WARN",
-        { gameId, playerId: userId, targetPlayerId }
+        { gameId, playerId: userId, targetPlayerId },
       );
     }
     return c.json(result, 200);
@@ -153,7 +153,7 @@ export const attack = async (c: Context) => {
         "ATTACK_ERROR",
         getMessage("ATTACK_ERROR", lang),
         "ERROR",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
     throw error;
@@ -178,7 +178,7 @@ export const divine = async (c: Context) => {
         "INVALID_REQUEST",
         getMessage("INVALID_REQUEST", lang),
         "WARN",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
 
@@ -190,7 +190,7 @@ export const divine = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
 
@@ -216,7 +216,7 @@ export const divine = async (c: Context) => {
           "NOT_SEER",
           getMessage("NOT_SEER", lang),
           "WARN",
-          { gameId, playerId: userId }
+          { gameId, playerId: userId },
         );
       }
       if (result.message.includes("夜フェーズではありません")) {
@@ -224,14 +224,14 @@ export const divine = async (c: Context) => {
           "INVALID_PHASE",
           getMessage("INVALID_PHASE", lang),
           "WARN",
-          { gameId, currentPhase: game.currentPhase, playerId: userId }
+          { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
         "DIVINE_ERROR",
         result.message,
         "WARN",
-        { gameId, playerId: userId, targetPlayerId }
+        { gameId, playerId: userId, targetPlayerId },
       );
     }
     return c.json(result, 200);
@@ -245,7 +245,7 @@ export const divine = async (c: Context) => {
         "DIVINE_ERROR",
         getMessage("DIVINE_ERROR", lang),
         "ERROR",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
     throw error;
@@ -264,10 +264,10 @@ export const guard = async (c: Context) => {
         "INVALID_REQUEST",
         getMessage("INVALID_REQUEST", lang),
         "WARN",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
-    
+
     const targetPlayerId = data.targetPlayerId;
 
     const game = gameModel.getGameById(gameId);
@@ -276,10 +276,10 @@ export const guard = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
-    
+
     const result = await gameActions.handleGuardAction(game, userId, targetPlayerId);
     if (!result.success) {
       if (result.message.includes("狩人以外は護衛できません")) {
@@ -287,7 +287,7 @@ export const guard = async (c: Context) => {
           "NOT_BODYGUARD",
           getMessage("NOT_BODYGUARD", lang),
           "WARN",
-          { gameId, playerId: userId }
+          { gameId, playerId: userId },
         );
       }
       if (result.message.includes("夜フェーズではありません")) {
@@ -295,14 +295,14 @@ export const guard = async (c: Context) => {
           "INVALID_PHASE",
           getMessage("INVALID_PHASE", lang),
           "WARN",
-          { gameId, currentPhase: game.currentPhase, playerId: userId }
+          { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
         "GUARD_ERROR",
         result.message,
         "WARN",
-        { gameId, playerId: userId, targetPlayerId }
+        { gameId, playerId: userId, targetPlayerId },
       );
     }
     return c.json(result, 200);
@@ -316,7 +316,7 @@ export const guard = async (c: Context) => {
         "GUARD_ERROR",
         getMessage("GUARD_ERROR", lang),
         "ERROR",
-        { gameId, playerId: userId }
+        { gameId, playerId: userId },
       );
     }
     throw error;

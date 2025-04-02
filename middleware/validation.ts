@@ -1,7 +1,7 @@
 import { Context, MiddlewareHandler, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { GameError } from "../types/error.ts";
-import { SupportedLanguage, getMessage } from "../utils/messages.ts";
+import { getMessage, SupportedLanguage } from "../utils/messages.ts";
 import { logger } from "../utils/logger.ts";
 
 // バリデーション用のzodスキーマ定義
@@ -76,29 +76,29 @@ export const createValidationMiddleware = (schema: z.ZodType): MiddlewareHandler
     } catch (error) {
       if (error instanceof z.ZodError) {
         const lang = c.get("lang") as SupportedLanguage;
-        
+
         // バリデーションエラーをログに記録
-        logger.warn("Validation error", { 
-          errors: error.errors.map(err => ({ 
-            path: err.path.join('.'), 
-            message: err.message 
+        logger.warn("Validation error", {
+          errors: error.errors.map((err) => ({
+            path: err.path.join("."),
+            message: err.message,
           })),
-          requestPath: c.req.path
+          requestPath: c.req.path,
         });
-        
+
         // 明示的に VALIDATION_ERROR コードを設定する
         const gameError = new GameError(
           "VALIDATION_ERROR", // この行が重要: エラーコードを明示的に設定
           getMessage("VALIDATION_ERROR", lang),
           "WARN",
           {
-            validationErrors: error.errors.map(err => ({
-              path: err.path.join('.'),
-              message: err.message
-            }))
-          }
+            validationErrors: error.errors.map((err) => ({
+              path: err.path.join("."),
+              message: err.message,
+            })),
+          },
         );
-        
+
         logger.info("Throwing validation error", { code: gameError.code, message: gameError.message });
         throw gameError;
       }

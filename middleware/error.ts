@@ -1,5 +1,5 @@
 import { Context, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { GameError, ErrorContext } from "../types/error.ts";
+import { ErrorContext, GameError } from "../types/error.ts";
 import { logger } from "../utils/logger.ts";
 import { config } from "../config.ts";
 import { setRequestId } from "../utils/context.ts";
@@ -40,19 +40,19 @@ function generateRequestId(): string {
 export const errorHandler = async (c: Context, next: Next) => {
   // パフォーマンス測定開始
   logger.startTimer(`request-${c.req.path}`);
-  
+
   const requestId = generateRequestId();
   setRequestId(c, requestId);
 
   try {
     await next();
-    
+
     // 正常レスポンス時はパフォーマンス測定終了
     logger.endTimer(`request-${c.req.path}`, {
       path: c.req.path,
       method: c.req.method,
       statusCode: c.res.status,
-      requestId
+      requestId,
     });
   } catch (error: unknown) {
     // エラーコンテキスト情報の生成
@@ -61,10 +61,10 @@ export const errorHandler = async (c: Context, next: Next) => {
       requestMethod: c.req.method,
       operationName: `${c.req.method} ${c.req.path}`,
     };
-    
+
     // エラーの変換（すでにGameErrorの場合もコンテキスト情報を追加）
     const gameError = GameError.fromError(error, "INTERNAL_SERVER_ERROR", errorContext);
-    
+
     // ステータスコードの決定
     const status = errorStatusMap[gameError.code] || 500;
 
@@ -74,9 +74,9 @@ export const errorHandler = async (c: Context, next: Next) => {
       method: c.req.method,
       statusCode: status,
       errorCode: gameError.code,
-      requestId
+      requestId,
     });
-    
+
     // エラーログ出力
     logger.logWithSeverity(
       `HTTP ${status} エラー: ${gameError.code} - ${gameError.message}`,
@@ -88,17 +88,17 @@ export const errorHandler = async (c: Context, next: Next) => {
         errorCategory: gameError.category,
         statusCode: status,
         path: c.req.path,
-        method: c.req.method
-      }
+        method: c.req.method,
+      },
     );
-    
+
     // 開発環境でのみ詳細情報を含める
     const details = config.env === "production" ? undefined : {
       stack: gameError.stack,
       context: gameError.context,
-      ...(gameError.details || {})
+      ...(gameError.details || {}),
     };
-    
+
     // APIエラーレスポンスを返却
     return c.json({
       code: gameError.code,
@@ -107,7 +107,7 @@ export const errorHandler = async (c: Context, next: Next) => {
       category: gameError.category,
       timestamp: new Date().toISOString(),
       requestId,
-      details
+      details,
     }, status);
   }
 };

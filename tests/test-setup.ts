@@ -1,7 +1,7 @@
 import { assert } from "https://deno.land/std@0.210.0/assert/mod.ts";
 
 // テストタイムアウトを設定（5秒）
-const TEST_TIMEOUT = 5000;  // 10秒から5秒に短縮
+const TEST_TIMEOUT = 5000; // 10秒から5秒に短縮
 
 // テストのグローバル設定
 Deno.test({

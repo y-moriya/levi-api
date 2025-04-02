@@ -11,10 +11,10 @@ export const sendMessage = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const userId = c.get("userId");
   const lang = getLang(c);
-  
+
   try {
     const data = await c.req.json() as SendMessageRequest;
-    
+
     // ゲームの存在確認
     const game = gameModel.getGameById(gameId);
     if (!game) {
@@ -22,7 +22,7 @@ export const sendMessage = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
 
@@ -33,7 +33,7 @@ export const sendMessage = async (c: Context) => {
         "UNAUTHORIZED",
         getMessage("UNAUTHORIZED", lang),
         "WARN",
-        { gameId, userId }
+        { gameId, userId },
       );
     }
 
@@ -44,7 +44,7 @@ export const sendMessage = async (c: Context) => {
         "CHANNEL_ACCESS_DENIED",
         getMessage("CHANNEL_ACCESS_DENIED", lang),
         "WARN",
-        { gameId, userId, channel: data.channel }
+        { gameId, userId, channel: data.channel },
       );
     }
 
@@ -69,12 +69,15 @@ export const sendMessage = async (c: Context) => {
       throw error;
     }
     // その他のエラーは内部サーバーエラーとして処理
-    logger.error("Failed to send message", error instanceof Error ? error : new Error(String(error)), { gameId, userId });
+    logger.error("Failed to send message", error instanceof Error ? error : new Error(String(error)), {
+      gameId,
+      userId,
+    });
     throw new GameError(
       "INTERNAL_SERVER_ERROR",
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
-      { originalError: error instanceof Error ? error.message : String(error) }
+      { originalError: error instanceof Error ? error.message : String(error) },
     );
   }
 };
@@ -93,7 +96,7 @@ export const getMessages = (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
 
@@ -104,7 +107,7 @@ export const getMessages = (c: Context) => {
         "UNAUTHORIZED",
         getMessage("UNAUTHORIZED", lang),
         "WARN",
-        { gameId, userId }
+        { gameId, userId },
       );
     }
 
@@ -125,12 +128,15 @@ export const getMessages = (c: Context) => {
       throw error;
     }
     // その他のエラーは内部サーバーエラーとして処理
-    logger.error("Failed to get messages", error instanceof Error ? error : new Error(String(error)), { gameId, userId });
+    logger.error("Failed to get messages", error instanceof Error ? error : new Error(String(error)), {
+      gameId,
+      userId,
+    });
     throw new GameError(
       "INTERNAL_SERVER_ERROR",
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
-      { originalError: error instanceof Error ? error.message : String(error) }
+      { originalError: error instanceof Error ? error.message : String(error) },
     );
   }
 };

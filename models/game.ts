@@ -23,76 +23,76 @@ class GameStore {
   private gamesByStatus: Map<string, Set<string>> = new Map();
   private playerGameMap: Map<string, Set<string>> = new Map();
   private requestUser: User | null = null;
-  
+
   constructor() {
     // ゲームステータスの種類ごとにセットを初期化
     this.gamesByStatus.set("WAITING", new Set());
     this.gamesByStatus.set("IN_PROGRESS", new Set());
     this.gamesByStatus.set("FINISHED", new Set());
   }
-  
+
   // リクエストユーザーを設定するメソッド（テスト用）
   setRequestUser(user: User | null): void {
     this.requestUser = user;
   }
-  
+
   // 現在のリクエストユーザーを取得するメソッド
   getRequestUser(): User | null {
     return this.requestUser;
   }
-  
+
   // ゲームを追加
   add(game: Game): void {
     this.games.set(game.id, game);
-    
+
     // ステータスごとのインデックスを更新
     const statusSet = this.gamesByStatus.get(game.status);
     if (statusSet) {
       statusSet.add(game.id);
     }
-    
+
     // プレイヤーとゲームの関連を追跡
-    game.players.forEach(player => {
+    game.players.forEach((player) => {
       if (!this.playerGameMap.has(player.playerId)) {
         this.playerGameMap.set(player.playerId, new Set());
       }
       this.playerGameMap.get(player.playerId)?.add(game.id);
     });
-    
-    logger.info("Game added to store", { 
-      gameId: game.id, 
-      status: game.status, 
-      playerCount: game.players.length 
+
+    logger.info("Game added to store", {
+      gameId: game.id,
+      status: game.status,
+      playerCount: game.players.length,
     });
   }
-  
+
   // ゲームを更新
   update(game: Game): void {
     const oldGame = this.games.get(game.id);
     if (!oldGame) {
       return this.add(game);
     }
-    
+
     // ステータスが変更された場合、インデックスを更新
     if (oldGame.status !== game.status) {
       const oldStatusSet = this.gamesByStatus.get(oldGame.status);
       const newStatusSet = this.gamesByStatus.get(game.status);
-      
+
       if (oldStatusSet) {
         oldStatusSet.delete(game.id);
       }
-      
+
       if (newStatusSet) {
         newStatusSet.add(game.id);
       }
     }
-    
+
     // プレイヤーが変更された場合、関連を更新
-    const oldPlayerIds = new Set(oldGame.players.map(p => p.playerId));
-    const newPlayerIds = new Set(game.players.map(p => p.playerId));
-    
+    const oldPlayerIds = new Set(oldGame.players.map((p) => p.playerId));
+    const newPlayerIds = new Set(game.players.map((p) => p.playerId));
+
     // 削除されたプレイヤーの関連を更新
-    oldPlayerIds.forEach(playerId => {
+    oldPlayerIds.forEach((playerId) => {
       if (!newPlayerIds.has(playerId)) {
         const playerGames = this.playerGameMap.get(playerId);
         if (playerGames) {
@@ -103,9 +103,9 @@ class GameStore {
         }
       }
     });
-    
+
     // 追加されたプレイヤーの関連を追加
-    newPlayerIds.forEach(playerId => {
+    newPlayerIds.forEach((playerId) => {
       if (!oldPlayerIds.has(playerId)) {
         if (!this.playerGameMap.has(playerId)) {
           this.playerGameMap.set(playerId, new Set());
@@ -113,24 +113,24 @@ class GameStore {
         this.playerGameMap.get(playerId)?.add(game.id);
       }
     });
-    
+
     // ゲームオブジェクトを更新
     this.games.set(game.id, game);
   }
-  
+
   // ゲームを削除
   delete(gameId: string): void {
     const game = this.games.get(gameId);
     if (!game) return;
-    
+
     // ステータスインデックスから削除
     const statusSet = this.gamesByStatus.get(game.status);
     if (statusSet) {
       statusSet.delete(gameId);
     }
-    
+
     // プレイヤーとの関連を削除
-    game.players.forEach(player => {
+    game.players.forEach((player) => {
       const playerGames = this.playerGameMap.get(player.playerId);
       if (playerGames) {
         playerGames.delete(gameId);
@@ -139,58 +139,58 @@ class GameStore {
         }
       }
     });
-    
+
     // ゲームを削除
     this.games.delete(gameId);
-    
+
     logger.info("Game deleted from store", { gameId });
   }
-  
+
   // ゲームを取得
   get(gameId: string): Game | undefined {
     return this.games.get(gameId);
   }
-  
+
   // すべてのゲームを取得
   getAll(): Game[] {
     return Array.from(this.games.values());
   }
-  
+
   // ステータスでフィルタリングしたゲームを取得
   getByStatus(status: string): Game[] {
     const gameIds = this.gamesByStatus.get(status);
     if (!gameIds) return [];
-    
+
     return Array.from(gameIds)
-      .map(id => this.games.get(id))
+      .map((id) => this.games.get(id))
       .filter((game): game is Game => game !== undefined);
   }
-  
+
   // プレイヤーが参加しているゲームを取得
   getByPlayer(playerId: string): Game[] {
     const gameIds = this.playerGameMap.get(playerId);
     if (!gameIds) return [];
-    
+
     return Array.from(gameIds)
-      .map(id => this.games.get(id))
+      .map((id) => this.games.get(id))
       .filter((game): game is Game => game !== undefined);
   }
-  
+
   // すべてを削除（テスト用）
   clear(): void {
     this.games.clear();
-    this.gamesByStatus.forEach(set => set.clear());
+    this.gamesByStatus.forEach((set) => set.clear());
     this.playerGameMap.clear();
     this.requestUser = null;
-    
+
     // ステータスセットを再初期化
     this.gamesByStatus.set("WAITING", new Set());
     this.gamesByStatus.set("IN_PROGRESS", new Set());
     this.gamesByStatus.set("FINISHED", new Set());
-    
+
     logger.info("Game store cleared");
   }
-  
+
   // 統計情報を取得
   getStats(): Record<string, number> {
     return {
@@ -198,7 +198,7 @@ class GameStore {
       waitingGames: this.gamesByStatus.get("WAITING")?.size || 0,
       inProgressGames: this.gamesByStatus.get("IN_PROGRESS")?.size || 0,
       finishedGames: this.gamesByStatus.get("FINISHED")?.size || 0,
-      activePlayers: this.playerGameMap.size
+      activePlayers: this.playerGameMap.size,
     };
   }
 }
@@ -283,10 +283,10 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
 
   game.players.push(newPlayer);
   game.currentPlayers += 1;
-  
+
   // ゲームストアを更新
   gameStore.update(game);
-  
+
   return game;
 };
 
@@ -314,10 +314,10 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<Game>
 
   game.players.splice(playerIndex, 1);
   game.currentPlayers -= 1;
-  
+
   // ゲームストアを更新
   gameStore.update(game);
-  
+
   return game;
 };
 
@@ -338,7 +338,7 @@ export const startGame = async (gameId: string, playerId: string): Promise<Game>
 
   // ゲーム開始のロジックを呼び出し
   initializeGame(game);
-  
+
   // ゲームストアを更新
   gameStore.update(game);
 

@@ -30,26 +30,26 @@ Deno.test("バリデーションエラーが適切に処理されることを検
 
   assertEquals(response.status, 400);
   const errorResponse = await response.json();
-  
+
   assertObjectMatch(errorResponse, {
     code: "VALIDATION_ERROR",
     message: "リクエストデータが無効です", // 日本語メッセージがデフォルト
     severity: "WARN",
-    category: "VAL" // 新しく追加されたカテゴリフィールド
+    category: "VAL", // 新しく追加されたカテゴリフィールド
   });
-  
+
   // バリデーションエラーの詳細が含まれていることを確認
   // リファクタリング後の構造では、details.contextまたはcontextにエラー情報がある可能性がある
-  const hasValidationDetails = errorResponse.details && 
+  const hasValidationDetails = errorResponse.details &&
     (
       (errorResponse.details.validationErrors && errorResponse.details.validationErrors.length > 0) ||
-      (errorResponse.details.context && errorResponse.details.context.validationErrors && 
-       errorResponse.details.context.validationErrors.length > 0) ||
+      (errorResponse.details.context && errorResponse.details.context.validationErrors &&
+        errorResponse.details.context.validationErrors.length > 0) ||
       (errorResponse.details.errors && errorResponse.details.errors.length > 0)
     );
-  
+
   assertEquals(!!hasValidationDetails, true, "レスポンスにバリデーションエラーの詳細情報が含まれていません");
-  
+
   // レスポンスボディの消費を確実にする
   if (response.bodyUsed === false && response.body) {
     try {
@@ -72,13 +72,13 @@ Deno.test("認証エラーが適切に処理されることを検証", async () 
 
   assertEquals(response.status, 401);
   const errorResponse = await response.json();
-  
+
   assertObjectMatch(errorResponse, {
     code: "INVALID_CREDENTIALS",
     message: "無効なメールアドレスまたはパスワードです",
-    severity: "WARN"
+    severity: "WARN",
   });
-  
+
   // レスポンスボディの消費を確実にする
   if (response.bodyUsed === false && response.body) {
     try {
@@ -93,29 +93,29 @@ Deno.test("認証エラーが適切に処理されることを検証", async () 
 Deno.test("言語設定によって適切なエラーメッセージが返されることを検証", async () => {
   // 不正なリクエストを英語設定で送信
   const invalidUserData = {
-    username: "a", 
+    username: "a",
     email: "invalid-email",
     password: "short",
   };
 
   // テスト用のヘルパーを使用し、リクエストヘッダーでAccept-Languageを設定
   const response = await apiRequest(
-    "POST", 
-    "/auth/register", 
+    "POST",
+    "/auth/register",
     invalidUserData,
     undefined,
-    { "Accept-Language": "en-US" }
+    { "Accept-Language": "en-US" },
   );
 
   assertEquals(response.status, 400);
   const errorResponse = await response.json();
-  
+
   assertObjectMatch(errorResponse, {
     code: "VALIDATION_ERROR",
     message: "Invalid request data", // 英語メッセージ
-    severity: "WARN"
+    severity: "WARN",
   });
-  
+
   // レスポンスボディの消費を確実にする
   if (response.bodyUsed === false && response.body) {
     try {
@@ -129,20 +129,20 @@ Deno.test("言語設定によって適切なエラーメッセージが返され
 // リソースが見つからない場合のエラーのテスト
 Deno.test("リソースが見つからない場合のエラーが適切に処理されることを検証", async () => {
   const { token } = await createAuthenticatedUser();
-  
+
   // 存在しないゲームIDでリクエスト
   const nonExistentGameId = "nonexistent-game-id";
   const response = await apiRequest("GET", `/games/${nonExistentGameId}`, undefined, token);
 
   assertEquals(response.status, 404);
   const errorResponse = await response.json();
-  
+
   assertObjectMatch(errorResponse, {
     code: "GAME_NOT_FOUND",
     message: "指定されたゲームが見つかりません",
-    severity: "WARN"
+    severity: "WARN",
   });
-  
+
   // レスポンスボディの消費を確実にする
   if (response.bodyUsed === false && response.body) {
     try {

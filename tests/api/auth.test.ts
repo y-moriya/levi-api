@@ -86,7 +86,7 @@ Deno.test({
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response2.status, 400);
       // assertEquals((_error as Error & { response: { code: string } }).response.code, "EMAIL_EXISTS");
-      
+
       // エラーが発生することだけを確認
       assertNotEquals(response2.status, 201);
     }
@@ -115,7 +115,7 @@ Deno.test({
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);
       // assertEquals((_error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
-      
+
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 201);
     }
@@ -170,7 +170,7 @@ Deno.test({
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
       // assertEquals((_error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
-      
+
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);
     }
@@ -196,7 +196,7 @@ Deno.test({
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 401);
       // assertEquals((_error as Error & { response: { code: string } }).response.code, "INVALID_CREDENTIALS");
-      
+
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);
     }
@@ -222,7 +222,7 @@ Deno.test({
       // 現状のAPIレスポンスに合わせてテストを修正
       // assertEquals(response.status, 400);
       // assertEquals((_error as Error & { response: { code: string } }).response.code, "VALIDATION_ERROR");
-      
+
       // エラーが発生することだけを確認
       assertNotEquals(response.status, 200);
     }

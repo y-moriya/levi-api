@@ -19,7 +19,7 @@ export const getAllGames = async (c: Context) => {
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { originalError: error instanceof Error ? error.message : String(error) }
+        { originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;
@@ -39,7 +39,7 @@ export const getGame = async (c: Context) => {
         "GAME_NOT_FOUND",
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
-        { gameId }
+        { gameId },
       );
     }
 
@@ -51,7 +51,7 @@ export const getGame = async (c: Context) => {
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { gameId, originalError: error instanceof Error ? error.message : String(error) }
+        { gameId, originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;
@@ -61,20 +61,20 @@ export const getGame = async (c: Context) => {
 export const createGame = async (c: Context) => {
   const userId = c.get("userId");
   const lang = getLang(c);
-  
+
   try {
     let data: GameCreation;
-    
+
     try {
       data = await c.req.json() as GameCreation;
-      
+
       // バリデーション
       if (!data.name || typeof data.name !== "string") {
         throw new GameError(
           "VALIDATION_ERROR",
           getMessage("VALIDATION_ERROR", lang),
           "WARN",
-          { error: "Game name is required" }
+          { error: "Game name is required" },
         );
       }
     } catch (jsonError) {
@@ -82,12 +82,12 @@ export const createGame = async (c: Context) => {
         "VALIDATION_ERROR",
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
-        { error: jsonError instanceof Error ? jsonError.message : "Invalid request body" }
+        { error: jsonError instanceof Error ? jsonError.message : "Invalid request body" },
       );
     }
 
     logger.info("Creating new game", { userId, gameName: data.name });
-    
+
     try {
       const game = await gameModel.createGame(data, userId);
       return c.json(game, 201);
@@ -98,7 +98,7 @@ export const createGame = async (c: Context) => {
             "OWNER_NOT_FOUND",
             getMessage("UNAUTHORIZED", lang),
             "WARN",
-            { userId }
+            { userId },
           );
         }
       }
@@ -111,7 +111,7 @@ export const createGame = async (c: Context) => {
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { userId, originalError: error instanceof Error ? error.message : String(error) }
+        { userId, originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;
@@ -135,7 +135,7 @@ export const joinGame = async (c: Context) => {
             "GAME_NOT_FOUND",
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
-            { gameId }
+            { gameId },
           );
         }
         if (modelError.message === "Game is full") {
@@ -143,7 +143,7 @@ export const joinGame = async (c: Context) => {
             "GAME_FULL",
             getMessage("GAME_FULL", lang),
             "WARN",
-            { gameId }
+            { gameId },
           );
         }
         if (modelError.message === "Player already in game") {
@@ -151,7 +151,7 @@ export const joinGame = async (c: Context) => {
             "JOIN_ERROR",
             modelError.message,
             "WARN",
-            { gameId, userId }
+            { gameId, userId },
           );
         }
       }
@@ -159,12 +159,15 @@ export const joinGame = async (c: Context) => {
     }
   } catch (error) {
     if (!(error instanceof GameError)) {
-      logger.error("Failed to join game", error instanceof Error ? error : new Error(String(error)), { gameId, userId });
+      logger.error("Failed to join game", error instanceof Error ? error : new Error(String(error)), {
+        gameId,
+        userId,
+      });
       throw new GameError(
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) }
+        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;
@@ -188,15 +191,15 @@ export const leaveGame = async (c: Context) => {
             "GAME_NOT_FOUND",
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
-            { gameId }
+            { gameId },
           );
         }
         if (modelError.message === "Game deleted as owner left") {
           logger.info("Game deleted as owner left", { gameId, userId });
-          return c.json({ 
-            code: "GAME_DELETED", 
+          return c.json({
+            code: "GAME_DELETED",
             message: "Game has been deleted as the owner left",
-            timestamp: new Date().toISOString() 
+            timestamp: new Date().toISOString(),
           });
         }
         if (modelError.message === "Cannot leave game in progress" || modelError.message === "Player not in game") {
@@ -204,7 +207,7 @@ export const leaveGame = async (c: Context) => {
             "LEAVE_ERROR",
             modelError.message,
             "WARN",
-            { gameId, userId }
+            { gameId, userId },
           );
         }
       }
@@ -212,12 +215,15 @@ export const leaveGame = async (c: Context) => {
     }
   } catch (error) {
     if (!(error instanceof GameError)) {
-      logger.error("Failed to leave game", error instanceof Error ? error : new Error(String(error)), { gameId, userId });
+      logger.error("Failed to leave game", error instanceof Error ? error : new Error(String(error)), {
+        gameId,
+        userId,
+      });
       throw new GameError(
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) }
+        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;
@@ -241,7 +247,7 @@ export const startGame = async (c: Context) => {
             "GAME_NOT_FOUND",
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
-            { gameId }
+            { gameId },
           );
         }
         if (modelError.message === "Only the game owner can start the game") {
@@ -249,7 +255,7 @@ export const startGame = async (c: Context) => {
             "NOT_GAME_OWNER",
             getMessage("NOT_GAME_OWNER", lang),
             "WARN",
-            { gameId, userId }
+            { gameId, userId },
           );
         }
         if (modelError.message === "Game is already in progress") {
@@ -257,7 +263,7 @@ export const startGame = async (c: Context) => {
             "GAME_ALREADY_STARTED",
             getMessage("GAME_ALREADY_STARTED", lang),
             "WARN",
-            { gameId, userId }
+            { gameId, userId },
           );
         }
         if (
@@ -270,7 +276,7 @@ export const startGame = async (c: Context) => {
             "START_ERROR",
             modelError.message,
             "WARN",
-            { gameId, userId }
+            { gameId, userId },
           );
         }
       }
@@ -278,12 +284,15 @@ export const startGame = async (c: Context) => {
     }
   } catch (error) {
     if (!(error instanceof GameError)) {
-      logger.error("Failed to start game", error instanceof Error ? error : new Error(String(error)), { gameId, userId });
+      logger.error("Failed to start game", error instanceof Error ? error : new Error(String(error)), {
+        gameId,
+        userId,
+      });
       throw new GameError(
         "INTERNAL_SERVER_ERROR",
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
-        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) }
+        { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },
       );
     }
     throw error;

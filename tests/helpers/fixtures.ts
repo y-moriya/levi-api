@@ -19,8 +19,8 @@ export const userFixtures = {
       gamesWon: 0,
       winRatio: 0,
       villagerWins: 0,
-      werewolfWins: 0
-    }
+      werewolfWins: 0,
+    },
   }),
 
   /**
@@ -35,8 +35,8 @@ export const userFixtures = {
       gamesWon: 0,
       winRatio: 0,
       villagerWins: 0,
-      werewolfWins: 0
-    }
+      werewolfWins: 0,
+    },
   }),
 };
 
@@ -59,7 +59,7 @@ export const gameFixtures = {
       },
       dayTimeSeconds: 60,
       nightTimeSeconds: 40,
-      voteTimeSeconds: 30
+      voteTimeSeconds: 30,
     },
   }),
 
@@ -78,7 +78,7 @@ export const gameFixtures = {
       },
       dayTimeSeconds: 120,
       nightTimeSeconds: 80,
-      voteTimeSeconds: 60
+      voteTimeSeconds: 60,
     },
   }),
 

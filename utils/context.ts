@@ -37,8 +37,8 @@ export function getRequestId(c: Context): string | undefined {
  * @returns バリデーション済みのリクエストボディ
  */
 export async function getValidatedBody<T>(
-  c: Context, 
-  validator: (data: unknown) => Promise<T> | T
+  c: Context,
+  validator: (data: unknown) => Promise<T> | T,
 ): Promise<T> {
   try {
     const body = await c.req.json();
@@ -46,12 +46,12 @@ export async function getValidatedBody<T>(
   } catch (error) {
     const _lang = getLang(c);
     throw new GameError(
-      "VALIDATION_ERROR", 
-      "リクエストデータが無効です", 
+      "VALIDATION_ERROR",
+      "リクエストデータが無効です",
       "ERROR", // ErrorSeverity型の明示的な値を指定
-      { 
-        errorMessage: error instanceof Error ? error.message : String(error) 
-      }
+      {
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
     );
   }
 }

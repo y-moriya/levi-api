@@ -38,7 +38,7 @@ export function initializeGameActions(gameId: string): void {
     divines: new Map<string, string>(),
     guards: new Map<string, string>(),
   };
-  
+
   actionCache.set(gameId, newActions);
   logger.info("Game actions initialized", { gameId });
 }
@@ -89,7 +89,7 @@ export function handleVoteAction(game: Game, playerId: string, targetId: string)
 
   // アクション状態に投票を記録
   actions.votes.set(playerId, targetId);
-  
+
   // キャッシュされた結果をリセット（新しい投票があったため）
   if (actions.cachedResults) {
     delete actions.cachedResults.voteDistribution;
@@ -141,7 +141,7 @@ export function handleAttackAction(game: Game, playerId: string, targetId: strin
 
   // アクション状態に記録
   actions.attacks.set(playerId, targetId);
-  
+
   // キャッシュされた結果をリセット
   if (actions.cachedResults) {
     delete actions.cachedResults.attackDistribution;
@@ -260,24 +260,24 @@ function assignRandomActions(game: Game): void {
   if (!actions) return;
 
   const alivePlayers = game.players.filter((p) => p.isAlive);
-  
+
   // 役職ごとのプレイヤーリストを一度だけ生成
   const rolePlayerMap = new Map<string, GamePlayer[]>();
-  
+
   if (game.currentPhase === "DAY_VOTE") {
     // 投票していないプレイヤーを抽出
     const nonVotingPlayers = alivePlayers.filter(
-      player => !actions.votes.has(player.playerId)
+      (player) => !actions.votes.has(player.playerId),
     );
-    
+
     if (nonVotingPlayers.length === 0) return;
-    
+
     // 投票可能なターゲットリストを一度だけ生成
-    const possibleTargets = alivePlayers.map(p => p.playerId);
-    
+    const possibleTargets = alivePlayers.map((p) => p.playerId);
+
     // バッチ処理で投票を割り当て
-    nonVotingPlayers.forEach(player => {
-      const validTargets = possibleTargets.filter(id => id !== player.playerId);
+    nonVotingPlayers.forEach((player) => {
+      const validTargets = possibleTargets.filter((id) => id !== player.playerId);
       if (validTargets.length > 0) {
         const targetId = validTargets[Math.floor(Math.random() * validTargets.length)];
         actions.votes.set(player.playerId, targetId);
@@ -288,39 +288,38 @@ function assignRandomActions(game: Game): void {
         });
       }
     });
-    
+
     // キャッシュされた結果をリセット
     if (actions.cachedResults) {
       delete actions.cachedResults.voteDistribution;
     }
-  } 
-  else if (game.currentPhase === "NIGHT") {
+  } else if (game.currentPhase === "NIGHT") {
     // 各役職のプレイヤーリストを作成
-    alivePlayers.forEach(player => {
+    alivePlayers.forEach((player) => {
       if (!rolePlayerMap.has(player.role || "")) {
         rolePlayerMap.set(player.role || "", []);
       }
       rolePlayerMap.get(player.role || "")?.push(player);
     });
-    
+
     // 人狼の襲撃処理
     const werewolves = rolePlayerMap.get("WEREWOLF") || [];
-    const nonWerewolves = alivePlayers.filter(p => p.role !== "WEREWOLF");
-    
+    const nonWerewolves = alivePlayers.filter((p) => p.role !== "WEREWOLF");
+
     if (werewolves.length > 0 && nonWerewolves.length > 0) {
       // アクションを実行していない人狼だけを対象に
       const nonActingWerewolves = werewolves.filter(
-        wolf => !actions.attacks.has(wolf.playerId)
+        (wolf) => !actions.attacks.has(wolf.playerId),
       );
-      
+
       if (nonActingWerewolves.length > 0) {
         // 全員で同じターゲットを選ぶ（連携）
         const targetId = nonWerewolves[Math.floor(Math.random() * nonWerewolves.length)].playerId;
-        
-        nonActingWerewolves.forEach(wolf => {
+
+        nonActingWerewolves.forEach((wolf) => {
           actions.attacks.set(wolf.playerId, targetId);
         });
-        
+
         logger.info("Random coordinated attack assigned", {
           gameId: game.id,
           werewolfCount: nonActingWerewolves.length,
@@ -328,13 +327,13 @@ function assignRandomActions(game: Game): void {
         });
       }
     }
-    
+
     // 占い師の処理
     const seers = rolePlayerMap.get("SEER") || [];
     if (seers.length > 0) {
-      seers.forEach(seer => {
+      seers.forEach((seer) => {
         if (!actions.divines.has(seer.playerId) && seer.isAlive) {
-          const possibleTargets = alivePlayers.filter(p => p.playerId !== seer.playerId);
+          const possibleTargets = alivePlayers.filter((p) => p.playerId !== seer.playerId);
           if (possibleTargets.length > 0) {
             const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
             actions.divines.set(seer.playerId, target.playerId);
@@ -342,13 +341,13 @@ function assignRandomActions(game: Game): void {
         }
       });
     }
-    
+
     // 狩人の処理
     const bodyguards = rolePlayerMap.get("BODYGUARD") || [];
     if (bodyguards.length > 0) {
-      bodyguards.forEach(guard => {
+      bodyguards.forEach((guard) => {
         if (!actions.guards.has(guard.playerId) && guard.isAlive) {
-          const possibleTargets = alivePlayers.filter(p => p.playerId !== guard.playerId);
+          const possibleTargets = alivePlayers.filter((p) => p.playerId !== guard.playerId);
           if (possibleTargets.length > 0) {
             const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
             actions.guards.set(guard.playerId, target.playerId);
@@ -356,7 +355,7 @@ function assignRandomActions(game: Game): void {
         }
       });
     }
-    
+
     // キャッシュされた結果をリセット
     if (actions.cachedResults) {
       delete actions.cachedResults.attackDistribution;
@@ -379,14 +378,13 @@ export function processPhaseActions(game: Game): void {
     const voteKey = `vote_${game.currentDay}` as const;
     game[voteKey] = game[voteKey] || new Map<string, string>();
     const votes = game[voteKey];
-    
+
     // 一度クリアしてからMapを更新
     votes.clear();
     actions.votes.forEach((targetId, playerId) => {
       votes.set(playerId, targetId);
     });
-  } 
-  else if (game.currentPhase === "NIGHT") {
+  } else if (game.currentPhase === "NIGHT") {
     // 夜アクションをゲーム状態に反映
     const attackKey = `attack_${game.currentDay}` as const;
     const divineKey = `divine_${game.currentDay}` as const;
@@ -399,7 +397,7 @@ export function processPhaseActions(game: Game): void {
     const attacks = game[attackKey];
     const divines = game[divineKey];
     const guards = game[guardKey];
-    
+
     // 一度クリアしてからMapを更新
     attacks.clear();
     divines.clear();
@@ -423,24 +421,26 @@ export function processPhaseActions(game: Game): void {
 export function getVoteDistribution(game: Game): Map<string, number> {
   const actions = actionCache.get(game.id);
   if (!actions) return new Map();
-  
+
   // キャッシュがあり、最近のものなら使用
-  if (actions.cachedResults?.voteDistribution && 
-      Date.now() - actions.cachedResults.timestamp < 5000) {
+  if (
+    actions.cachedResults?.voteDistribution &&
+    Date.now() - actions.cachedResults.timestamp < 5000
+  ) {
     return actions.cachedResults.voteDistribution;
   }
-  
+
   // 新しく計算
   const distribution = new Map<string, number>();
   actions.votes.forEach((targetId) => {
     distribution.set(targetId, (distribution.get(targetId) || 0) + 1);
   });
-  
+
   // 結果をキャッシュ
   actions.cachedResults = actions.cachedResults || { timestamp: Date.now() };
   actions.cachedResults.voteDistribution = distribution;
   actions.cachedResults.timestamp = Date.now();
-  
+
   return distribution;
 }
 
@@ -450,24 +450,26 @@ export function getVoteDistribution(game: Game): Map<string, number> {
 export function getAttackDistribution(game: Game): Map<string, number> {
   const actions = actionCache.get(game.id);
   if (!actions) return new Map();
-  
+
   // キャッシュがあり、最近のものなら使用
-  if (actions.cachedResults?.attackDistribution && 
-      Date.now() - actions.cachedResults.timestamp < 5000) {
+  if (
+    actions.cachedResults?.attackDistribution &&
+    Date.now() - actions.cachedResults.timestamp < 5000
+  ) {
     return actions.cachedResults.attackDistribution;
   }
-  
+
   // 新しく計算
   const distribution = new Map<string, number>();
   actions.attacks.forEach((targetId) => {
     distribution.set(targetId, (distribution.get(targetId) || 0) + 1);
   });
-  
+
   // 結果をキャッシュ
   actions.cachedResults = actions.cachedResults || { timestamp: Date.now() };
   actions.cachedResults.attackDistribution = distribution;
   actions.cachedResults.timestamp = Date.now();
-  
+
   return distribution;
 }
 
@@ -482,13 +484,13 @@ export function getGameActions(gameId: string) {
  * アクションを提出する（テスト互換性のためのラッパー関数）
  */
 export function submitAction(
-  game: Game, 
-  playerId: string, 
-  targetId: string, 
-  actionType: "vote" | "attack" | "divine" | "guard"
+  game: Game,
+  playerId: string,
+  targetId: string,
+  actionType: "vote" | "attack" | "divine" | "guard",
 ): ActionResult | DivineResult {
   logger.info("Action submitted", { gameId: game.id, playerId, targetId, actionType });
-  
+
   switch (actionType) {
     case "vote":
       return handleVoteAction(game, playerId, targetId);
