@@ -15,6 +15,16 @@ export const sendMessage = async (c: Context) => {
   try {
     const data = await c.req.json() as SendMessageRequest;
 
+    // メッセージの内容チェック
+    if (!data.content || data.content.trim() === "") {
+      throw new GameError(
+        "INVALID_MESSAGE",
+        "メッセージは空にできません",
+        "WARN",
+        { gameId, userId }
+      );
+    }
+
     // ゲームの存在確認
     const game = gameModel.getGameById(gameId);
     if (!game) {
@@ -47,6 +57,39 @@ export const sendMessage = async (c: Context) => {
         { gameId, userId, channel: data.channel },
       );
     }
+    
+    // 霊界チャンネルへの投稿は死亡したプレイヤーのみ許可
+    if (data.channel === "SPIRIT" && player.isAlive) {
+      logger.warn("Spirit channel access denied to living player", { gameId, userId, channel: data.channel });
+      throw new GameError(
+        "CHANNEL_ACCESS_DENIED",
+        "霊界チャンネルには死亡したプレイヤーのみがアクセスできます",
+        "WARN",
+        { gameId, userId, channel: data.channel },
+      );
+    }
+
+    // 死亡したプレイヤーは全体チャットに投稿できない
+    if (data.channel === "GLOBAL" && !player.isAlive) {
+      logger.warn("Global channel access denied to dead player", { gameId, userId, channel: data.channel });
+      throw new GameError(
+        "CHANNEL_ACCESS_DENIED",
+        "死亡したプレイヤーは全体チャットにメッセージを送信できません",
+        "WARN",
+        { gameId, userId, channel: data.channel },
+      );
+    }
+
+    // 夜間は全体チャットに投稿できない（人狼以外）
+    if (game.currentPhase === "NIGHT" && data.channel === "GLOBAL" && player.role !== "WEREWOLF") {
+      logger.warn("Night phase global chat denied", { gameId, userId, channel: data.channel, phase: game.currentPhase });
+      throw new GameError(
+        "PHASE_CHAT_RESTRICTED",
+        "夜間は全体チャットに参加できません",
+        "WARN",
+        { gameId, userId, channel: data.channel, phase: game.currentPhase },
+      );
+    }
 
     // メッセージの保存
     const message = {
@@ -61,7 +104,7 @@ export const sendMessage = async (c: Context) => {
     };
 
     chatService.addMessage(message);
-    logger.info("Message sent", { gameId, channel: data.channel, userId });
+    logger.info("Chat message sent", { gameId, channel: data.channel, userId });
     return c.json({ success: true });
   } catch (error) {
     // GameErrorはそのまま再スロー
@@ -111,15 +154,22 @@ export const getMessages = (c: Context) => {
       );
     }
 
-    // チャンネルのアクセス権確認（人狼チャンネルは人狼のみ閲覧可能）
+    // チャンネルのアクセス権確認
     if (channel === "WEREWOLF" && player.role !== "WEREWOLF") {
       logger.warn("Channel access denied", { gameId, userId, channel });
       // エラーをスローせず、空の配列を返す
       return c.json({ messages: [] });
     }
+    
+    // 霊界チャンネルのアクセス権確認
+    if (channel === "SPIRIT" && player.isAlive) {
+      logger.warn("Spirit channel access denied to living player", { gameId, userId, channel });
+      // エラーをスローせず、空の配列を返す
+      return c.json({ messages: [] });
+    }
 
     // メッセージの取得
-    const messages = chatService.getGameMessages(gameId, channel as "GLOBAL" | "WEREWOLF", userId, game);
+    const messages = chatService.getGameMessages(gameId, channel as "GLOBAL" | "WEREWOLF" | "GENERAL" | "SPIRIT", userId, game);
     logger.info("Messages retrieved", { gameId, channel, count: messages.length });
     return c.json({ messages });
   } catch (error) {

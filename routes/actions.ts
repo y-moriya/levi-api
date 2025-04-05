@@ -1,5 +1,5 @@
 import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { attack, divine, guard, vote } from "../controllers/actions.ts";
+import { attack, divine, guard, medium, vote } from "../controllers/actions.ts";
 import { authMiddleware } from "../middleware/auth.ts";
 import { createValidationMiddleware } from "../middleware/validation.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
@@ -27,5 +27,8 @@ router.post("/:gameId/divine", actionValidation, divine);
 
 // 護衛
 router.post("/:gameId/guard", actionValidation, guard);
+
+// 霊能
+router.post("/:gameId/medium", actionValidation, medium);
 
 export default router;

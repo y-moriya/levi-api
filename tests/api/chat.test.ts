@@ -225,3 +225,235 @@ Deno.test({
     await cleanupTests();
   },
 });
+
+Deno.test({
+  name: "チャット - 霊界チャンネルのアクセス制御",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await setupTests();
+    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+
+    // ゲームの作成
+    const createResponse = await apiRequest("POST", "/games", {
+      name: "Spirit Chat Test Game",
+      maxPlayers: 5,
+    }, ownerAuth.token);
+    const game = await consumeResponse<{ id: string }>(createResponse);
+    gameId = game.id;
+
+    // 全プレイヤーの参加
+    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
+    for (const player of players) {
+      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
+      await consumeResponse(joinResponse);
+    }
+
+    // ゲーム開始
+    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
+    await consumeResponse(startResponse);
+
+    // 一部のプレイヤーを死亡状態に設定
+    const gameInstance = gameModel.getGameById(gameId)!;
+    const deadPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
+    const alivePlayer = gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!;
+    
+    deadPlayer.isAlive = false;
+    deadPlayer.deathCause = "WEREWOLF_ATTACK";
+    
+    // 死亡プレイヤーからの霊界メッセージ送信（成功するはず）
+    const deadPlayerSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "SPIRIT",
+      content: "Message from the afterlife",
+    }, seerAuth.token);
+    const deadPlayerSendResult = await consumeResponse<{ success: boolean }>(deadPlayerSendResponse);
+    assertEquals(deadPlayerSendResult.success, true);
+
+    // 生存プレイヤーからの霊界メッセージ送信（失敗するはず）
+    const alivePlayerSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "SPIRIT",
+      content: "Try to send to spirit realm",
+    }, villagerAuth.token);
+
+    // エラー応答のステータスコードを検証（403 Forbiddenが返されることを期待）
+    assertEquals(alivePlayerSendResponse.status, 403, "Expected error response with status 403");
+
+    // 死亡プレイヤーのメッセージ取得（メッセージが見えるはず）
+    const deadPlayerGetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/SPIRIT`,
+      undefined,
+      seerAuth.token,
+    );
+    const deadPlayerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayerGetResponse);
+    assertEquals(deadPlayerGetResult.messages.length, 1);
+    assertEquals(deadPlayerGetResult.messages[0].content, "Message from the afterlife");
+
+    // 生存プレイヤーのメッセージ取得（空配列が返るはず）
+    const alivePlayerGetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/SPIRIT`,
+      undefined,
+      villagerAuth.token,
+    );
+    const alivePlayerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(alivePlayerGetResponse);
+    assertEquals(alivePlayerGetResult.messages.length, 0);
+
+    await cleanupTests();
+  },
+});
+
+Deno.test({
+  name: "チャット - 複数の死亡プレイヤーの霊界チャットでの会話",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await setupTests();
+    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+
+    // ゲームの作成 - リクエストボディを明示的に変数に格納
+    const gameData = {
+      name: "Multiple Dead Test Game", // 短くシンプルな名前に変更
+      maxPlayers: 5,
+    };
+    console.log("ゲーム作成リクエスト:", gameData); // デバッグ用ログ追加
+
+    const createResponse = await apiRequest("POST", "/games", gameData, ownerAuth.token);
+    const game = await consumeResponse<{ id: string }>(createResponse);
+    gameId = game.id;
+
+    // 全プレイヤーの参加
+    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
+    for (const player of players) {
+      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
+      await consumeResponse(joinResponse);
+    }
+
+    // ゲーム開始
+    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
+    await consumeResponse(startResponse);
+
+    // 複数のプレイヤーを死亡状態に設定
+    const gameInstance = gameModel.getGameById(gameId)!;
+    const deadPlayer1 = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
+    const deadPlayer2 = gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!;
+    
+    deadPlayer1.isAlive = false;
+    deadPlayer1.deathCause = "WEREWOLF_ATTACK";
+    
+    deadPlayer2.isAlive = false;
+    deadPlayer2.deathCause = "EXECUTION";
+    
+    // 1人目の死亡プレイヤーが霊界チャットにメッセージを送信
+    const deadPlayer1SendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "SPIRIT",
+      content: "Hello from the other side",
+    }, seerAuth.token);
+    await consumeResponse<{ success: boolean }>(deadPlayer1SendResponse);
+
+    // 2人目の死亡プレイヤーが霊界チャットにメッセージを送信
+    const deadPlayer2SendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "SPIRIT",
+      content: "I can hear you!",
+    }, bodyguardAuth.token);
+    await consumeResponse<{ success: boolean }>(deadPlayer2SendResponse);
+
+    // 1人目の死亡プレイヤーがメッセージを取得（両方のメッセージが見えるはず）
+    const deadPlayer1GetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/SPIRIT`,
+      undefined,
+      seerAuth.token,
+    );
+    const deadPlayer1GetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayer1GetResponse);
+    assertEquals(deadPlayer1GetResult.messages.length, 2);
+    assertEquals(deadPlayer1GetResult.messages[0].content, "Hello from the other side");
+    assertEquals(deadPlayer1GetResult.messages[1].content, "I can hear you!");
+
+    // 2人目の死亡プレイヤーがメッセージを取得（両方のメッセージが見えるはず）
+    const deadPlayer2GetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/SPIRIT`,
+      undefined,
+      bodyguardAuth.token,
+    );
+    const deadPlayer2GetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayer2GetResponse);
+    assertEquals(deadPlayer2GetResult.messages.length, 2);
+    assertEquals(deadPlayer2GetResult.messages[0].content, "Hello from the other side");
+    assertEquals(deadPlayer2GetResult.messages[1].content, "I can hear you!");
+
+    await cleanupTests();
+  },
+});
+
+Deno.test({
+  name: "チャット - 死亡プレイヤーの霊界チャットと全体チャットへのアクセス",
+  sanitizeOps: false,
+  sanitizeResources: false,
+  async fn() {
+    await setupTests();
+    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+
+    // ゲームの作成
+    const createResponse = await apiRequest("POST", "/games", {
+      name: "Dead Player Access Test",
+      maxPlayers: 5,
+    }, ownerAuth.token);
+    const game = await consumeResponse<{ id: string }>(createResponse);
+    gameId = game.id;
+
+    // 全プレイヤーの参加
+    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
+    for (const player of players) {
+      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
+      await consumeResponse(joinResponse);
+    }
+
+    // ゲーム開始
+    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
+    await consumeResponse(startResponse);
+
+    // プレイヤーが生きている間に全体チャットにメッセージを送信
+    const aliveGlobalSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "GLOBAL",
+      content: "I'm still alive",
+    }, seerAuth.token);
+    await consumeResponse<{ success: boolean }>(aliveGlobalSendResponse);
+
+    // プレイヤーを死亡状態に設定
+    const gameInstance = gameModel.getGameById(gameId)!;
+    const deadPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
+    deadPlayer.isAlive = false;
+    deadPlayer.deathCause = "WEREWOLF_ATTACK";
+    
+    // 死亡プレイヤーが全体チャットにメッセージを送信しようとする（失敗するはず）
+    const deadGlobalSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "GLOBAL",
+      content: "Can you hear me?",
+    }, seerAuth.token);
+    
+    // エラー応答のステータスコードを検証
+    assertEquals(deadGlobalSendResponse.status, 403, "Expected error response with status 403");
+
+    // 死亡プレイヤーが霊界チャットにメッセージを送信（成功するはず）
+    const deadSpiritSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
+      channel: "SPIRIT",
+      content: "Hello from spirit realm",
+    }, seerAuth.token);
+    const deadSpiritSendResult = await consumeResponse<{ success: boolean }>(deadSpiritSendResponse);
+    assertEquals(deadSpiritSendResult.success, true);
+
+    // 死亡プレイヤーは全体チャットのメッセージを読むことができる（過去のメッセージが見えるはず）
+    const deadGlobalGetResponse = await apiRequest(
+      "GET",
+      `/chat/${gameId}/messages/GLOBAL`,
+      undefined,
+      seerAuth.token,
+    );
+    const deadGlobalGetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadGlobalGetResponse);
+    assertEquals(deadGlobalGetResult.messages.length, 1);
+    assertEquals(deadGlobalGetResult.messages[0].content, "I'm still alive");
+
+    await cleanupTests();
+  },
+});

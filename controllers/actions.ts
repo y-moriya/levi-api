@@ -322,3 +322,95 @@ export const guard = async (c: Context) => {
     throw error;
   }
 };
+
+export const medium = async (c: Context) => {
+  const gameId = c.req.param("gameId");
+  const userId = c.get("userId");
+  const lang = c.get("lang") as SupportedLanguage;
+
+  try {
+    const data = await c.req.json();
+    logger.info("Medium request body", {
+      gameId,
+      playerId: userId,
+      body: data,
+    });
+
+    if (!data.targetPlayerId) {
+      throw new GameError(
+        "INVALID_REQUEST",
+        getMessage("INVALID_REQUEST", lang),
+        "WARN",
+        { gameId, playerId: userId },
+      );
+    }
+
+    const targetPlayerId = data.targetPlayerId;
+
+    const game = gameModel.getGameById(gameId);
+    if (!game) {
+      throw new GameError(
+        "GAME_NOT_FOUND",
+        getMessage("GAME_NOT_FOUND", lang),
+        "WARN",
+        { gameId },
+      );
+    }
+
+    logger.info("Medium request received", {
+      gameId,
+      playerId: userId,
+      targetId: targetPlayerId,
+      currentPhase: game.currentPhase,
+      currentDay: game.currentDay,
+      gameActions: JSON.stringify(gameActions.getGameActions(gameId)),
+    });
+
+    const result = gameActions.handleMediumAction(game, userId, targetPlayerId);
+    logger.info("Medium action result", {
+      gameId,
+      playerId: userId,
+      result,
+    });
+
+    if (!result.success) {
+      if (result.message.includes("霊能者以外は霊能を使えません")) {
+        throw new GameError(
+          "NOT_MEDIUM",
+          "霊能者以外は霊能を使えません",
+          "WARN",
+          { gameId, playerId: userId },
+        );
+      }
+      if (result.message.includes("昼または夜のフェーズでしか霊能は使えません")) {
+        throw new GameError(
+          "INVALID_PHASE",
+          getMessage("INVALID_PHASE", lang),
+          "WARN",
+          { gameId, currentPhase: game.currentPhase, playerId: userId },
+        );
+      }
+      throw new GameError(
+        "MEDIUM_ERROR",
+        result.message,
+        "WARN",
+        { gameId, playerId: userId, targetPlayerId },
+      );
+    }
+    return c.json(result, 200);
+  } catch (error: unknown) {
+    if (!(error instanceof GameError)) {
+      logger.error("Medium action failed", error as Error, {
+        gameId,
+        playerId: userId,
+      });
+      throw new GameError(
+        "MEDIUM_ERROR",
+        "霊能の使用中にエラーが発生しました",
+        "ERROR",
+        { gameId, playerId: userId },
+      );
+    }
+    throw error;
+  }
+};

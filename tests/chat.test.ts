@@ -448,3 +448,239 @@ Deno.test({
     cleanupTest();
   }),
 });
+
+// 霊界チャットのテスト
+Deno.test({
+  name: "sendMessage - 死亡したプレイヤーは霊界チャットにメッセージを送信できる",
+  fn: withQuietLogs(async () => {
+    await setupChatTest();
+
+    // プレイヤーを死亡状態に設定
+    testGame.players[3].isAlive = false;
+    testGame.players[4].isAlive = false;
+
+    // 死亡したプレイヤーが霊界チャットにメッセージを送信
+    const message = await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "霊界からのメッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+
+    assertEquals(message.channel, "SPIRIT");
+    assertEquals(message.content, "霊界からのメッセージ");
+
+    // もう一人の死亡プレイヤーが霊界チャットにメッセージを送信
+    const message2 = await chatService.sendMessage(
+      testGame.id,
+      testUsers[4].id, // 死亡したプレイヤー
+      "霊界からの2つ目のメッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+
+    assertEquals(message2.channel, "SPIRIT");
+    assertEquals(message2.content, "霊界からの2つ目のメッセージ");
+
+    // 霊界チャットメッセージの取得テスト
+    const spiritMessages = await chatService.getMessages(
+      testGame.id,
+      "SPIRIT",
+      testUsers[3].id,
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+    assertEquals(spiritMessages.length, 2);
+    assertEquals(spiritMessages[0].content, "霊界からのメッセージ");
+    assertEquals(spiritMessages[1].content, "霊界からの2つ目のメッセージ");
+
+    cleanupTest();
+  }),
+});
+
+Deno.test({
+  name: "sendMessage - 生存プレイヤーは霊界チャットにメッセージを送信できない",
+  fn: withQuietLogs(async () => {
+    await setupChatTest();
+
+    // プレイヤーを死亡状態に設定
+    testGame.players[3].isAlive = false;
+    
+    // 生存プレイヤーが霊界チャットにメッセージを送信しようとするとエラー
+    try {
+      await chatService.sendMessage(
+        testGame.id,
+        testUsers[0].id, // 生存プレイヤー
+        "不正なメッセージ",
+        "SPIRIT",
+        "テストユーザー",
+        testGame,
+        false, // 権限チェックを有効にするためfalseに設定
+      );
+      throw new Error("エラーが発生しませんでした");
+    } catch (error) {
+      if (error instanceof GameError) {
+        assertEquals(error.message, "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
+      } else {
+        throw error; // GameError以外のエラーは再スロー
+      }
+    }
+
+    cleanupTest();
+  }),
+});
+
+Deno.test({
+  name: "getMessages - 生存プレイヤーは霊界チャンネルのメッセージを取得できない",
+  fn: withQuietLogs(async () => {
+    await setupChatTest();
+
+    // プレイヤーを死亡状態に設定
+    testGame.players[3].isAlive = false;
+    
+    // 死亡プレイヤーが霊界チャットにメッセージを送信
+    await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "霊界からのメッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+
+    // 生存プレイヤーは霊界チャットを取得できない
+    try {
+      await chatService.getMessages(testGame.id, "SPIRIT", testUsers[0].id, testGame, false);
+      throw new Error("エラーが発生しませんでした");
+    } catch (error) {
+      if (error instanceof GameError) {
+        assertEquals(error.message, "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
+      } else {
+        throw error; // GameError以外のエラーは再スロー
+      }
+    }
+
+    cleanupTest();
+  }),
+});
+
+Deno.test({
+  name: "getMessages - 死亡したプレイヤーは霊界チャンネルのメッセージを取得できる",
+  fn: withQuietLogs(async () => {
+    await setupChatTest();
+
+    // 複数のプレイヤーを死亡状態に設定
+    testGame.players[2].isAlive = false;
+    testGame.players[3].isAlive = false;
+    
+    // 死亡プレイヤーが霊界チャットにメッセージを送信
+    await chatService.sendMessage(
+      testGame.id,
+      testUsers[2].id, // 死亡したプレイヤー
+      "霊界からのメッセージ1",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+    
+    await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "霊界からのメッセージ2",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+
+    // 死亡プレイヤーAは霊界チャットを取得できる
+    const messagesForPlayerA = await chatService.getMessages(
+      testGame.id, 
+      "SPIRIT", 
+      testUsers[2].id, 
+      testGame, 
+      true
+    );
+    assertEquals(messagesForPlayerA.length, 2);
+    assertEquals(messagesForPlayerA[0].content, "霊界からのメッセージ1");
+    assertEquals(messagesForPlayerA[1].content, "霊界からのメッセージ2");
+    
+    // 死亡プレイヤーBも霊界チャットを取得できる
+    const messagesForPlayerB = await chatService.getMessages(
+      testGame.id, 
+      "SPIRIT", 
+      testUsers[3].id, 
+      testGame, 
+      true
+    );
+    assertEquals(messagesForPlayerB.length, 2);
+    assertEquals(messagesForPlayerB[0].content, "霊界からのメッセージ1");
+    assertEquals(messagesForPlayerB[1].content, "霊界からのメッセージ2");
+
+    cleanupTest();
+  }),
+});
+
+Deno.test({
+  name: "sendMessage - 死亡したプレイヤーはゲームフェーズに関係なく霊界チャットにメッセージを送信できる",
+  fn: withQuietLogs(async () => {
+    await setupChatTest();
+
+    // プレイヤーを死亡状態に設定
+    testGame.players[3].isAlive = false;
+    
+    // 昼フェーズでのテスト
+    testGame.currentPhase = "DAY_DISCUSSION";
+    const dayMessage = await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "昼間の霊界メッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+    
+    assertEquals(dayMessage.channel, "SPIRIT");
+    assertEquals(dayMessage.content, "昼間の霊界メッセージ");
+    
+    // 夜フェーズでのテスト
+    testGame.currentPhase = "NIGHT";
+    const nightMessage = await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "夜間の霊界メッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+    
+    assertEquals(nightMessage.channel, "SPIRIT");
+    assertEquals(nightMessage.content, "夜間の霊界メッセージ");
+    
+    // 投票フェーズでのテスト
+    testGame.currentPhase = "DAY_VOTE";
+    const voteMessage = await chatService.sendMessage(
+      testGame.id,
+      testUsers[3].id, // 死亡したプレイヤー
+      "投票中の霊界メッセージ",
+      "SPIRIT",
+      "テストユーザー",
+      testGame,
+      true, // テストモードをtrueに設定
+    );
+    
+    assertEquals(voteMessage.channel, "SPIRIT");
+    assertEquals(voteMessage.content, "投票中の霊界メッセージ");
+
+    cleanupTest();
+  }),
+});

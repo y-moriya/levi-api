@@ -27,6 +27,7 @@ export interface Game {
   [key: `attack_${number}`]: Map<string, string>;
   [key: `divine_${number}`]: Map<string, string>;
   [key: `guard_${number}`]: Map<string, string>;
+  [key: `medium_${number}`]: Map<string, string>;
 }
 
 export type GameStatus = "WAITING" | "IN_PROGRESS" | "FINISHED";
@@ -36,7 +37,7 @@ export type Role = "VILLAGER" | "WEREWOLF" | "SEER" | "BODYGUARD" | "MEDIUM";
 export type DeathCause = "WEREWOLF_ATTACK" | "EXECUTION" | "NONE";
 
 // アクションの種類
-export type ActionType = "VOTE" | "ATTACK" | "DIVINE" | "GUARD";
+export type ActionType = "VOTE" | "ATTACK" | "DIVINE" | "GUARD" | "MEDIUM";
 
 // ベースアクション
 export interface GameAction {
@@ -69,6 +70,11 @@ export interface GuardAction extends GameAction {
   type: "GUARD";
 }
 
+// 霊能アクション
+export interface MediumAction extends GameAction {
+  type: "MEDIUM";
+}
+
 // アクション結果のベース
 export interface ActionResult {
   success: boolean;
@@ -81,12 +87,19 @@ export interface DivineResult extends ActionResult {
   isWerewolf: boolean;
 }
 
+export interface MediumResult extends ActionResult {
+  targetPlayerId: string;
+  targetUsername: string;
+  isWerewolf: boolean;
+}
+
 // フェーズごとのアクション状態
 export interface PhaseActions {
   votes: Map<string, string>; // playerId -> targetId
   attacks: Map<string, string>;
   divinations: Map<string, string>;
   guards: Map<string, string>;
+  mediums: Map<string, string>; // 霊能者のアクション
 }
 
 export interface GamePlayer {

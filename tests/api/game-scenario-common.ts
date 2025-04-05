@@ -20,6 +20,7 @@ export interface TestUsers {
   seerAuth: AuthenticatedUser;
   bodyguardAuth: AuthenticatedUser;
   villagerAuth: AuthenticatedUser;
+  mediumAuth: AuthenticatedUser; // 霊能者を追加
 }
 
 export async function setupScenarioTest(): Promise<TestUsers> {
@@ -36,7 +37,7 @@ export async function setupScenarioTest(): Promise<TestUsers> {
     }
 
     // Create authenticated users with specific roles
-    const [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth] = await Promise.all([
+    const [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth, mediumAuth] = await Promise.all([
       createAuthenticatedUser({
         username: "owner",
         email: `owner${Date.now()}@example.com`,
@@ -62,9 +63,14 @@ export async function setupScenarioTest(): Promise<TestUsers> {
         email: `villager${Date.now()}@example.com`,
         password: "password123",
       }),
+      createAuthenticatedUser({
+        username: "medium",
+        email: `medium${Date.now()}@example.com`,
+        password: "password123",
+      }),
     ]);
 
-    return { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth };
+    return { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth, mediumAuth };
   } catch (error) {
     console.error("Failed to setup scenario test:", error);
     throw error;

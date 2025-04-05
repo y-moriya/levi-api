@@ -6,7 +6,7 @@ import { advancePhase } from "./game-logic.ts";
 // アクション用のユーティリティ関数
 export function getActionMap(
   game: Game,
-  key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}`,
+  key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}` | `medium_${number}`,
 ): Map<string, string> {
   game[key] = game[key] || new Map<string, string>();
   return game[key];
@@ -203,54 +203,96 @@ function handlePendingNightActions(game: Game): void {
   const attackKey = `attack_${game.currentDay}` as const;
   const divineKey = `divine_${game.currentDay}` as const;
   const guardKey = `guard_${game.currentDay}` as const;
+  const mediumKey = `medium_${game.currentDay}` as const;
 
   // アクション済みのプレイヤーを収集
   const actedPlayers = new Set([
     ...getActionMap(game, attackKey).keys(),
     ...getActionMap(game, divineKey).keys(),
     ...getActionMap(game, guardKey).keys(),
+    ...getActionMap(game, mediumKey).keys(),
   ]);
+
+  // 前日に処刑されたプレイヤーを探す（霊能者用）
+  const executedPlayers = game.players.filter(
+    (p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1
+  );
 
   // 生存していて特殊役職を持つプレイヤーを処理
   game.players
     .filter((p) => p.isAlive && !actedPlayers.has(p.playerId))
     .forEach((player) => {
-      // 投票可能な対象（自分以外の生存者）を取得
-      const possibleTargets = game.players.filter(
-        (t) => t.isAlive && t.playerId !== player.playerId,
-      );
+      // 役職に応じた処理
+      switch (player.role) {
+        case "WEREWOLF": {
+          // 投票可能な対象（自分以外の生存者で人狼以外）を取得
+          const possibleTargets = game.players.filter(
+            (t) => t.isAlive && t.playerId !== player.playerId && t.role !== "WEREWOLF"
+          );
 
-      if (possibleTargets.length > 0) {
-        // ランダムに対象を選択
-        const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
-
-        switch (player.role) {
-          case "WEREWOLF":
+          if (possibleTargets.length > 0) {
+            // ランダムに対象を選択
+            const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
             getActionMap(game, attackKey).set(player.playerId, target.playerId);
             logger.info("Random attack assigned", {
               gameId: game.id,
               playerId: player.playerId,
               targetId: target.playerId,
             });
-            break;
+          }
+          break;
+        }
 
-          case "SEER":
+        case "SEER": {
+          // 投票可能な対象（自分以外の生存者）を取得
+          const possibleTargets = game.players.filter(
+            (t) => t.isAlive && t.playerId !== player.playerId
+          );
+
+          if (possibleTargets.length > 0) {
+            // ランダムに対象を選択
+            const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
             getActionMap(game, divineKey).set(player.playerId, target.playerId);
             logger.info("Random divine assigned", {
               gameId: game.id,
               playerId: player.playerId,
               targetId: target.playerId,
             });
-            break;
+          }
+          break;
+        }
 
-          case "BODYGUARD":
+        case "BODYGUARD": {
+          // 投票可能な対象（自分以外の生存者）を取得
+          const possibleTargets = game.players.filter(
+            (t) => t.isAlive && t.playerId !== player.playerId
+          );
+
+          if (possibleTargets.length > 0) {
+            // ランダムに対象を選択
+            const target = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
             getActionMap(game, guardKey).set(player.playerId, target.playerId);
             logger.info("Random guard assigned", {
               gameId: game.id,
               playerId: player.playerId,
               targetId: target.playerId,
             });
-            break;
+          }
+          break;
+        }
+        
+        case "MEDIUM": {
+          // 前日処刑者がいれば自動的に対象にする
+          if (executedPlayers.length > 0) {
+            const target = executedPlayers[0]; // 処刑者は通常1人
+            getActionMap(game, mediumKey).set(player.playerId, target.playerId);
+            logger.info("Random medium action assigned", {
+              gameId: game.id,
+              playerId: player.playerId,
+              targetId: target.playerId,
+            });
+          }
+          break;
         }
       }
     });

@@ -11,7 +11,7 @@ chat.use("/*", authMiddleware);
 
 // チャットメッセージのバリデーションスキーマ
 const messageSchema = z.object({
-  channel: z.enum(["GLOBAL", "WEREWOLF"]),
+  channel: z.enum(["GLOBAL", "WEREWOLF", "GENERAL", "SPIRIT"]),
   content: z.string().min(1).max(500),
 });
 

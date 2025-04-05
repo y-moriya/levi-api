@@ -28,15 +28,23 @@ export function getGameMessages(
 ): ChatMessage[] {
   const messages = gameMessages.get(gameId) || [];
 
-  // プレイヤーが人狼かどうかを確認
+  // プレイヤーの情報を取得
   const player = game.players.find((p) => p.playerId === playerId);
   const isWerewolf = player?.role === "WEREWOLF";
+  const isAlive = player?.isAlive ?? true;
 
-  // 人狼チャンネルのメッセージは人狼のみが見れる
+  // チャンネルによるメッセージのフィルタリング
   return messages.filter((msg) => {
+    // 人狼チャンネルは人狼のみ閲覧可能
     if (msg.channel === "WEREWOLF" && !isWerewolf) {
       return false;
     }
+    
+    // 霊界チャンネルは死亡したプレイヤーのみ閲覧可能
+    if (msg.channel === "SPIRIT" && isAlive) {
+      return false;
+    }
+    
     return msg.channel === channel;
   });
 }
@@ -61,7 +69,7 @@ export function sendMessage(
   }
 
   // 有効なチャンネルかどうかをチェック
-  const validChannels = ["GLOBAL", "WEREWOLF", "GENERAL"];
+  const validChannels = ["GLOBAL", "WEREWOLF", "GENERAL", "SPIRIT"];
   if (!validChannels.includes(channel)) {
     throw new GameError("INVALID_CHANNEL", `無効なチャンネルです: ${channel}`);
   }
@@ -91,6 +99,11 @@ export function sendMessage(
     // 人狼チャンネルへのアクセス権限チェック
     if (channel === "WEREWOLF" && player.role !== "WEREWOLF") {
       throw new GameError("CHANNEL_ACCESS_DENIED", "人狼チャンネルには人狼のみがアクセスできます");
+    }
+    
+    // 霊界チャンネルへのアクセス権限チェック
+    if (channel === "SPIRIT" && player.isAlive) {
+      throw new GameError("CHANNEL_ACCESS_DENIED", "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
     }
 
     // プレイヤーの生存状態チェック
@@ -138,7 +151,7 @@ export function getMessages(
   }
 
   // 有効なチャンネルかどうかをチェック
-  const validChannels = ["GLOBAL", "WEREWOLF", "GENERAL"];
+  const validChannels = ["GLOBAL", "WEREWOLF", "GENERAL", "SPIRIT"];
   if (!validChannels.includes(channel)) {
     throw new GameError("INVALID_CHANNEL", `無効なチャンネルです: ${channel}`);
   }
@@ -155,10 +168,17 @@ export function getMessages(
   const messages = gameMessages.get(gameId) || [];
 
   // 権限チェック（テストモード以外）
-  if (!isTestMode && game && playerId && channel === "WEREWOLF") {
+  if (!isTestMode && game && playerId) {
     const player = game.players.find((p) => p.playerId === playerId);
-    if (!player || player.role !== "WEREWOLF") {
+    
+    // 人狼チャンネルの権限チェック
+    if (channel === "WEREWOLF" && (!player || player.role !== "WEREWOLF")) {
       throw new GameError("CHANNEL_ACCESS_DENIED", "人狼チャンネルには人狼のみがアクセスできます");
+    }
+    
+    // 霊界チャンネルの権限チェック
+    if (channel === "SPIRIT" && (!player || player.isAlive)) {
+      throw new GameError("CHANNEL_ACCESS_DENIED", "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
     }
   }
 

@@ -32,6 +32,7 @@ export type ErrorCode =
   | "NOT_WEREWOLF"
   | "NOT_SEER"
   | "NOT_BODYGUARD"
+  | "NOT_MEDIUM"
   | "NOT_GAME_OWNER"
   | "OWNER_NOT_FOUND"
   | "JOIN_ERROR"
@@ -50,6 +51,7 @@ export type ErrorCode =
   | "ATTACK_ERROR"
   | "DIVINE_ERROR"
   | "GUARD_ERROR"
+  | "MEDIUM_ERROR"
   // システムエラー
   | "INTERNAL_SERVER_ERROR"
   | "NOT_FOUND";
@@ -76,6 +78,7 @@ export const errorCategoryMap: Record<ErrorCode, ErrorCategory> = {
   NOT_WEREWOLF: ErrorCategory.GAME,
   NOT_SEER: ErrorCategory.GAME,
   NOT_BODYGUARD: ErrorCategory.GAME,
+  NOT_MEDIUM: ErrorCategory.GAME,
   NOT_GAME_OWNER: ErrorCategory.GAME,
   OWNER_NOT_FOUND: ErrorCategory.GAME,
   JOIN_ERROR: ErrorCategory.GAME,
@@ -96,6 +99,7 @@ export const errorCategoryMap: Record<ErrorCode, ErrorCategory> = {
   ATTACK_ERROR: ErrorCategory.ACTION,
   DIVINE_ERROR: ErrorCategory.ACTION,
   GUARD_ERROR: ErrorCategory.ACTION,
+  MEDIUM_ERROR: ErrorCategory.ACTION,
 
   // システムエラー
   INTERNAL_SERVER_ERROR: ErrorCategory.SYSTEM,
@@ -124,6 +128,7 @@ export const defaultErrorSeverityMap: Record<ErrorCode, ErrorSeverity> = {
   NOT_WEREWOLF: "WARN",
   NOT_SEER: "WARN",
   NOT_BODYGUARD: "WARN",
+  NOT_MEDIUM: "WARN",
   NOT_GAME_OWNER: "WARN",
   OWNER_NOT_FOUND: "WARN",
   JOIN_ERROR: "WARN",
@@ -144,6 +149,7 @@ export const defaultErrorSeverityMap: Record<ErrorCode, ErrorSeverity> = {
   ATTACK_ERROR: "WARN",
   DIVINE_ERROR: "WARN",
   GUARD_ERROR: "WARN",
+  MEDIUM_ERROR: "WARN",
 
   // システムエラー
   INTERNAL_SERVER_ERROR: "ERROR",
@@ -175,6 +181,7 @@ export interface ErrorContext {
   playerId?: string; // プレイヤーID
   targetPlayerId?: string; // 対象プレイヤーID
   currentPhase?: string; // 現在のゲームフェーズ
+  phase?: string; // ゲームフェーズ (別名)
 
   // チャット関連
   channel?: string; // チャットチャンネル
@@ -225,11 +232,16 @@ export class GameError extends Error {
 
       // 権限関連
       case "PERMISSION_DENIED":
+      case "CHANNEL_ACCESS_DENIED":
+      case "DEAD_PLAYER_CHAT":
+      case "PHASE_CHAT_RESTRICTED":
         return 403;
 
       // バリデーション関連
       case "VALIDATION_ERROR":
       case "INVALID_REQUEST":
+      case "INVALID_CHANNEL":
+      case "INVALID_MESSAGE":
         return 400;
 
       // リソース関連
@@ -248,18 +260,19 @@ export class GameError extends Error {
       case "NOT_WEREWOLF":
       case "NOT_SEER":
       case "NOT_BODYGUARD":
+      case "NOT_MEDIUM":
       case "NOT_GAME_OWNER":
       case "OWNER_NOT_FOUND":
       case "JOIN_ERROR":
       case "LEAVE_ERROR":
       case "START_ERROR":
       case "GAME_DELETED":
-      case "CHANNEL_ACCESS_DENIED":
-      case "INVALID_CHANNEL":
+      case "PLAYER_NOT_IN_GAME":
       case "VOTE_ERROR":
       case "ATTACK_ERROR":
       case "DIVINE_ERROR":
       case "GUARD_ERROR":
+      case "MEDIUM_ERROR":
         return 400;
 
       // システムエラー

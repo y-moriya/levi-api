@@ -1,6 +1,6 @@
 import { Role } from "./game.ts";
 
-export type ChatChannel = "GLOBAL" | "WEREWOLF" | "GENERAL";
+export type ChatChannel = "GLOBAL" | "WEREWOLF" | "GENERAL" | "SPIRIT";
 
 export interface ChatMessage {
   id: string;
