@@ -34,7 +34,7 @@ async function setupTest() {
 
 // テストの後処理用の関数
 async function cleanupTest() {
-  const games = gameModel.getAllGames();
+  const games = await gameModel.getAllGames();
   for (const game of games) {
     await gamePhase.clearPhaseTimer(game.id);
   }
@@ -54,7 +54,7 @@ Deno.test({
     assertEquals(game.players.length, 1);
     assertEquals(game.players[0].playerId, user1.id);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -69,7 +69,7 @@ Deno.test({
       Error,
       "Owner not found",
     );
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -87,7 +87,7 @@ Deno.test({
     assertEquals(game.settings.roles.bodyguardCount, 1);
     assertEquals(game.settings.roles.mediumCount, 0);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -104,7 +104,7 @@ Deno.test({
     assertEquals(joinedGame.players[1].playerId, user2.id);
     assertEquals(joinedGame.players[1].username, testUser2.username);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -119,7 +119,7 @@ Deno.test({
       Error,
       "Game not found",
     );
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -156,7 +156,7 @@ Deno.test({
       Error,
       "Game is full",
     );
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -174,7 +174,7 @@ Deno.test({
       Error,
       "Player already in game",
     );
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -191,7 +191,7 @@ Deno.test({
     assertEquals(updatedGame.players.length, 1);
     assertEquals(updatedGame.players[0].playerId, user1.id);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -210,10 +210,10 @@ Deno.test({
       "Game deleted as owner left",
     );
 
-    const deletedGame = gameModel.getGameById(game.id);
+    const deletedGame = await gameModel.getGameById(game.id);
     assertEquals(deletedGame, undefined);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -232,13 +232,13 @@ Deno.test({
       name: "Game 2",
     }, user2.id);
 
-    const games = gameModel.getAllGames();
+    const games = await gameModel.getAllGames();
 
     assertEquals(games.length, 2);
     assertEquals(games[0].id, game1.id);
     assertEquals(games[1].id, game2.id);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -246,9 +246,9 @@ Deno.test({
   name: "ゲーム一覧 - ゲームが存在しない場合は空の配列を返すか",
   async fn() {
     await setupTest();
-    const games = gameModel.getAllGames();
+    const games = await gameModel.getAllGames();
     assertEquals(games.length, 0);
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -258,13 +258,13 @@ Deno.test({
   async fn() {
     await setupTest();
     const game = await gameModel.createGame(testGameData, user1.id);
-    const retrievedGame = gameModel.getGameById(game.id);
+    const retrievedGame = await gameModel.getGameById(game.id);
 
     assertNotEquals(retrievedGame, undefined);
     assertEquals(retrievedGame?.id, game.id);
     assertEquals(retrievedGame?.name, testGameData.name);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -272,9 +272,9 @@ Deno.test({
   name: "ゲーム取得 - 存在しないゲームの場合はundefinedを返すか",
   async fn() {
     await setupTest();
-    const game = gameModel.getGameById("non-existent-id");
+    const game = await gameModel.getGameById("non-existent-id");
     assertEquals(game, undefined);
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -307,7 +307,7 @@ Deno.test({
     assertNotEquals(startedGame.phaseEndTime, null);
     assertEquals(startedGame.players.every((p) => p.role !== undefined), true);
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -325,7 +325,7 @@ Deno.test({
       "Only the game owner can start the game",
     );
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -362,7 +362,7 @@ Deno.test({
       "Game is not in waiting state",
     );
 
-    cleanupTest();
+    await cleanupTest();
   },
 });
 
@@ -416,6 +416,6 @@ Deno.test({
       ),
     );
 
-    cleanupTest();
+    await cleanupTest();
   },
 });

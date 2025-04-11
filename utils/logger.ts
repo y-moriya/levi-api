@@ -109,11 +109,23 @@ class Logger {
 
   error(
     message: string,
-    error?: Error,
+    errorOrContext?: Error | Record<string, unknown>,
     context?: Record<string, unknown>,
   ): void {
     if (this.shouldLog("error")) {
-      const formatted = this.formatMessage("error", message, error, context);
+      let actualError: Error | undefined;
+      let actualContext: Record<string, unknown> | undefined;
+
+      // errorOrContextパラメータの型に基づいて処理を分岐
+      if (errorOrContext instanceof Error) {
+        actualError = errorOrContext;
+        actualContext = context;
+      } else {
+        actualError = undefined;
+        actualContext = errorOrContext;
+      }
+
+      const formatted = this.formatMessage("error", message, actualError, actualContext);
       console.error(formatted);
       this.logToFile(formatted);
     }

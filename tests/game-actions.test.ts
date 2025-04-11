@@ -14,8 +14,8 @@ let medium: GamePlayer;
 
 async function setupTest() {
   // ゲーム状態のリセット
-  gameModel.resetGames();
-  authService.resetStore();
+  await gameModel.resetGames();
+  await authService.resetStore();
 
   // テストユーザーの作成
   const testUsers = [
@@ -41,7 +41,11 @@ async function setupTest() {
   }
 
   // ゲームの取得と初期化
-  game = gameModel.getGameById(testGame.id)!;
+  const gameData = await gameModel.getGameById(testGame.id);
+  if (!gameData) {
+    throw new Error("Game not found");
+  }
+  game = gameData;
   game.status = "IN_PROGRESS";
   game.currentDay = 1;
 
@@ -57,7 +61,7 @@ async function setupTest() {
   bodyguard = game.players[3];
 
   // アクション状態の初期化
-  gameActions.initializeGameActions(game.id);
+  await gameActions.initializeGameActions(game.id);
 }
 
 // 霊能アクションのテストに必要な追加のセットアップを作成
@@ -97,8 +101,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_VOTE";
-    const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, true);
+    const result = await gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, true);
   },
 });
 
@@ -107,8 +111,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -118,8 +122,8 @@ Deno.test({
     await setupTest();
     game.currentPhase = "DAY_VOTE";
     villager.isAlive = false;
-    const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -129,8 +133,8 @@ Deno.test({
     await setupTest();
     game.currentPhase = "DAY_VOTE";
     werewolf.isAlive = false;
-    const result = gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -140,8 +144,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
-    assertEquals(result.success, true);
+    const result = await gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
+    assertEquals((await result).success, true);
   },
 });
 
@@ -150,8 +154,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleAttackAction(game, villager.playerId, seer.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleAttackAction(game, villager.playerId, seer.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -160,8 +164,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleAttackAction(game, werewolf.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleAttackAction(game, werewolf.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -170,8 +174,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
-    const result = gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -181,9 +185,9 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, true);
+    const result = await gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, true);
   },
 });
 
@@ -192,8 +196,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleDivineAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleDivineAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -202,9 +206,9 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleDivineAction(game, seer.playerId, villager.playerId);
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, false);
+    const result = await gameActions.handleDivineAction(game, seer.playerId, villager.playerId);
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, false);
   },
 });
 
@@ -213,8 +217,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
-    const result = gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleDivineAction(game, seer.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -224,8 +228,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
-    assertEquals(result.success, true);
+    const result = await gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
+    assertEquals((await result).success, true);
   },
 });
 
@@ -234,8 +238,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleGuardAction(game, villager.playerId, seer.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleGuardAction(game, villager.playerId, seer.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -245,8 +249,8 @@ Deno.test({
     await setupTest();
     game.currentPhase = "NIGHT";
     villager.isAlive = false;
-    const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -255,8 +259,8 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "DAY_DISCUSSION";
-    const result = gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -266,9 +270,9 @@ Deno.test({
   async fn() {
     await setupMediumTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, true);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, true);
   },
 });
 
@@ -277,8 +281,8 @@ Deno.test({
   async fn() {
     await setupMediumTest();
     game.currentPhase = "NIGHT";
-    const result = gameActions.handleMediumAction(game, villager.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, villager.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -288,8 +292,8 @@ Deno.test({
     await setupMediumTest();
     game.currentPhase = "NIGHT";
     // 村人は死んでいない
-    const result = gameActions.handleMediumAction(game, medium.playerId, villager.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, villager.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -300,8 +304,8 @@ Deno.test({
     game.currentPhase = "NIGHT";
     // 襲撃で死亡した設定に変更
     werewolf.deathCause = "WEREWOLF_ATTACK";
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -310,9 +314,9 @@ Deno.test({
   async fn() {
     await setupMediumTest();
     game.currentPhase = "DAY_DISCUSSION";
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, true);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, true);
   },
 });
 
@@ -321,8 +325,8 @@ Deno.test({
   async fn() {
     await setupMediumTest();
     game.currentPhase = "DAY_VOTE";
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -340,9 +344,9 @@ Deno.test({
     villager.deathCause = "EXECUTION";
     villager.deathDay = 1;
     
-    const result = gameActions.handleMediumAction(game, medium.playerId, villager.playerId);
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, villager.playerId);
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, false);
   },
 });
 
@@ -357,8 +361,8 @@ Deno.test({
     medium.deathCause = "WEREWOLF_ATTACK";
     medium.deathDay = 1;
     
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -370,8 +374,8 @@ Deno.test({
     // 2日前の処刑に設定
     werewolf.deathDay = game.currentDay - 2;
     
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, false);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, false);
   },
 });
 
@@ -399,13 +403,13 @@ Deno.test({
     const medium2 = game.players[5]; // 6人目のプレイヤー
     
     // 両方の霊能者が同じ処刑者に対して霊能を使用
-    const result1 = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    const result2 = gameActions.handleMediumAction(game, medium2.playerId, werewolf.playerId);
+    const result1 = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    const result2 = await gameActions.handleMediumAction(game, medium2.playerId, werewolf.playerId);
     
-    assertEquals(result1.success, true);
-    assertEquals(result1.isWerewolf, true);
-    assertEquals(result2.success, true);
-    assertEquals(result2.isWerewolf, true);
+    assertEquals((await result1).success, true);
+    assertEquals((await result1).isWerewolf, true);
+    assertEquals((await result2).success, true);
+    assertEquals((await result2).isWerewolf, true);
   },
 });
 
@@ -438,10 +442,10 @@ Deno.test({
     const medium2 = game.players[5]; // 6人目のプレイヤー
     
     // 2人目の霊能者が処刑された1人目の霊能者を対象にする
-    const result = gameActions.handleMediumAction(game, medium2.playerId, medium.playerId);
+    const result = await gameActions.handleMediumAction(game, medium2.playerId, medium.playerId);
     
-    assertEquals(result.success, true);
-    assertEquals(result.isWerewolf, false); // 霊能者は人狼ではない
+    assertEquals((await result).success, true);
+    assertEquals((await result).isWerewolf, false); // 霊能者は人狼ではない
   },
 });
 
@@ -452,15 +456,15 @@ Deno.test({
     game.currentPhase = "NIGHT";
     
     // 霊能を実行
-    const result = gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
-    assertEquals(result.success, true);
+    const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
+    assertEquals((await result).success, true);
     
     // processPhaseActions を実行して game オブジェクトに反映させる
-    gameActions.processPhaseActions(game);
+    await gameActions.processPhaseActions(game);
     
     // アクションマップに記録されているか確認
     const mediumKey = `medium_${game.currentDay}` as const;
-    const mediums = getActionMap(game, mediumKey);
+    const mediums = await getActionMap(game, mediumKey);
     
     assertEquals(mediums.has(medium.playerId), true);
     assertEquals(mediums.get(medium.playerId), werewolf.playerId);
@@ -474,16 +478,16 @@ Deno.test({
     await setupTest();
     game.currentPhase = "DAY_VOTE";
     // 全員がwerewolfに投票
-    gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
-    gameActions.handleVoteAction(game, seer.playerId, werewolf.playerId);
-    gameActions.handleVoteAction(game, bodyguard.playerId, werewolf.playerId);
+    await gameActions.handleVoteAction(game, villager.playerId, werewolf.playerId);
+    await gameActions.handleVoteAction(game, seer.playerId, werewolf.playerId);
+    await gameActions.handleVoteAction(game, bodyguard.playerId, werewolf.playerId);
 
     // 投票のランダム割り当てを処理
-    gameActions.processPhaseActions(game);
+    await gameActions.processPhaseActions(game);
 
     // game-logicの投票結果処理を実行
     const voteKey = `vote_${game.currentDay}` as const;
-    const votes = getActionMap(game, voteKey);
+    const votes = await getActionMap(game, voteKey);
     const voteCount = new Map<string, number>();
 
     // 投票を集計
@@ -516,11 +520,11 @@ Deno.test({
     game.currentPhase = "NIGHT";
 
     // 人狼が村人を攻撃
-    gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
+    await gameActions.handleAttackAction(game, werewolf.playerId, villager.playerId);
     // 護衛が村人を守る
-    gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
+    await gameActions.handleGuardAction(game, bodyguard.playerId, villager.playerId);
 
-    gameActions.processPhaseActions(game);
+    await gameActions.processPhaseActions(game);
     assertEquals(villager.isAlive, true);
     assertEquals(villager.deathCause, "NONE");
   },
@@ -531,9 +535,9 @@ Deno.test({
   async fn() {
     await setupTest();
     game.currentPhase = "NIGHT";
-    gameActions.processPhaseActions(game);
+    await gameActions.processPhaseActions(game);
 
-    const actions = gameActions.getGameActions(game.id);
+    const actions = await gameActions.getGameActions(game.id);
     assertNotEquals(actions, undefined);
   },
 });

@@ -83,7 +83,7 @@ Deno.test({
     setPlayerAliveStatus(testGame, { 1: false });
 
     const result = gameLogic.checkGameEnd(testGame);
-    assertEquals(result.isEnded, true);
+    assertEquals(result.ended, true);
     assertions.assertGameWinner(result, "VILLAGERS");
 
     cleanupTest();
@@ -102,7 +102,7 @@ Deno.test({
     setPlayerAliveStatus(testGame, { 2: false, 3: false, 4: false });
 
     const result = gameLogic.checkGameEnd(testGame);
-    assertEquals(result.isEnded, true);
+    assertEquals(result.ended, true);
     assertions.assertGameWinner(result, "WEREWOLVES");
 
     cleanupTest();
@@ -120,18 +120,21 @@ Deno.test({
 
     // DAY_DISCUSSIONからDAY_VOTEへのテスト
     testGame.currentPhase = "DAY_DISCUSSION";
+    await gameLogic.advancePhase(testGame.id);
+    testGame = await gameModel.getGameById(testGame.id) as Game;
+    assertEquals(testGame.currentPhase, "DAY_VOTE");
 
-    // 最初の移行テスト: DAY_DISCUSSIONからDAY_VOTEへ
-    const nextPhase = gameLogic._getNextPhase(testGame.currentPhase);
-    assertEquals(nextPhase, "DAY_VOTE");
+    // DAY_VOTEからNIGHTへのテスト
+    testGame.currentPhase = "DAY_VOTE";
+    await gameLogic.advancePhase(testGame.id);
+    testGame = await gameModel.getGameById(testGame.id) as Game;
+    assertEquals(testGame.currentPhase, "NIGHT");
 
-    // 2番目の移行テスト: DAY_VOTEからNIGHTへ
-    const nightPhase = gameLogic._getNextPhase("DAY_VOTE");
-    assertEquals(nightPhase, "NIGHT");
-
-    // 3番目の移行テスト: NIGHTからDAY_DISCUSSIONへ
-    const dayPhase = gameLogic._getNextPhase("NIGHT");
-    assertEquals(dayPhase, "DAY_DISCUSSION");
+    // NIGHTからDAY_DISCUSSIONへのテスト
+    testGame.currentPhase = "NIGHT";
+    await gameLogic.advancePhase(testGame.id);
+    testGame = await gameModel.getGameById(testGame.id) as Game;
+    assertEquals(testGame.currentPhase, "DAY_DISCUSSION");
 
     cleanupTest();
   }),
@@ -204,7 +207,7 @@ Deno.test({
     const result = gameLogic.checkGameEnd(mockGame);
 
     // アサーション
-    assertEquals(result.isEnded, true);
+    assertEquals(result.ended, true);
     assertions.assertGameWinner(result, "WEREWOLVES");
   },
 });
@@ -230,7 +233,7 @@ Deno.test({
     const result = gameLogic.checkGameEnd(mockGame);
 
     // アサーション
-    assertEquals(result.isEnded, false);
+    assertEquals(result.ended, false);
     assertions.assertGameWinner(result, null);
   },
 });

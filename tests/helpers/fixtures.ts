@@ -52,7 +52,7 @@ export const gameFixtures = {
     maxPlayers: 5,
     settings: {
       roles: {
-        werewolfCount: 1,
+        werewolfCount: 2,
         seerCount: 1,
         bodyguardCount: 1,
         mediumCount: 0,

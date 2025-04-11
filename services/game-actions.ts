@@ -48,7 +48,7 @@ export function initializeGameActions(gameId: string): void {
 /**
  * 投票アクションを処理
  */
-export function handleVoteAction(game: Game, playerId: string, targetId: string): ActionResult {
+export async function handleVoteAction(game: Game, playerId: string, targetId: string): Promise<ActionResult> {
   logger.info("Handling vote action", {
     gameId: game.id,
     currentPhase: game.currentPhase,
@@ -80,7 +80,7 @@ export function handleVoteAction(game: Game, playerId: string, targetId: string)
 
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized", undefined, { gameId: game.id });
+    logger.error("Game actions not initialized");
     initializeGameActions(game.id);
     const newActions = actionCache.get(game.id);
     if (!newActions) {
@@ -110,7 +110,7 @@ export function handleVoteAction(game: Game, playerId: string, targetId: string)
 /**
  * 襲撃アクションを処理
  */
-export function handleAttackAction(game: Game, playerId: string, targetId: string): ActionResult {
+export async function handleAttackAction(game: Game, playerId: string, targetId: string): Promise<ActionResult> {
   if (game.currentPhase !== "NIGHT") {
     return { success: false, message: "夜フェーズではありません" };
   }
@@ -132,7 +132,7 @@ export function handleAttackAction(game: Game, playerId: string, targetId: strin
 
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized", undefined, { gameId: game.id });
+    logger.error("Game actions not initialized");
     initializeGameActions(game.id);
     const newActions = actionCache.get(game.id);
     if (!newActions) {
@@ -155,7 +155,7 @@ export function handleAttackAction(game: Game, playerId: string, targetId: strin
 /**
  * 占いアクションを処理
  */
-export function handleDivineAction(game: Game, playerId: string, targetId: string): DivineResult {
+export async function handleDivineAction(game: Game, playerId: string, targetId: string): Promise<DivineResult> {
   if (game.currentPhase !== "NIGHT") {
     return {
       success: false,
@@ -191,7 +191,7 @@ export function handleDivineAction(game: Game, playerId: string, targetId: strin
 
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized", undefined, { gameId: game.id });
+    logger.error("Game actions not initialized");
     initializeGameActions(game.id);
     const newActions = actionCache.get(game.id);
     if (!newActions) {
@@ -221,7 +221,7 @@ export function handleDivineAction(game: Game, playerId: string, targetId: strin
 /**
  * 護衛アクションを処理
  */
-export function handleGuardAction(game: Game, playerId: string, targetId: string): ActionResult {
+export async function handleGuardAction(game: Game, playerId: string, targetId: string): Promise<ActionResult> {
   if (game.currentPhase !== "NIGHT") {
     return { success: false, message: "夜フェーズではありません" };
   }
@@ -239,7 +239,7 @@ export function handleGuardAction(game: Game, playerId: string, targetId: string
 
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized", undefined, { gameId: game.id });
+    logger.error("Game actions not initialized");
     initializeGameActions(game.id);
     const newActions = actionCache.get(game.id);
     if (!newActions) {
@@ -257,7 +257,7 @@ export function handleGuardAction(game: Game, playerId: string, targetId: string
 /**
  * 霊能アクションを処理
  */
-export function handleMediumAction(game: Game, playerId: string, targetId: string): MediumResult {
+export async function handleMediumAction(game: Game, playerId: string, targetId: string): Promise<MediumResult> {
   // 霊能はいつでも使えるべきだが、死亡者が出る前の昼フェーズでは結果がない
   if (game.currentPhase !== "NIGHT" && game.currentPhase !== "DAY_DISCUSSION") {
     return {
@@ -308,7 +308,7 @@ export function handleMediumAction(game: Game, playerId: string, targetId: strin
 
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized", undefined, { gameId: game.id });
+    logger.error("Game actions not initialized");
     initializeGameActions(game.id);
     const newActions = actionCache.get(game.id);
     if (!newActions) {
@@ -605,12 +605,12 @@ export function getGameActions(gameId: string) {
 /**
  * アクションを提出する（テスト互換性のためのラッパー関数）
  */
-export function submitAction(
+export async function submitAction(
   game: Game,
   playerId: string,
   targetId: string,
   actionType: "vote" | "attack" | "divine" | "guard" | "medium",
-): ActionResult | DivineResult | MediumResult {
+): Promise<ActionResult | DivineResult | MediumResult> {
   logger.info("Action submitted", { gameId: game.id, playerId, targetId, actionType });
 
   switch (actionType) {

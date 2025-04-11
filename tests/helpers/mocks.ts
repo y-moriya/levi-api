@@ -1,4 +1,4 @@
-import { Game, GamePlayer } from "../../types/game.ts";
+import { Game, GamePlayer, GameAction } from "../../types/game.ts";
 import { User } from "../../types/user.ts";
 import { ChatMessage } from "../../types/chat.ts";
 
@@ -66,6 +66,15 @@ export function createMockGame(overrides: Partial<Game> = {}): Game {
   const players = overrides.players ?? createMockGamePlayers(playerCount);
   const mockUser = createMockUser();
 
+  // GameAction[]と{[key: string]: Map<string, string>}を満たす合成型を生成
+  const emptyActions = [] as unknown as GameAction[] & { [key: string]: Map<string, string> };
+  // 各アクションタイプに対応するMapを追加
+  emptyActions.votes = new Map<string, string>();
+  emptyActions.attacks = new Map<string, string>();
+  emptyActions.divinations = new Map<string, string>();
+  emptyActions.guards = new Map<string, string>();
+  emptyActions.mediums = new Map<string, string>();
+
   return {
     id: `game_${Date.now()}`,
     name: "モックゲーム",
@@ -98,6 +107,9 @@ export function createMockGame(overrides: Partial<Game> = {}): Game {
       voteTimeSeconds: 30,
     },
     createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    creatorId: mockUser.id,
+    actions: emptyActions,
     ...overrides,
   };
 }

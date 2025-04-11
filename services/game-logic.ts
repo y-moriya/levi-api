@@ -1,615 +1,686 @@
-import { Game, GamePhase, Role } from "../types/game.ts";
-import { uuid } from "https://deno.land/x/uuid@v0.1.2/mod.ts";
+import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import {
+  Action,
+  Game,
+  GameAction,
+  GameActionType,
+  GamePhase,
+  GamePlayer,
+  GameSettings,
+  GameStatus,
+  PlayerRole,
+  VoteType,
+  Winner,
+  DeathCause,
+} from "../types/game.ts";
+import * as gamePhase from "./game-phase.ts";
 import { logger } from "../utils/logger.ts";
-import { scheduleNextPhase } from "./game-phase.ts";
-import * as gameActions from "./game-actions.ts";
-import { gameStore } from "../models/game.ts";
-import { GameError } from "../types/error.ts";
+import { getGameById } from "../models/game.ts";
+import { gameStore } from "../models/game.ts"; // gameStoreをインポート
+import { generatePhaseEndMessage, generatePlayerRoleMessages } from "../utils/messages.ts";
+import { addSystemMessage } from "./chat.ts";
 
-// フェーズ変更時の説明文を生成
-function getPhaseChangeDescription(phase: GamePhase, day: number): string {
-  switch (phase) {
-    case "DAY_DISCUSSION":
-      return `${day}日目の昼になりました。自由に議論を行ってください。`;
-    case "DAY_VOTE":
-      return `投票の時間になりました。処刑する人を決めてください。`;
-    case "NIGHT":
-      return `夜になりました。各役職は行動を選択してください。`;
-    default:
-      return `フェーズが${phase}に変更されました。`;
-  }
-}
-
-// 役職をランダムに割り当てる
-export const assignRoles = (game: Game): void => {
-  const players = [...game.players];
-  const settings = game.settings;
-
-  // 役職リストを効率的に作成
-  const roles: Role[] = [];
-
-  // 特殊役職を一度に追加（配列操作を最小化）
-  const specialRoles: Array<[Role, number]> = [
-    ["WEREWOLF", settings.roles.werewolfCount],
-    ["SEER", settings.roles.seerCount],
-    ["BODYGUARD", settings.roles.bodyguardCount],
-    ["MEDIUM", settings.roles.mediumCount],
-  ];
-
-  specialRoles.forEach(([role, count]) => {
-    for (let i = 0; i < count; i++) {
-      roles.push(role);
-    }
-  });
-
-  // 残りは村人
-  const villagerCount = players.length - roles.length;
-  for (let i = 0; i < villagerCount; i++) {
-    roles.push("VILLAGER");
-  }
-
-  // Fisher-Yatesアルゴリズムで効率的にシャッフル
-  for (let i = roles.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [roles[i], roles[j]] = [roles[j], roles[i]];
-  }
-
-  // 一度の反復でプレイヤーに役職を割り当て
-  for (let i = 0; i < players.length; i++) {
-    players[i].role = roles[i];
-  }
-
-  game.players = players;
-
-  // パフォーマンスメトリクスを記録
-  const roleDistribution = countRoles(roles);
-  logger.info("Roles assigned to players", {
-    gameId: game.id,
-    playerCount: players.length,
-    roleDistribution,
-  });
-};
-
-// ゲームの勝敗判定を最適化
-export const checkGameEnd = (game: Game): { isEnded: boolean; winner: "VILLAGERS" | "WEREWOLVES" | "NONE" } => {
-  // プレイヤーリストをメモリに一度だけロード
-  const alivePlayers = game.players.filter((p) => p.isAlive);
-
-  // 生存プレイヤー数が少ない場合の高速パス
-  if (alivePlayers.length === 0) {
-    return { isEnded: true, winner: "VILLAGERS" }; // エッジケース
-  }
-
-  // ロールカウントを一度に計算（複数回のフィルタリングを避ける）
-  let aliveWerewolfCount = 0;
-  let aliveVillagerCount = 0;
-
-  alivePlayers.forEach((player) => {
-    if (player.role === "WEREWOLF") {
-      aliveWerewolfCount++;
-    } else {
-      aliveVillagerCount++;
-    }
-  });
-
-  // 効率的な勝敗判定
-  if (aliveWerewolfCount === 0) {
-    return { isEnded: true, winner: "VILLAGERS" };
-  }
-
-  if (aliveWerewolfCount >= aliveVillagerCount) {
-    return { isEnded: true, winner: "WEREWOLVES" };
-  }
-
-  return { isEnded: false, winner: "NONE" };
-};
-
-// フェーズを効率的に進める（非同期処理を適切に活用）
-export const advancePhase = (game: Game): void => {
-  const previousPhase = game.currentPhase;
-  const gameId = game.id;
-
-  logger.info("Starting phase transition", {
-    gameId,
-    from: previousPhase,
-    currentDay: game.currentDay,
-    gameStatus: game.status,
-  });
-
-  // 勝敗判定（高速パスを利用）
-  const { isEnded, winner } = checkGameEnd(game);
-  if (isEnded) {
-    game.status = "FINISHED";
-    game.winner = winner;
-
-    // ゲーム終了イベントを追加
-    game.gameEvents.push({
-      id: uuid(),
-      day: game.currentDay,
-      phase: game.currentPhase || "GAME_OVER",
-      type: "GAME_END",
-      description: `ゲームが終了しました。${winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info("Game ended", {
-      gameId,
-      winner,
-      finalDay: game.currentDay,
-      finalPhase: game.currentPhase,
-    });
-
-    // ゲームストアを更新して変更を保存
-    gameStore.update(game);
-    return;
-  }
-
-  // フェーズ進行を効率的に処理
-  switch (game.currentPhase) {
-    case "DAY_DISCUSSION": {
-      logger.info("Transitioning from DAY_DISCUSSION", {
-        gameId,
-        nextPhase: "DAY_VOTE",
-      });
-
-      game.currentPhase = "DAY_VOTE";
-      game.phaseEndTime = new Date(Date.now() + game.settings.voteTimeSeconds * 1000).toISOString();
-
-      // アクション状態を非同期で初期化（パフォーマンス改善）
-      gameActions.initializeGameActions(game.id);
-      break;
-    }
-    case "DAY_VOTE": {
-      logger.info("Processing DAY_VOTE actions", {
-        gameId,
-        hasActions: !!gameActions.getGameActions(game.id),
-      });
-
-      // 投票処理を実行
-      gameActions.processPhaseActions(game);
-      _processVoteResults(game);
-
-      // 投票結果の処理後に勝敗判定
-      const voteEndCheck = checkGameEnd(game);
-      if (voteEndCheck.isEnded) {
-        game.status = "FINISHED";
-        game.winner = voteEndCheck.winner;
-
-        // ゲーム終了イベントを追加
-        game.gameEvents.push({
-          id: uuid(),
-          day: game.currentDay,
-          phase: game.currentPhase,
-          type: "GAME_END",
-          description: `ゲームが終了しました。${voteEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
-          timestamp: new Date().toISOString(),
-        });
-
-        logger.info("Game ended after voting", {
-          gameId,
-          winner: voteEndCheck.winner,
-        });
-
-        // ゲームストアを更新して変更を保存
-        gameStore.update(game);
-        return;
-      }
-
-      // 夜フェーズに移行
-      game.currentPhase = "NIGHT";
-      game.phaseEndTime = new Date(Date.now() + game.settings.nightTimeSeconds * 1000).toISOString();
-
-      // 夜フェーズ開始時にアクション状態を初期化
-      gameActions.initializeGameActions(game.id);
-      break;
-    }
-    case "NIGHT": {
-      logger.info("Processing NIGHT actions", {
-        gameId,
-        hasActions: !!gameActions.getGameActions(game.id),
-      });
-
-      // 夜アクションの処理
-      _processNightActions(game);
-      gameActions.processPhaseActions(game);
-
-      // 夜アクションの処理後に勝敗判定
-      const gameEndCheck = checkGameEnd(game);
-      if (gameEndCheck.isEnded) {
-        game.status = "FINISHED";
-        game.winner = gameEndCheck.winner;
-
-        // ゲーム終了イベントを追加
-        game.gameEvents.push({
-          id: uuid(),
-          day: game.currentDay,
-          phase: game.currentPhase,
-          type: "GAME_END",
-          description: `ゲームが終了しました。${gameEndCheck.winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
-          timestamp: new Date().toISOString(),
-        });
-
-        logger.info("Game ended after night actions", {
-          gameId,
-          winner: gameEndCheck.winner,
-        });
-
-        // ゲームストアを更新して変更を保存
-        gameStore.update(game);
-        return;
-      }
-
-      // 次の日に進む
-      game.currentDay += 1;
-      game.currentPhase = "DAY_DISCUSSION";
-      game.phaseEndTime = new Date(Date.now() + game.settings.dayTimeSeconds * 1000).toISOString();
-      break;
-    }
-  }
-
-  // フェーズ変更イベントを記録
-  game.gameEvents.push({
-    id: uuid(),
-    day: game.currentDay,
-    phase: game.currentPhase,
-    type: "PHASE_CHANGE",
-    description: getPhaseChangeDescription(game.currentPhase, game.currentDay),
-    timestamp: new Date().toISOString(),
-  });
-
-  logger.info("Phase transition completed", {
-    gameId,
-    day: game.currentDay,
-    previousPhase,
-    currentPhase: game.currentPhase,
-    phaseEndTime: game.phaseEndTime,
-  });
-
-  // ゲームストアを更新
-  gameStore.update(game);
-};
-
-// ゲーム開始時の初期化
-export const initializeGame = (game: Game): void => {
-  if (game.status !== "WAITING") {
-    throw new Error("Game is not in waiting state");
-  }
-
-  // プレイヤー数チェック（計算を一度だけ実行）
-  const minPlayers = calculateMinPlayers(game.settings);
-  if (game.players.length < minPlayers) {
-    throw new Error(`At least ${minPlayers} players are required`);
-  }
-
-  // 役職数の妥当性チェック
-  validateRoleSettings(game);
-
-  // ゲーム状態の初期化
-  game.status = "IN_PROGRESS";
-  game.currentDay = 1;
-  game.currentPhase = "DAY_DISCUSSION";
-  game.phaseEndTime = new Date(Date.now() + game.settings.dayTimeSeconds * 1000).toISOString();
-  game.winner = "NONE";
-
-  // 役職の割り当て
-  assignRoles(game);
-
-  // アクション状態の初期化
-  gameActions.initializeGameActions(game.id);
-
-  // 開始イベントの記録
-  game.gameEvents.push({
-    id: uuid(),
-    day: game.currentDay,
-    phase: game.currentPhase,
-    type: "PHASE_CHANGE",
-    description: "ゲームが開始されました",
-    timestamp: new Date().toISOString(),
-  });
-
-  // 初期フェーズのタイマーを設定
-  scheduleNextPhase(game);
-
-  logger.info("Game initialized", {
-    gameId: game.id,
-    playerCount: game.players.length,
-    settings: {
-      dayTimeSeconds: game.settings.dayTimeSeconds,
-      nightTimeSeconds: game.settings.nightTimeSeconds,
-      voteTimeSeconds: game.settings.voteTimeSeconds,
-      roles: game.settings.roles,
-    },
-  });
-
-  // ゲームストアを更新
-  gameStore.update(game);
-};
-
-// ゲーム開始機能
-export const startGame = (gameId: string): Game => {
-  const game = gameStore.get(gameId);
-
-  if (!game) {
-    throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
-  }
-
-  // ゲームの状態チェック
-  if (game.status !== "WAITING") {
-    throw new GameError("GAME_ALREADY_STARTED", "ゲームは既に開始されています");
-  }
-
-  // オーナー権限チェック - テストモードの環境変数を確認
-  const isTestMode = Deno.env.get("TEST_MODE") === "true";
-
-  // テストモードでない場合のみ権限チェックを行う
-  if (!isTestMode) {
-    const contextUserId = Deno.env.get("CONTEXT_USER_ID");
-    const requestUser = gameStore.getRequestUser();
-
-    // リクエストユーザーまたはコンテキストユーザーがゲームオーナーと一致するか確認
-    const requesterId = requestUser?.id || contextUserId;
-
-    if (requesterId && requesterId !== game.owner.id) {
-      throw new GameError("PERMISSION_DENIED", "ゲームオーナーのみがゲームを開始できます");
-    }
-  }
-
-  // ゲームの初期化を行う
-  initializeGame(game);
-
-  logger.info("Game started", { gameId });
-
+// updateGame関数を定義
+const updateGame = async (game: Game): Promise<Game> => {
+  await gameStore.update(game);
   return game;
 };
 
-// メモ化されたヘルパー関数
-const nextPhaseMap: Record<GamePhase, GamePhase> = {
-  "DAY_DISCUSSION": "DAY_VOTE",
-  "DAY_VOTE": "NIGHT",
-  "NIGHT": "DAY_DISCUSSION",
-  "GAME_OVER": "DAY_DISCUSSION", // ゲーム終了後も次のゲームを考慮
-};
+// ゲームプレイヤーにランダムに役職を割り当てる
+export function assignRoles(game: Game): GamePlayer[] {
+  const rolesToAssign: PlayerRole[] = [];
 
-export function _getNextPhase(currentPhase: GamePhase): GamePhase {
-  return nextPhaseMap[currentPhase] || "DAY_DISCUSSION";
+  // 各役職を必要な数だけ追加
+  for (let i = 0; i < game.settings.roles.werewolfCount; i++) {
+    rolesToAssign.push("WEREWOLF");
+  }
+  for (let i = 0; i < game.settings.roles.seerCount; i++) {
+    rolesToAssign.push("SEER");
+  }
+  for (let i = 0; i < game.settings.roles.bodyguardCount; i++) {
+    rolesToAssign.push("BODYGUARD");
+  }
+  for (let i = 0; i < game.settings.roles.mediumCount; i++) {
+    rolesToAssign.push("MEDIUM");
+  }
+
+  // 残りの全プレイヤーに村人の役職を割り当て
+  const villagersCount = game.players.length -
+    (game.settings.roles.werewolfCount +
+      game.settings.roles.seerCount +
+      game.settings.roles.bodyguardCount +
+      game.settings.roles.mediumCount);
+
+  for (let i = 0; i < villagersCount; i++) {
+    rolesToAssign.push("VILLAGER");
+  }
+
+  // 役職をシャッフル
+  for (let i = rolesToAssign.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [rolesToAssign[i], rolesToAssign[j]] = [rolesToAssign[j], rolesToAssign[i]];
+  }
+
+  // 各プレイヤーに役職を割り当て
+  const updatedPlayers = [...game.players];
+  for (let i = 0; i < updatedPlayers.length; i++) {
+    updatedPlayers[i] = {
+      ...updatedPlayers[i],
+      role: rolesToAssign[i],
+      isAlive: true,
+    };
+  }
+
+  return updatedPlayers;
 }
 
-// メモ化されたフェーズ時間取得関数
-function _getPhaseTime(phase: GamePhase, game: Game): number {
-  switch (phase) {
-    case "DAY_DISCUSSION":
-      return game.settings.dayTimeSeconds;
-    case "DAY_VOTE":
-      return game.settings.voteTimeSeconds;
-    case "NIGHT":
-      return game.settings.nightTimeSeconds;
-    default:
-      return game.settings.dayTimeSeconds;
+// ゲームを開始する
+export async function startGame(gameId: string): Promise<Game> {
+  // ゲームの取得
+  const game = await getGameById(gameId);
+  if (!game) {
+    throw new Error("Game not found");
   }
+
+  // 最低プレイヤー数のチェック
+  if (game.players.length < 4) {
+    throw new Error("Not enough players to start the game");
+  }
+
+  // 役職の割り当て
+  const playersWithRoles = assignRoles(game);
+
+  // デバッグ情報：役職の割り当て結果をログに出力
+  logger.debug(`役職割り当て: 人狼=${game.settings.roles.werewolfCount}人`);
+  const werewolvesCount = playersWithRoles.filter(p => p.role === "WEREWOLF").length;
+  logger.debug(`割り当て結果: 人狼=${werewolvesCount}人`);
+  
+  // 役職割り当てが期待通りであることを確認
+  if (werewolvesCount !== game.settings.roles.werewolfCount) {
+    logger.error(`役職割り当てエラー: 期待=${game.settings.roles.werewolfCount}, 実際=${werewolvesCount}`);
+    // 問題がある場合は役職を再割り当てするのではなく、強制的に修正する
+    const correctedPlayers = forceCorrectRoleAssignment(playersWithRoles, game.settings.roles);
+    return completeGameStart(game, correctedPlayers);
+  }
+
+  return completeGameStart(game, playersWithRoles);
 }
 
-// 必要最小プレイヤー数計算（高速）
-function calculateMinPlayers(settings: Game["settings"]): number {
-  const { werewolfCount, seerCount, bodyguardCount, mediumCount } = settings.roles;
-  return werewolfCount + seerCount + bodyguardCount + mediumCount + 1; // 最低1人の村人が必要
-}
+// 役職割り当てを強制的に修正する関数
+function forceCorrectRoleAssignment(players: GamePlayer[], roles: { 
+  werewolfCount: number;
+  seerCount: number;
+  bodyguardCount: number;
+  mediumCount: number;
+}): GamePlayer[] {
+  const { werewolfCount, seerCount, bodyguardCount, mediumCount } = roles;
+  
+  // 村人以外の役職の現在の数をカウント
+  let currentWerewolves = players.filter(p => p.role === "WEREWOLF").length;
+  let currentSeers = players.filter(p => p.role === "SEER").length;
+  let currentBodyguards = players.filter(p => p.role === "BODYGUARD").length;
+  let currentMediums = players.filter(p => p.role === "MEDIUM").length;
 
-// 役職設定の妥当性検証
-function validateRoleSettings(game: Game): void {
-  const { werewolfCount, seerCount, bodyguardCount, mediumCount } = game.settings.roles;
-  const totalSpecialRoles = werewolfCount + seerCount + bodyguardCount + mediumCount;
-
-  if (totalSpecialRoles >= game.players.length) {
-    throw new Error("Too many special roles for the number of players");
-  }
-
-  if (werewolfCount < 1) {
-    throw new Error("At least 1 werewolf is required");
-  }
-}
-
-// 最適化された役職カウント関数
-function countRoles(roles: Role[]): Record<Role, number> {
-  const counts: Record<string, number> = {};
-
-  // 効率的な集計（一度の反復）
-  for (const role of roles) {
-    counts[role] = (counts[role] || 0) + 1;
-  }
-
-  return counts as Record<Role, number>;
-}
-
-// 投票結果の処理と処刑の実行（最適化）
-const _processVoteResults = (game: Game): void => {
-  // 拡張機能を使用して投票分布を直接取得
-  const voteDistribution = gameActions.getVoteDistribution(game);
-
-  if (voteDistribution.size === 0) {
-    logger.warn("No votes to process", { gameId: game.id, day: game.currentDay });
-    return;
-  }
-
-  // 最多得票者を効率的に決定
-  const executedPlayerId = _getMostVotedPlayer(voteDistribution);
-
-  if (executedPlayerId) {
-    logger.info("Executing player", {
-      gameId: game.id,
-      playerId: executedPlayerId,
-      voteCount: voteDistribution.get(executedPlayerId),
-    });
-    _killPlayer(game, executedPlayerId, "EXECUTION");
-  }
-};
-
-// 夜のアクション結果の処理（最適化）
-const _processNightActions = (game: Game): void => {
-  const guardKey = `guard_${game.currentDay}` as const;
-  const guards = game[guardKey] || new Map<string, string>();
-
-  // 最適化された襲撃分布の取得
-  const attackDistribution = gameActions.getAttackDistribution(game);
-
-  if (attackDistribution.size === 0) {
-    return;
-  }
-
-  // 襲撃先を決定
-  const attackedPlayerId = _getMostVotedPlayer(attackDistribution);
-
-  if (attackedPlayerId) {
-    // 護衛の確認（効率的な方法）
-    const guardTargets = new Set(Array.from(guards.values()));
-    const isGuarded = guardTargets.has(attackedPlayerId);
-
-    if (!isGuarded) {
-      _killPlayer(game, attackedPlayerId, "WEREWOLF_ATTACK");
+  // コピーしたプレイヤー配列を作成
+  const correctedPlayers = [...players];
+  
+  // 最初に全員を村人に設定
+  correctedPlayers.forEach(p => p.role = "VILLAGER");
+  
+  // ランダムに選択するための関数
+  const getRandomPlayers = (count: number) => {
+    const indices = Array.from({length: correctedPlayers.length}, (_, i) => i);
+    indices.sort(() => Math.random() - 0.5); // シャッフル
+    return indices.slice(0, count);
+  };
+  
+  // 人狼を割り当て
+  getRandomPlayers(werewolfCount).forEach(idx => {
+    correctedPlayers[idx].role = "WEREWOLF";
+  });
+  
+  // 占い師を割り当て（人狼以外から）
+  getRandomPlayers(correctedPlayers.length).forEach(idx => {
+    if (currentSeers < seerCount && correctedPlayers[idx].role === "VILLAGER") {
+      correctedPlayers[idx].role = "SEER";
+      currentSeers++;
     }
+  });
+  
+  // 狩人を割り当て（人狼・占い師以外から）
+  getRandomPlayers(correctedPlayers.length).forEach(idx => {
+    if (currentBodyguards < bodyguardCount && correctedPlayers[idx].role === "VILLAGER") {
+      correctedPlayers[idx].role = "BODYGUARD";
+      currentBodyguards++;
+    }
+  });
+  
+  // 霊能者を割り当て（他の特殊役職以外から）
+  getRandomPlayers(correctedPlayers.length).forEach(idx => {
+    if (currentMediums < mediumCount && correctedPlayers[idx].role === "VILLAGER") {
+      correctedPlayers[idx].role = "MEDIUM";
+      currentMediums++;
+    }
+  });
+
+  logger.info(`役職割り当てを修正しました: 人狼=${werewolfCount}人, 占い師=${seerCount}人, 狩人=${bodyguardCount}人, 霊能者=${mediumCount}人`);
+  return correctedPlayers;
+}
+
+// ゲーム開始の処理を完了する関数
+async function completeGameStart(game: Game, playersWithRoles: GamePlayer[]): Promise<Game> {
+  // 初期フェーズの設定
+  const initialPhase: GamePhase = "DAY_DISCUSSION";
+  const phaseEndTime = new Date(
+    Date.now() + game.settings.dayTimeSeconds * 1000,
+  );
+
+  // ゲーム状態の更新
+  const updatedGame: Game = {
+    ...game,
+    status: "IN_PROGRESS",
+    currentDay: 1,
+    currentPhase: initialPhase,
+    phaseEndTime: phaseEndTime.toISOString(),
+    players: playersWithRoles,
+    revealedRoles: [],
+  };
+
+  // ゲームの更新
+  await updateGame(updatedGame);
+
+  // 役職メッセージの生成
+  await generatePlayerRoleMessages(updatedGame.players);
+
+  // フェーズ終了タイマーの設定
+  await gamePhase.setPhaseTimer(updatedGame.id, game.settings.dayTimeSeconds);
+
+  // 更新後のゲーム状態を取得して返す
+  const finalGame = await getGameById(updatedGame.id);
+  logger.debug(`ゲーム状態確認: ${finalGame?.status}`);
+
+  // 最終的なゲーム状態が取得できない場合は更新済みのものを返す
+  return finalGame || updatedGame;
+}
+
+// 次のフェーズに進む
+export async function advancePhase(gameId: string): Promise<Game> {
+  const game = await getGameById(gameId);
+  if (!game) {
+    throw new Error("Game not found");
   }
-};
 
-// 最多得票者を取得（最適化版）
-function _getMostVotedPlayer(voteDistribution: Map<string, number>): string | null {
+  if (game.status !== "IN_PROGRESS") {
+    throw new Error("Game is not in progress");
+  }
+
+  // まず、現在のフェーズの終了処理を行う
+  // handlePhaseEnd を直接呼び出さずに、フェーズ終了処理を行う
+  let updatedGame: Game = { ...game };
+  
+  // 現在のフェーズに応じた終了処理
+  // VOTINGとDAY_VOTEは同じフェーズとして扱う（互換性のため）
+  if (game.currentPhase === "DAY_VOTE" || game.currentPhase === "VOTING") {
+    updatedGame = await handleVotingPhaseEnd(updatedGame);
+  } else if (game.currentPhase === "NIGHT") {
+    updatedGame = await handleNightPhaseEnd(updatedGame);
+  }
+
+  // ゲームが終了している場合は、そのままゲーム状態を返す
+  if (updatedGame.status === "FINISHED") {
+    // フェーズ終了メッセージの生成と送信
+    const message = generatePhaseEndMessage(
+      updatedGame,
+      updatedGame.currentPhase,
+      updatedGame.currentDay
+    );
+    await addSystemMessage(gameId, message);
+    
+    // 更新されたゲーム情報を保存
+    await updateGame(updatedGame);
+    
+    return updatedGame;
+  }
+
+  // フェーズ終了メッセージの生成と送信
+  const message = generatePhaseEndMessage(
+    updatedGame,
+    updatedGame.currentPhase,
+    updatedGame.currentDay
+  );
+  await addSystemMessage(gameId, message);
+
+  // 次のフェーズと所要時間を決定
+  let nextPhase: GamePhase;
+  let phaseDuration: number;
+  let nextDay = updatedGame.currentDay;
+
+  // 現在のフェーズから次のフェーズを決定
+  switch (updatedGame.currentPhase) {
+    case "DAY_DISCUSSION":
+      nextPhase = "DAY_VOTE";
+      phaseDuration = updatedGame.settings.voteTimeSeconds;
+      break;
+    case "DAY_VOTE":
+    case "VOTING": // VOTINGの場合も同様に処理
+      nextPhase = "NIGHT";
+      phaseDuration = updatedGame.settings.nightTimeSeconds;
+      break;
+    case "NIGHT":
+      nextPhase = "DAY_DISCUSSION";
+      phaseDuration = updatedGame.settings.dayTimeSeconds;
+      nextDay += 1; // 夜から昼になるとき、日付を進める
+      break;
+    default:
+      throw new Error(`Invalid game phase: ${updatedGame.currentPhase}`);
+  }
+
+  // 次のフェーズの設定
+  const phaseEndTime = new Date(Date.now() + phaseDuration * 1000);
+
+  // ゲーム状態の更新
+  // GameAction[]と{[key: string]: Map<string, string>}を満たす合成型を生成
+  const emptyActions = [] as unknown as GameAction[] & { [key: string]: Map<string, string> };
+  // 各アクションタイプに対応するMapを追加
+  emptyActions.votes = new Map<string, string>();
+  emptyActions.attacks = new Map<string, string>();
+  emptyActions.divinations = new Map<string, string>();
+  emptyActions.guards = new Map<string, string>();
+  emptyActions.mediums = new Map<string, string>();
+
+  const finalUpdatedGame: Game = {
+    ...updatedGame,
+    currentPhase: nextPhase,
+    currentDay: nextDay,
+    phaseEndTime: phaseEndTime.toISOString(),
+    actions: emptyActions
+  };
+
+  // ゲームの更新
+  await updateGame(finalUpdatedGame);
+
+  // フェーズ終了タイマーの設定
+  await gamePhase.setPhaseTimer(gameId, phaseDuration);
+
+  return finalUpdatedGame;
+}
+
+// フェーズ終了時の処理
+export async function handlePhaseEnd(gameId: string): Promise<Game> {
+  const game = await getGameById(gameId);
+  if (!game) {
+    throw new Error("Game not found");
+  }
+
+  if (game.status !== "IN_PROGRESS") {
+    throw new Error("Game is not in progress");
+  }
+
+  let updatedGame: Game = { ...game };
+
+  // 現在のフェーズに応じた終了処理
+  // VOTINGとDAY_VOTEは同じフェーズとして扱う（互換性のため）
+  if (game.currentPhase === "DAY_VOTE" || game.currentPhase === "VOTING") {
+    updatedGame = await handleVotingPhaseEnd(updatedGame);
+  } else if (game.currentPhase === "NIGHT") {
+    updatedGame = await handleNightPhaseEnd(updatedGame);
+  }
+
+  // フェーズ終了メッセージの生成と送信
+  const message = generatePhaseEndMessage(
+    updatedGame,
+    updatedGame.currentPhase,
+    updatedGame.currentDay
+  );
+  await addSystemMessage(gameId, message);
+
+  return updatedGame;
+}
+
+// 投票フェーズの終了処理
+async function handleVotingPhaseEnd(game: Game): Promise<Game> {
+  // 投票アクションを抽出
+  const voteActions = game.actions.filter(
+    (action) => action.type === "VOTE" && action.voteType === "EXECUTION",
+  );
+
+  if (voteActions.length === 0) {
+    return game;
+  }
+
+  // 各プレイヤーの得票数をカウント
+  const voteCounts: Record<string, number> = {};
+  voteActions.forEach((action) => {
+    if (action.targetId) {
+      voteCounts[action.targetId] = (voteCounts[action.targetId] || 0) + 1;
+    }
+  });
+
+  // 最も多く票を集めたプレイヤーを特定
   let maxVotes = 0;
-  const maxVotedPlayers: string[] = [];
+  let executedPlayerId: string | null = null;
 
-  // 一度だけ反復して最大得票数とプレイヤーリストを構築
-  voteDistribution.forEach((votes, playerId) => {
+  Object.entries(voteCounts).forEach(([playerId, votes]) => {
     if (votes > maxVotes) {
       maxVotes = votes;
-      maxVotedPlayers.length = 0;
-      maxVotedPlayers.push(playerId);
+      executedPlayerId = playerId;
     } else if (votes === maxVotes) {
-      maxVotedPlayers.push(playerId);
+      // 同点の場合はランダムに決定
+      if (Math.random() > 0.5) {
+        executedPlayerId = playerId;
+      }
     }
   });
 
-  if (maxVotedPlayers.length === 0) {
-    return null;
+  // 処刑するプレイヤーがいない場合は何もしない
+  if (!executedPlayerId) {
+    return game;
   }
 
-  // 同数の場合はランダムに選択
-  return maxVotedPlayers[Math.floor(Math.random() * maxVotedPlayers.length)];
-}
-
-// プレイヤーの死亡処理
-function _killPlayer(game: Game, playerId: string, cause: "WEREWOLF_ATTACK" | "EXECUTION"): void {
-  const player = game.players.find((p) => p.playerId === playerId);
-  if (player && player.isAlive) {
-    player.isAlive = false;
-    player.deathDay = game.currentDay;
-    player.deathCause = cause;
-
-    const causeText = cause === "WEREWOLF_ATTACK" ? "人狼に襲撃" : "処刑";
-
-    logger.info(`Player ${causeText}ed`, {
-      gameId: game.id,
-      playerId: player.playerId,
-      username: player.username,
-      role: player.role,
-      cause,
-    });
-
-    game.gameEvents.push({
-      id: uuid(),
-      day: game.currentDay,
-      phase: game.currentPhase || "NIGHT",
-      type: "PLAYER_DEATH",
-      description: `${player.username}が${causeText}されました`,
-      timestamp: new Date().toISOString(),
-    });
-  }
-}
-
-export function handlePhaseEnd(game: Game): void {
-  if (!game) return;
-
-  logger.info("Handling phase end", {
-    gameId: game.id,
-    currentPhase: game.currentPhase,
-    currentDay: game.currentDay,
+  // プレイヤーを処刑
+  const updatedPlayers = game.players.map((player) => {
+    if (player.playerId === executedPlayerId) {
+      return {
+        ...player,
+        isAlive: false,
+        deathCause: "EXECUTION" as DeathCause,
+        deathDay: game.currentDay,
+        executionDay: game.currentDay,
+      };
+    }
+    return player;
   });
 
-  // まず現在のフェーズのアクションを処理
+  // 役職の公開
+  const executedPlayer = game.players.find((p) => p.playerId === executedPlayerId);
+  let revealedRoles = game.revealedRoles ? [...game.revealedRoles] : [];
+  
+  if (executedPlayer && executedPlayer.role) {
+    revealedRoles.push({
+      playerId: executedPlayerId,
+      role: executedPlayer.role,
+      revealDay: game.currentDay,
+      revealType: "EXECUTION",
+    });
+  }
+
+  return {
+    ...game,
+    players: updatedPlayers,
+    revealedRoles,
+  };
+}
+
+// 夜フェーズの終了処理
+async function handleNightPhaseEnd(game: Game): Promise<Game> {
+  // 人狼の襲撃アクション
+  const werewolfAttacks = game.actions.filter(
+    (action) => action.type === "WEREWOLF_ATTACK",
+  );
+
+  // 守護者の保護アクション
+  const bodyguardProtections = game.actions.filter(
+    (action) => action.type === "PROTECT",
+  );
+
+  // 占い師の占いアクション
+  const seerDivinations = game.actions.filter(
+    (action) => action.type === "DIVINATION",
+  );
+
+  let updatedPlayers = [...game.players];
+  let revealedRoles = game.revealedRoles ? [...game.revealedRoles] : [];
+
+  // 人狼の襲撃処理
+  if (werewolfAttacks.length > 0) {
+    // 最も多く襲撃対象に選ばれたプレイヤーを特定
+    const attackCounts: Record<string, number> = {};
+    werewolfAttacks.forEach((action) => {
+      if (action.targetId) {
+        attackCounts[action.targetId] = (attackCounts[action.targetId] || 0) + 1;
+      }
+    });
+
+    let maxAttacks = 0;
+    let attackedPlayerId: string | null = null;
+
+    Object.entries(attackCounts).forEach(([playerId, attacks]) => {
+      if (attacks > maxAttacks) {
+        maxAttacks = attacks;
+        attackedPlayerId = playerId;
+      } else if (attacks === maxAttacks) {
+        // 同点の場合はランダムに決定
+        if (Math.random() > 0.5) {
+          attackedPlayerId = playerId;
+        }
+      }
+    });
+
+    // 襲撃するプレイヤーが選ばれた場合
+    if (attackedPlayerId) {
+      // 守護者の保護対象かどうかをチェック
+      const isProtected = bodyguardProtections.some(
+        (action) => action.targetId === attackedPlayerId,
+      );
+
+      // 保護されていない場合は死亡処理
+      if (!isProtected) {
+        updatedPlayers = updatedPlayers.map((player) => {
+          if (player.playerId === attackedPlayerId) {
+            return {
+              ...player,
+              isAlive: false,
+              deathCause: "WEREWOLF_ATTACK",
+              deathDay: game.currentDay,
+            };
+          }
+          return player;
+        });
+      }
+    }
+  }
+
+  // 占い結果の処理
+  if (seerDivinations.length > 0) {
+    seerDivinations.forEach((action) => {
+      if (action.targetId) {
+        const targetPlayer = game.players.find((p) => p.playerId === action.targetId);
+        if (targetPlayer && targetPlayer.role) {
+          // 占い結果を記録（役職公開はしない）
+          // ここではプレイヤーのみが知る情報として扱う
+        }
+      }
+    });
+  }
+
+  return {
+    ...game,
+    players: updatedPlayers,
+    revealedRoles,
+  };
+}
+
+// ゲーム終了条件のチェック
+export function checkGameEnd(game: Game): { ended: boolean; winner: Winner | null } {
+  // 生存プレイヤー数の取得
+  const alivePlayers = game.players.filter((player) => player.isAlive);
+  
+  // 人狼陣営の生存プレイヤー数
+  const aliveWerewolves = alivePlayers.filter(
+    (player) => player.role === "WEREWOLF",
+  );
+  
+  // 村人陣営の生存プレイヤー数
+  const aliveVillagers = alivePlayers.filter(
+    (player) => player.role !== "WEREWOLF",
+  );
+
+  // ゲーム終了条件のチェック
+  if (aliveWerewolves.length === 0) {
+    // 人狼がいなくなった場合、村人陣営の勝利
+    return { ended: true, winner: "VILLAGERS" };
+  } else if (aliveWerewolves.length >= aliveVillagers.length) {
+    // 人狼の数が村人以上になった場合、人狼陣営の勝利
+    return { ended: true, winner: "WEREWOLVES" };
+  }
+
+  // ゲーム継続
+  return { ended: false, winner: null };
+}
+
+// プレイヤーのアクションを処理
+export async function processAction(
+  gameId: string,
+  playerId: string,
+  actionType: GameActionType,
+  targetId?: string,
+  voteType?: VoteType,
+): Promise<GameAction> {
+  const game = await getGameById(gameId);
+  if (!game) {
+    throw new Error("Game not found");
+  }
+
+  if (game.status !== "IN_PROGRESS") {
+    throw new Error("Game is not in progress");
+  }
+
+  // プレイヤーが生存していることを確認
+  const player = game.players.find((p) => p.playerId === playerId);
+  if (!player) {
+    throw new Error("Player not found in this game");
+  }
+
+  if (!player.isAlive) {
+    throw new Error("Dead players cannot perform actions");
+  }
+
+  // アクションタイプごとの権限チェック
+  validateActionPermission(game, player, actionType, targetId);
+
+  // 既存のアクションを更新するか、新しいアクションを作成
+  const existingActionIndex = game.actions.findIndex(
+    (a) => a.playerId === playerId && a.type === actionType,
+  );
+
+  const newAction: GameAction = {
+    id: nanoid(),
+    gameId,
+    playerId,
+    type: actionType,
+    targetId: targetId || "",
+    voteType,
+    createdAt: new Date(),
+  };
+
+  // ゲームのアクションをコピー
+  const actionsArray = [...game.actions];
+  if (existingActionIndex >= 0) {
+    // 既存のアクションを更新
+    actionsArray[existingActionIndex] = newAction;
+  } else {
+    // 新しいアクションを追加
+    actionsArray.push(newAction);
+  }
+
+  // GameAction[]と{[key: string]: Map<string, string>}を満たす合成型を生成
+  const updatedActions = actionsArray as unknown as GameAction[] & { [key: string]: Map<string, string> };
+  // 既存のマップをコピーまたは新規作成
+  updatedActions.votes = game.actions.votes ? new Map(game.actions.votes) : new Map<string, string>();
+  updatedActions.attacks = game.actions.attacks ? new Map(game.actions.attacks) : new Map<string, string>();
+  updatedActions.divinations = game.actions.divinations ? new Map(game.actions.divinations) : new Map<string, string>();
+  updatedActions.guards = game.actions.guards ? new Map(game.actions.guards) : new Map<string, string>();
+  updatedActions.mediums = game.actions.mediums ? new Map(game.actions.mediums) : new Map<string, string>();
+
+  // ゲームの更新
+  await updateGame({
+    ...game,
+    actions: updatedActions
+  });
+
+  return newAction;
+}
+
+// アクションの権限を確認
+function validateActionPermission(
+  game: Game,
+  player: GamePlayer,
+  actionType: GameActionType,
+  targetId?: string,
+): void {
+  // フェーズに応じたアクションの制限
   switch (game.currentPhase) {
+    case "DAY_DISCUSSION":
+      if (actionType !== "CHAT") {
+        throw new Error("Only chat actions are allowed during day discussion");
+      }
+      break;
     case "DAY_VOTE":
-      // 投票の処理
-      gameActions.processPhaseActions(game);
-      _processVoteResults(game);
+    case "VOTING":
+      if (actionType !== "VOTE") {
+        throw new Error("Only voting is allowed during voting phase");
+      }
       break;
     case "NIGHT":
-      // 夜アクションの処理
-      _processNightActions(game);
-      gameActions.processPhaseActions(game);
+      // 夜の特殊アクションは役職に依存
+      validateNightActionByRole(player, actionType);
+      break;
+  }
+
+  // ターゲットが必要なアクションで、ターゲットが指定されていない場合
+  if (
+    ["VOTE", "WEREWOLF_ATTACK", "DIVINATION", "PROTECT"].includes(actionType) &&
+    !targetId
+  ) {
+    throw new Error("Target is required for this action");
+  }
+
+  // ターゲットが自分自身の場合（一部のアクションでは自分を対象にできない）
+  if (
+    ["VOTE", "WEREWOLF_ATTACK", "DIVINATION"].includes(actionType) &&
+    targetId === player.playerId
+  ) {
+    throw new Error("Cannot target yourself with this action");
+  }
+
+  // ターゲットのプレイヤーが存在し、生存していることを確認
+  if (targetId) {
+    const targetPlayer = game.players.find((p) => p.playerId === targetId);
+    if (!targetPlayer) {
+      throw new Error("Target player not found");
+    }
+    if (!targetPlayer.isAlive) {
+      throw new Error("Cannot target a dead player");
+    }
+  }
+}
+
+// 役職に応じた夜のアクション権限を確認
+function validateNightActionByRole(player: GamePlayer, actionType: GameActionType): void {
+  if (!player.role) {
+    throw new Error("Player has no assigned role");
+  }
+
+  switch (actionType) {
+    case "WEREWOLF_ATTACK":
+      if (player.role !== "WEREWOLF") {
+        throw new Error("Only werewolves can attack");
+      }
+      break;
+    case "DIVINATION":
+      if (player.role !== "SEER") {
+        throw new Error("Only seers can perform divination");
+      }
+      break;
+    case "PROTECT":
+      if (player.role !== "BODYGUARD") {
+        throw new Error("Only bodyguards can protect");
+      }
+      break;
+    case "CHAT":
+      // チャットは常に許可
       break;
     default:
-      // その他のフェーズではアクションの同期のみ
-      gameActions.processPhaseActions(game);
-      break;
+      throw new Error(`Invalid action type for night phase: ${actionType}`);
   }
-
-  // 勝敗判定（各フェーズの処理後）
-  const { isEnded, winner } = checkGameEnd(game);
-  if (isEnded) {
-    game.status = "FINISHED";
-    game.winner = winner;
-
-    // ゲーム終了イベントを追加
-    game.gameEvents.push({
-      id: uuid(),
-      day: game.currentDay,
-      phase: game.currentPhase,
-      type: "GAME_END",
-      description: `ゲームが終了しました。${winner === "VILLAGERS" ? "村人" : "人狼"}陣営の勝利です。`,
-      timestamp: new Date().toISOString(),
-    });
-
-    logger.info("Game ended during phase end", {
-      gameId: game.id,
-      winner,
-      phase: game.currentPhase,
-    });
-
-    // ゲームストアを更新
-    gameStore.update(game);
-    return;
-  }
-
-  // フェーズの更新（メモ化されたヘルパー関数を使用）
-  const nextPhase = _getNextPhase(game.currentPhase);
-  game.currentPhase = nextPhase;
-
-  // 次のフェーズの準備
-  switch (nextPhase) {
-    case "DAY_VOTE":
-    case "NIGHT":
-      // アクション状態の初期化
-      gameActions.initializeGameActions(game.id);
-      game.phaseEndTime = new Date(Date.now() + _getPhaseTime(nextPhase, game) * 1000).toISOString();
-      break;
-    case "DAY_DISCUSSION":
-      game.currentDay += 1;
-      game.phaseEndTime = new Date(Date.now() + _getPhaseTime(nextPhase, game) * 1000).toISOString();
-      break;
-  }
-
-  // フェーズ変更イベントの記録
-  game.gameEvents.push({
-    id: uuid(),
-    day: game.currentDay,
-    phase: game.currentPhase,
-    type: "PHASE_CHANGE",
-    description: getPhaseChangeDescription(game.currentPhase, game.currentDay),
-    timestamp: new Date().toISOString(),
-  });
-
-  logger.info("Phase end completed", {
-    gameId: game.id,
-    newPhase: game.currentPhase,
-    currentDay: game.currentDay,
-  });
-
-  // ゲームストアを更新
-  gameStore.update(game);
 }

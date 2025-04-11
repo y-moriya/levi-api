@@ -11,6 +11,7 @@ import { getMessage, SupportedLanguage } from "./utils/messages.ts";
 import { config } from "./config.ts";
 import { getLang, getRequestId, setLang } from "./utils/context.ts";
 import { ErrorContext, GameError } from "./types/error.ts";
+import { repositoryContainer } from "./repositories/repository-container.ts";
 
 const app = new Hono();
 
@@ -95,6 +96,7 @@ app.get("/v1/health", (c: Context) => {
   return c.json({
     status: "OK",
     version: config.version,
+    database: config.database.type,
     timestamp: new Date().toISOString(),
   });
 });
@@ -151,11 +153,31 @@ app.onError((err, c) => {
   }, status);
 });
 
+// リポジトリの初期化
+async function initializeRepositories() {
+  try {
+    logger.info(`データストレージタイプ: ${config.database.type} を初期化中...`);
+    await repositoryContainer.initialize();
+    logger.info("データリポジトリの初期化が完了しました");
+  } catch (error) {
+    logger.error("データリポジトリの初期化に失敗しました", { error });
+    throw error;
+  }
+}
+
 // サーバーの起動
 if (import.meta.main) {
   const port = Number(Deno.env.get("PORT")) || 8080;
-  Deno.serve({ port }, app.fetch);
-  logger.info(`Server is running on port ${port}`);
+  
+  // リポジトリの初期化後にサーバーを起動
+  initializeRepositories().then(() => {
+    Deno.serve({ port }, app.fetch);
+    logger.info(`サーバーがポート ${port} で起動しました`);
+    logger.info(`データベースタイプ: ${config.database.type}`);
+  }).catch((error) => {
+    logger.error("アプリケーションの起動に失敗しました", { error });
+    Deno.exit(1);
+  });
 }
 
 export default app;

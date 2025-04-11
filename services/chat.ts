@@ -2,16 +2,14 @@ import { ChatChannel, ChatMessage } from "../types/chat.ts";
 import { Game } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
 import { GameError } from "../types/error.ts";
-import { gameStore } from "../models/game.ts";
-
-// インメモリでメッセージを保存
-const gameMessages: Map<string, ChatMessage[]> = new Map();
+import { getGameById } from "../models/game.ts";
+import { repositoryContainer } from "../repositories/repository-container.ts";
 
 // メッセージの保存
-export function addMessage(message: ChatMessage): void {
-  const messages = gameMessages.get(message.gameId) || [];
-  messages.push(message);
-  gameMessages.set(message.gameId, messages);
+export async function addMessage(message: ChatMessage): Promise<void> {
+  const chatRepo = repositoryContainer.getChatMessageRepository();
+  await chatRepo.add(message);
+  
   logger.info("Chat message added", {
     gameId: message.gameId,
     channel: message.channel,
@@ -19,14 +17,39 @@ export function addMessage(message: ChatMessage): void {
   });
 }
 
+// システムメッセージを追加する
+export async function addSystemMessage(
+  gameId: string,
+  content: string,
+  channel: ChatChannel = "GLOBAL"
+): Promise<void> {
+  const message: ChatMessage = {
+    id: crypto.randomUUID(),
+    gameId,
+    senderId: "SYSTEM",
+    senderUsername: "システム",
+    content,
+    channel,
+    timestamp: new Date().toISOString(),
+  };
+
+  await addMessage(message);
+  logger.info("System message added", {
+    gameId,
+    channel,
+    content,
+  });
+}
+
 // 特定のゲームのメッセージを取得
-export function getGameMessages(
+export async function getGameMessages(
   gameId: string,
   channel: ChatChannel,
   playerId: string,
   game: Game,
-): ChatMessage[] {
-  const messages = gameMessages.get(gameId) || [];
+): Promise<ChatMessage[]> {
+  const chatRepo = repositoryContainer.getChatMessageRepository();
+  const messages = await chatRepo.findByGameAndChannel(gameId, channel);
 
   // プレイヤーの情報を取得
   const player = game.players.find((p) => p.playerId === playerId);
@@ -45,20 +68,20 @@ export function getGameMessages(
       return false;
     }
     
-    return msg.channel === channel;
+    return true;
   });
 }
 
 // メッセージを送信する
-export function sendMessage(
+export async function sendMessage(
   gameId: string,
   senderId: string,
   content: string,
   channel: ChatChannel,
   senderUsername: string = "テストユーザー",
-  game?: Game,
+  existingGame?: Game,
   isTestMode = false,
-): ChatMessage {
+): Promise<ChatMessage> {
   // 入力検証
   if (!gameId) {
     throw new GameError("GAME_NOT_FOUND", "ゲームIDが指定されていません");
@@ -74,22 +97,23 @@ export function sendMessage(
     throw new GameError("INVALID_CHANNEL", `無効なチャンネルです: ${channel}`);
   }
 
-  // ゲームの取得（テストモードでなければ）
-  if (!isTestMode && !game) {
-    game = gameStore.get(gameId);
-    if (!game) {
-      throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
+  // ゲーム情報の取得
+  let gameInstance: Game | undefined = existingGame;
+  if (gameId && !gameInstance) {
+    const foundGame = await getGameById(gameId);
+    if (foundGame) {
+      gameInstance = foundGame;
     }
   }
 
   // テストモードか、または有効なゲームがあるかチェック
-  if (!isTestMode && !game) {
+  if (!isTestMode && !gameInstance) {
     throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
   }
 
   // プレイヤーのロールとゲームの状態をチェック（テストモード以外）
-  if (!isTestMode && game) {
-    const player = game.players.find((p) => p.playerId === senderId);
+  if (!isTestMode && gameInstance) {
+    const player = gameInstance.players.find((p) => p.playerId === senderId);
 
     // プレイヤーがゲームに参加しているか確認
     if (!player) {
@@ -112,7 +136,7 @@ export function sendMessage(
     }
 
     // ゲームフェーズのチェック（夜間は全体チャット不可）
-    if (game.currentPhase === "NIGHT" && channel === "GLOBAL" && player.role !== "WEREWOLF") {
+    if (gameInstance.currentPhase === "NIGHT" && channel === "GLOBAL" && player.role !== "WEREWOLF") {
       throw new GameError("PHASE_CHAT_RESTRICTED", "夜間は全体チャットに参加できません");
     }
   }
@@ -127,7 +151,7 @@ export function sendMessage(
     timestamp: new Date().toISOString(),
   };
 
-  addMessage(message);
+  await addMessage(message);
   logger.info("Chat message sent", {
     gameId,
     channel,
@@ -138,13 +162,13 @@ export function sendMessage(
 }
 
 // メッセージを取得する
-export function getMessages(
+export async function getMessages(
   gameId: string,
   channel: ChatChannel,
   playerId?: string,
-  game?: Game,
+  existingGame?: Game,
   isTestMode = false,
-): ChatMessage[] {
+): Promise<ChatMessage[]> {
   // 入力検証
   if (!gameId) {
     throw new GameError("GAME_NOT_FOUND", "ゲームIDが指定されていません");
@@ -157,19 +181,19 @@ export function getMessages(
   }
 
   // ゲームの取得（テストモードでなければ）
-  if (!isTestMode && !game) {
-    game = gameStore.get(gameId);
-    if (!game) {
-      throw new GameError("GAME_NOT_FOUND", "指定されたゲームが見つかりません");
+  let gameInstance: Game | undefined = existingGame;
+  if (!isTestMode && !gameInstance) {
+    const foundGame = await getGameById(gameId);
+    if (foundGame) {
+      gameInstance = foundGame;
     }
   }
 
-  // メッセージがなくても空の配列を返す
-  const messages = gameMessages.get(gameId) || [];
+  const chatRepo = repositoryContainer.getChatMessageRepository();
 
   // 権限チェック（テストモード以外）
-  if (!isTestMode && game && playerId) {
-    const player = game.players.find((p) => p.playerId === playerId);
+  if (!isTestMode && gameInstance && playerId) {
+    const player = gameInstance.players.find((p) => p.playerId === playerId);
     
     // 人狼チャンネルの権限チェック
     if (channel === "WEREWOLF" && (!player || player.role !== "WEREWOLF")) {
@@ -182,11 +206,19 @@ export function getMessages(
     }
   }
 
-  return messages.filter((msg) => msg.channel === channel);
+  return await chatRepo.findByGameAndChannel(gameId, channel);
 }
 
 // テスト用のリセット関数
-export function resetMessages(): void {
-  gameMessages.clear();
+export async function resetMessages(): Promise<void> {
+  const chatRepo = repositoryContainer.getChatMessageRepository();
+  await chatRepo.clear();
   logger.info("Chat messages reset");
+}
+
+// ゲームに関連するすべてのメッセージを削除
+export async function deleteGameMessages(gameId: string): Promise<void> {
+  const chatRepo = repositoryContainer.getChatMessageRepository();
+  await chatRepo.deleteByGame(gameId);
+  logger.info("Game chat messages deleted", { gameId });
 }

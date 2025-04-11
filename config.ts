@@ -47,6 +47,20 @@ function getEnv<T>(
 // 環境タイプの定義
 export type Environment = "development" | "test" | "production";
 
+// リポジトリタイプの定義
+export type RepositoryType = "memory" | "postgresql";
+
+// データベース設定の型定義
+export interface DatabaseConfig {
+  type: RepositoryType;
+  host?: string;
+  port?: number;
+  user?: string;
+  password?: string;
+  name?: string;
+  ssl?: boolean;
+}
+
 // 設定オブジェクトの型定義
 export interface Config {
   port: number;
@@ -62,6 +76,7 @@ export interface Config {
   logging: {
     level: string;
   };
+  database: DatabaseConfig;
 }
 
 // 環境変数の検証関数
@@ -69,6 +84,9 @@ const isValidEnvironment = (env: string): env is Environment =>
   ["development", "test", "production"].includes(env as Environment);
 
 const isValidLogLevel = (level: string): boolean => ["error", "warn", "info", "debug", "trace"].includes(level);
+
+const isValidRepositoryType = (type: string): type is RepositoryType =>
+  ["memory", "postgresql"].includes(type as RepositoryType);
 
 // 設定値の読み込みと検証
 const initialConfig: Partial<Config> = {
@@ -93,6 +111,15 @@ export const config: Config = {
   logging: {
     level: getEnv("LOG_LEVEL", "info", isValidLogLevel),
   },
+  database: {
+    type: getEnv("DB_TYPE", "memory", isValidRepositoryType),
+    host: getEnv("DB_HOST", "localhost", () => true),
+    port: getEnv("DB_PORT", 5432, (port) => port > 0 && port < 65536),
+    user: getEnv("DB_USER", "postgres", () => true),
+    password: getEnv("DB_PASSWORD", "postgres", () => true),
+    name: getEnv("DB_NAME", "levi_api", () => true),
+    ssl: getEnv("DB_SSL", false, () => true),
+  },
 } as Config;
 
 // 本番環境でシークレットキーが弱い場合の警告
@@ -102,5 +129,15 @@ if (
 ) {
   console.error(
     "警告: 本番環境で安全でないデフォルトのJWTシークレットキーを使用しています。環境変数 JWT_SECRET を設定してください。",
+  );
+}
+
+// 本番環境でメモリリポジトリを使用する場合の警告
+if (
+  config.env === "production" &&
+  config.database.type === "memory"
+) {
+  console.warn(
+    "警告: 本番環境でインメモリストレージを使用しています。サーバー再起動時にデータが失われます。DB_TYPE=postgresql の設定を検討してください。"
   );
 }

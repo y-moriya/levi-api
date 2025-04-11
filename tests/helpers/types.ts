@@ -28,3 +28,8 @@ export interface DivineActionResponse extends ActionResponse {
 
 export type GameResponse = Game;
 export type GameListResponse = Game[];
+
+// 拡張されたResponseインターフェース
+export interface ExtendedResponse extends Response {
+  data?: any;
+}

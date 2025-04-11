@@ -38,8 +38,11 @@ Deno.test({
     assertEquals(startResponse.status, 200);
     assertEquals(startedGame.status, "IN_PROGRESS");
 
-    // 役職の割り当て（テスト用に固定）
-    const gameInstance = gameModel.getGameById(gameId)!;
+    // ゲームインスタンスを取得して役職を割り当て
+    let gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
     gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
@@ -50,7 +53,7 @@ Deno.test({
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
 
     // Day 1: 投票フェーズへ移行
-    gameLogic.advancePhase(gameInstance);
+    await gameLogic.advancePhase(gameId);
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
     // アクション状態の初期化を待機
@@ -66,7 +69,13 @@ Deno.test({
     }
 
     // ゲームフェーズの進行（投票の処理を含む）
-    gameLogic.handlePhaseEnd(gameInstance);
+    await gameLogic.handlePhaseEnd(gameId);
+    
+    // 最新のゲーム状態を取得
+    gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     assertEquals(gameInstance.currentPhase, "NIGHT");
 
     // アクション状態の初期化を待機
@@ -96,7 +105,13 @@ Deno.test({
     // assertEquals(guardResult.success, true);
 
     // ゲームフェーズの進行（夜アクションの処理を含む）
-    gameLogic.handlePhaseEnd(gameInstance);
+    await gameLogic.handlePhaseEnd(gameId);
+    
+    // 最新のゲーム状態を取得
+    gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
 
     const seerPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
@@ -104,7 +119,7 @@ Deno.test({
     assertEquals(seerPlayer.deathCause, "WEREWOLF_ATTACK");
 
     // Day 2: 投票フェーズへ
-    gameLogic.handlePhaseEnd(gameInstance);
+    await gameLogic.handlePhaseEnd(gameId);
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
     // 生存者のみを対象に投票を実行
@@ -128,8 +143,14 @@ Deno.test({
       }
     }
 
-    // // ゲームフェーズの進行（投票の処理を含む）
-    gameLogic.handlePhaseEnd(gameInstance);
+    // ゲームフェーズの進行（投票の処理を含む）
+    await gameLogic.handlePhaseEnd(gameId);
+    
+    // 最新のゲーム状態を取得
+    gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     // 投票でゲームは終了
     // assertEquals(gameInstance.currentPhase, "NIGHT");
 

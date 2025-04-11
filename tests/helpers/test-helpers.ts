@@ -188,13 +188,13 @@ export const assertions = {
   /**
    * ゲームの勝者を検証する
    */
-  assertGameWinner(game: { winner: Winner | "NONE" }, expectedWinner: Winner | "NONE" | null): void {
+  assertGameWinner(game: { ended?: boolean; winner: Winner | "NONE" | null }, expectedWinner: Winner | "NONE" | null): void {
     if (expectedWinner === null) {
-      assertEquals(game.winner, "NONE", "ゲームは勝者が決定していないはずです");
+      assertEquals(game.winner, null, "ゲームは勝者が決定していないはずです");
       return;
     }
 
-    assertNotEquals(game.winner, "NONE", "ゲームは勝者が決定しているはずです");
+    assertNotEquals(game.winner, null, "ゲームは勝者が決定しているはずです");
     assertEquals(game.winner, expectedWinner, `ゲームの勝者は${expectedWinner}のはずです`);
   },
 

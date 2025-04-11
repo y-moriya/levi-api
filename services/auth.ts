@@ -2,18 +2,23 @@ import { AuthToken, Login, User, UserRegistration } from "../types/user.ts";
 import { comparePassword, hashPassword } from "../utils/password.ts";
 import { createJwt } from "../utils/jwt.ts";
 import { config } from "../config.ts";
-
-// インメモリユーザーストレージ
-const users: Map<string, User> = new Map();
+import { repositoryContainer } from "../repositories/repository-container.ts";
+import { logger } from "../utils/logger.ts";
+import { getGameById } from "../models/game.ts";
 
 // テスト用のリセット関数
-export const resetStore = () => {
-  users.clear();
+export const resetStore = async () => {
+  const userRepo = repositoryContainer.getUserRepository();
+  await userRepo.clear();
+  logger.info("User store reset");
 };
 
 export const register = async (data: UserRegistration): Promise<User> => {
+  const userRepo = repositoryContainer.getUserRepository();
+  
   // メールアドレスの重複チェック
-  if (Array.from(users.values()).some((user) => user.email === data.email)) {
+  const existingUser = await userRepo.findByEmail(data.email);
+  if (existingUser) {
     throw new Error("Email already exists");
   }
 
@@ -35,13 +40,15 @@ export const register = async (data: UserRegistration): Promise<User> => {
     },
   };
 
-  users.set(userId, user);
+  await userRepo.add(user);
   const { password: _password, ...userWithoutPassword } = user;
   return userWithoutPassword as User;
 };
 
 export const login = async (data: Login): Promise<AuthToken> => {
-  const user = Array.from(users.values()).find((u) => u.email === data.email);
+  const userRepo = repositoryContainer.getUserRepository();
+  const user = await userRepo.findByEmail(data.email);
+  
   if (!user) {
     throw new Error("Invalid credentials");
   }
@@ -62,9 +69,56 @@ export const login = async (data: Login): Promise<AuthToken> => {
   };
 };
 
-export const getUserById = (userId: string): Omit<User, "password"> | undefined => {
-  const user = users.get(userId);
-  if (!user) return undefined;
+export const getUserById = async (userId: string): Promise<Omit<User, "password"> | null> => {
+  const userRepo = repositoryContainer.getUserRepository();
+  const user = await userRepo.findById(userId);
+  
+  if (!user) return null;
+
+  const { password: _password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+};
+
+// ユーザー統計の更新
+export const updateUserStats = async (
+  userId: string, 
+  stats: Partial<User["stats"]>
+): Promise<Omit<User, "password"> | null> => {
+  const userRepo = repositoryContainer.getUserRepository();
+  const updatedUser = await userRepo.updateStats(userId, stats);
+  
+  if (!updatedUser) return null;
+  
+  const { password: _password, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
+};
+
+// 互換性を維持するためのヘルパー関数
+export const getUserByIdSync = (userId: string): Omit<User, "password"> | undefined => {
+  // 非同期版をラップする同期APIを提供
+  // 注意: テスト環境以外では使用しないことを推奨
+  logger.warn("getUserByIdSync is deprecated, use async getUserById instead");
+  
+  // 非同期関数は同期的に値を返せないので、常にundefinedを返す
+  // 実際のアプリケーションでは、この関数の代わりに非同期版を使用すべき
+  return undefined;
+};
+
+export const getUserByGame = async (gameId: string, userId: string): Promise<Omit<User, "password"> | null> => {
+  const userRepo = repositoryContainer.getUserRepository();
+  const user = await userRepo.findById(userId);
+  
+  if (!user) return null;
+  
+  // ゲーム情報の確認（オプション）
+  if (gameId) {
+    const game = await getGameById(gameId);
+    if (!game) return null;
+    
+    // ユーザーがゲームに参加しているか確認
+    const isPlayerInGame = game.players.some(p => p.playerId === userId);
+    if (!isPlayerInGame) return null;
+  }
 
   const { password: _password, ...userWithoutPassword } = user;
   return userWithoutPassword;

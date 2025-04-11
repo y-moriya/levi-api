@@ -1,16 +1,16 @@
-import { Game, GamePhase } from "../types/game.ts";
+import { Game, GamePhase, Winner } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
-import { checkGameEnd } from "./game-logic.ts";
-import { advancePhase } from "./game-logic.ts";
+import { 
+  checkGameEnd, 
+  getNextPhase, 
+  getPhaseTime, 
+  getPhaseChangeDescription,
+  getActionMap
+} from "./game-core.ts";
+import { repositoryContainer } from "../repositories/repository-container.ts";
 
-// アクション用のユーティリティ関数
-export function getActionMap(
-  game: Game,
-  key: `vote_${number}` | `attack_${number}` | `divine_${number}` | `guard_${number}` | `medium_${number}`,
-): Map<string, string> {
-  game[key] = game[key] || new Map<string, string>();
-  return game[key];
-}
+// 他のファイルから利用できるようにgetActionMapを再エクスポート
+export { getActionMap };
 
 // フェーズタイマーの管理用マップ
 const phaseTimers: Map<string, number> = new Map();
@@ -41,7 +41,7 @@ export const scheduleNextPhase = (game: Game): void => {
 
   if (timeoutMs === 0) {
     // タイムアウトが0以下の場合は直ちにフェーズを進める
-    advancePhase(game);
+    advanceGamePhase(game);
     if (game.status === "IN_PROGRESS") {
       scheduleNextPhase(game);
     }
@@ -57,7 +57,7 @@ export const scheduleNextPhase = (game: Game): void => {
       }
 
       // フェーズを進める
-      advancePhase(game);
+      advanceGamePhase(game);
 
       // 次のフェーズのタイマーを設定
       if (game.status === "IN_PROGRESS") {
@@ -75,9 +75,60 @@ export const scheduleNextPhase = (game: Game): void => {
       timeoutMs,
     });
   } catch (error) {
-    logger.error("Failed to schedule phase timer", error as Error, {
+    logger.error("Failed to schedule phase timer", { 
+      error: (error as Error).message,
       gameId: game.id,
       phase: game.currentPhase,
+    });
+  }
+};
+
+/**
+ * フェーズタイマーの設定（シンプルなバージョン）
+ * ゲームIDと時間を指定して、次のフェーズ進行をスケジュール
+ */
+export const setPhaseTimer = async (gameId: string, durationSeconds: number): Promise<void> => {
+  // ゲーム情報を取得
+  const gameRepo = repositoryContainer.getGameRepository();
+  const game = await gameRepo.findById(gameId);
+  
+  if (!game || game.status !== "IN_PROGRESS") {
+    return;
+  }
+  
+  // 既存のタイマーがあれば削除
+  clearPhaseTimer(gameId);
+  
+  try {
+    // 新しいタイマーを設定
+    const timerId = setTimeout(async () => {
+      try {
+        // フェーズ進行時にゲーム情報を再取得
+        const currentGame = await gameRepo.findById(gameId);
+        if (currentGame && currentGame.status === "IN_PROGRESS") {
+          advanceGamePhase(currentGame);
+          // ゲーム情報を更新
+          await gameRepo.update(gameId, currentGame);
+        }
+      } catch (error) {
+        logger.error("Error in phase timer callback", { 
+          error: (error as Error).message, 
+          gameId 
+        });
+      }
+    }, durationSeconds * 1000);
+    
+    // タイマーIDを保存
+    phaseTimers.set(gameId, timerId);
+    
+    logger.info("Phase timer set", {
+      gameId,
+      durationSeconds,
+    });
+  } catch (error) {
+    logger.error("Failed to set phase timer", { 
+      error: (error as Error).message, 
+      gameId 
     });
   }
 };
@@ -93,7 +144,10 @@ export const clearPhaseTimer = (gameId: string): void => {
       phaseTimers.delete(gameId);
       logger.info("Phase timer cleared", { gameId });
     } catch (error) {
-      logger.error("Failed to clear phase timer", error as Error, { gameId });
+      logger.error("Failed to clear phase timer", { 
+        error: (error as Error).message, 
+        gameId 
+      });
     }
   }
 };
@@ -301,76 +355,35 @@ function handlePendingNightActions(game: Game): void {
 /**
  * ゲーム終了処理
  */
-function endGame(game: Game, winner: string): void {
+function endGame(game: Game, winner: Winner): void {
   game.status = "FINISHED";
   game.currentPhase = "GAME_OVER";
-  game.winner = winner as "VILLAGERS" | "WEREWOLVES";
+  game.winner = winner;
   game.phaseEndTime = null;
-
-  // タイマーをクリア
-  clearPhaseTimer(game.id);
-
-  // 終了イベントを記録
+  
+  // 結果を記録
+  const now = new Date();
   game.gameEvents.push({
     id: crypto.randomUUID(),
     day: game.currentDay,
-    phase: "GAME_OVER",
+    phase: game.currentPhase,
     type: "GAME_END",
-    description: `ゲームが終了しました。${winner}の勝利です！`,
-    timestamp: new Date().toISOString(),
+    description: winner === "VILLAGERS" 
+      ? "村人陣営が勝利しました！" 
+      : "人狼陣営が勝利しました！",
+    timestamp: now.toISOString(),
   });
 
   logger.info("Game ended", {
     gameId: game.id,
     winner,
-    finalDay: game.currentDay,
+    players: game.players.map(p => ({
+      id: p.playerId,
+      role: p.role,
+      isAlive: p.isAlive,
+    })),
   });
-}
-
-/**
- * 次のフェーズを取得
- */
-function getNextPhase(currentPhase: GamePhase): GamePhase {
-  switch (currentPhase) {
-    case "DAY_DISCUSSION":
-      return "DAY_VOTE";
-    case "DAY_VOTE":
-      return "NIGHT";
-    case "NIGHT":
-      return "DAY_DISCUSSION";
-    default:
-      return "DAY_DISCUSSION";
-  }
-}
-
-/**
- * フェーズの制限時間を取得
- */
-function getPhaseTime(phase: GamePhase, game: Game): number {
-  switch (phase) {
-    case "DAY_DISCUSSION":
-      return game.settings.dayTimeSeconds;
-    case "DAY_VOTE":
-      return game.settings.voteTimeSeconds;
-    case "NIGHT":
-      return game.settings.nightTimeSeconds;
-    default:
-      return game.settings.dayTimeSeconds;
-  }
-}
-
-/**
- * フェーズ変更の説明文を生成
- */
-function getPhaseChangeDescription(phase: GamePhase, day: number): string {
-  switch (phase) {
-    case "DAY_DISCUSSION":
-      return `${day}日目の昼になりました。自由に議論を行ってください。`;
-    case "DAY_VOTE":
-      return `投票の時間になりました。処刑する人を決めてください。`;
-    case "NIGHT":
-      return `夜になりました。各役職は行動を選択してください。`;
-    default:
-      return `フェーズが${phase}に変更されました。`;
-  }
+  
+  // タイマーをクリア
+  clearPhaseTimer(game.id);
 }

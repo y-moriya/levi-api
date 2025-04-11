@@ -1,0 +1,33 @@
+// このファイルは循環参照を回避するためのエクスポート用ファイルです
+// models/game.tsとservices/game-logic.tsの間の循環依存関係を解消します
+
+import { Game, GameAction, GameActionType, GamePlayer, VoteType, Winner } from "../types/game.ts";
+import * as gameLogicImpl from "./game-logic.ts";
+
+// 個別の関数をエクスポート
+export const startGame = gameLogicImpl.startGame;
+export const advancePhase = gameLogicImpl.advancePhase; 
+export const handlePhaseEnd = gameLogicImpl.handlePhaseEnd;
+export const checkGameEnd = gameLogicImpl.checkGameEnd;
+export const assignRoles = gameLogicImpl.assignRoles;
+export const processAction = gameLogicImpl.processAction;
+
+// 名前空間としてのエクスポート (テスト互換性のため)
+export const gameLogic = {
+  startGame,
+  advancePhase,
+  handlePhaseEnd,
+  checkGameEnd,
+  assignRoles,
+  processAction
+};
+
+// デフォルトエクスポート
+export default {
+  startGame,
+  advancePhase,
+  handlePhaseEnd,
+  checkGameEnd,
+  assignRoles,
+  processAction
+};

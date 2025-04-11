@@ -51,8 +51,8 @@ async function setupTests() {
 async function cleanupTests() {
   try {
     // Clean up games and timers
-    const games = gameModel.getAllGames();
-    for (const game of games) {
+    const games = await gameModel.getAllGames();
+    for (const game of await games) {
       await gamePhase.clearPhaseTimer(game.id);
     }
 
@@ -354,7 +354,10 @@ Deno.test({
     await consumeResponse<GameResponse>(startResponse);
 
     // テスト用に役職を割り当て
-    const gameInstance = gameModel.getGameById(gameId)!;
+    let gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     gameInstance.currentPhase = "DAY_VOTE"; // フェーズを投票フェーズに設定
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
@@ -433,7 +436,10 @@ Deno.test({
     const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
     await consumeResponse<GameResponse>(startResponse);
 
-    const gameInstance = gameModel.getGameById(gameId)!;
+    const gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 

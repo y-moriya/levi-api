@@ -1,459 +1,633 @@
-import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
-import { apiRequest, consumeResponse, createAuthenticatedUser, testServer } from "../helpers/api.ts";
-import { UserResponse } from "../helpers/types.ts";
-import app from "../../main.ts";
-import * as gameModel from "../../models/game.ts";
-import * as authService from "../../services/auth.ts";
-import * as gamePhase from "../../services/game-phase.ts";
-import { ChatMessage } from "../../types/chat.ts";
+import { assertEquals, assertNotEquals, assertRejects } from "https://deno.land/std@0.210.0/assert/mod.ts";
+import { api, consumeResponse, createAuthenticatedUser, createTestGame } from "../helpers/api.ts";
+import { generateTestUserData, setupTestGame } from "../helpers/test-helpers.ts";
+import { repositoryContainer } from "../../repositories/repository-container.ts";
+import { Game } from "../../types/game.ts";
+import { getGameById } from "../../models/game.ts";
 
-interface ChatError {
-  code: string;
-  message: string;
-}
+const repositories = repositoryContainer;
 
-interface TestUsers {
-  ownerAuth: { token: string; user: UserResponse };
-  werewolfAuth: { token: string; user: UserResponse };
-  seerAuth: { token: string; user: UserResponse };
-  bodyguardAuth: { token: string; user: UserResponse };
-  villagerAuth: { token: string; user: UserResponse };
-}
+Deno.test({
+  name: "チャット - チャットメッセージを正常に送信できるか",
+  async fn() {
+    const auth = await createAuthenticatedUser(api);
+    const token = auth.token;
 
-let gameId: string;
-let users: TestUsers;
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Test Game",
+      maxPlayers: 5,
+    }, token);
 
-// サーバー状態を追跡
-let isServerRunning = false;
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
 
-// セットアップとクリーンアップ
-async function setupTests() {
-  // Reset stores
-  gameModel.resetGames();
-  authService.resetStore();
-  gamePhase.clearAllTimers();
+    // チャットメッセージを送信
+    const messageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Hello, world!",
+        channel: "PUBLIC",
+      },
+      token,
+    );
 
-  try {
-    // サーバーが実行中でない場合のみ起動
-    if (!isServerRunning) {
-      await testServer.start(app);
-      isServerRunning = true;
+    assertEquals(messageResponse.status, 200);
+    assertNotEquals(messageResponse.data.id, undefined);
+    assertEquals(messageResponse.data.content, "Hello, world!");
+    assertEquals(messageResponse.data.sender.username, auth.user.username);
+    assertEquals(messageResponse.data.channel, "PUBLIC");
+
+    // チャットメッセージを取得
+    const messagesResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PUBLIC`,
+      token,
+    );
+
+    assertEquals(messagesResponse.status, 200);
+    assertEquals(messagesResponse.data.length, 1);
+    assertEquals(messagesResponse.data[0].content, "Hello, world!");
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, token);
+  },
+});
+
+Deno.test({
+  name: "チャット - 認証なしでチャットにアクセスできないか",
+  async fn() {
+    const auth = await createAuthenticatedUser(api);
+    const token = auth.token;
+
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Test Game",
+      maxPlayers: 5,
+    }, token);
+
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 認証なしでチャットメッセージを送信
+    const messageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Hello, world!",
+        channel: "PUBLIC",
+      },
+    );
+
+    assertEquals(messageResponse.status, 401);
+
+    // 認証なしでチャットメッセージを取得
+    const messagesResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PUBLIC`,
+    );
+
+    assertEquals(messagesResponse.status, 401);
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, token);
+  },
+});
+
+Deno.test({
+  name: "チャット - ゲームに参加していないユーザーがチャットにアクセスできないか",
+  async fn() {
+    const gameOwner = await createAuthenticatedUser(api, "owner");
+    const outsider = await createAuthenticatedUser(api, "outsider");
+
+    // ゲームを作成（オーナーのみが参加）
+    const gameResponse = await api.post("/api/games", {
+      name: "Test Game",
+      maxPlayers: 5,
+    }, gameOwner.token);
+
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // ゲームに参加していないユーザーがチャットメッセージを送信
+    const messageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Hello, world!",
+        channel: "PUBLIC",
+      },
+      outsider.token,
+    );
+
+    assertEquals(messageResponse.status, 403);
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, gameOwner.token);
+  },
+});
+
+Deno.test({
+  name: "チャット - すべてのゲームから全チャットメッセージを削除できるか",
+  async fn() {
+    const auth = await createAuthenticatedUser(api);
+    const token = auth.token;
+
+    // 複数のゲームを作成
+    const games = [];
+    for (let i = 0; i < 3; i++) {
+      const gameResponse = await api.post("/api/games", {
+        name: `Test Game ${i}`,
+        maxPlayers: 5,
+      }, token);
+      assertEquals(gameResponse.status, 200);
+      games.push(gameResponse.data);
     }
 
-    // Create test users in parallel
-    const [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth] = await Promise.all([
-      createAuthenticatedUser({
-        username: "owner",
-        email: `owner${Date.now()}@example.com`,
-        password: "password123",
-      }),
-      createAuthenticatedUser({
-        username: "werewolf",
-        email: `werewolf${Date.now()}@example.com`,
-        password: "password123",
-      }),
-      createAuthenticatedUser({
-        username: "seer",
-        email: `seer${Date.now()}@example.com`,
-        password: "password123",
-      }),
-      createAuthenticatedUser({
-        username: "bodyguard",
-        email: `bodyguard${Date.now()}@example.com`,
-        password: "password123",
-      }),
-      createAuthenticatedUser({
-        username: "villager",
-        email: `villager${Date.now()}@example.com`,
-        password: "password123",
-      }),
-    ]);
-
-    users = { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth };
-  } catch (error) {
-    console.error("Failed to setup tests:", error);
-    throw error;
-  }
-}
-
-function cleanupTests() {
-  try {
-    // Clean up games and timers
-    const games = gameModel.getAllGames();
+    // 各ゲームにチャットメッセージを送信
     for (const game of games) {
-      gamePhase.clearPhaseTimer(game.id);
+      const messageResponse = await api.post(
+        `/api/games/${game.id}/chat`,
+        {
+          content: `Message for game ${game.id}`,
+          channel: "PUBLIC",
+        },
+        token,
+      );
+      assertEquals(messageResponse.status, 200);
     }
 
-    // リセットするだけで、サーバーは停止しない
-    gameModel.resetGames();
-    authService.resetStore();
-  } catch (error) {
-    console.error("Failed to cleanup tests:", error);
-    throw error;
-  }
-}
+    // チャットリポジトリをクリア
+    const chatRepo = repositories.getChatRepository();
+    await chatRepo.clear();
 
-// チャットAPIのテスト
-Deno.test({
-  name: "チャットAPI - サーバーセットアップ",
-  sanitizeOps: false,
-  sanitizeResources: false,
-  async fn() {
-    await setupTests();
-    await cleanupTests();
+    // メッセージが削除されたことを確認
+    for (const game of games) {
+      const messagesResponse = await api.get(
+        `/api/games/${game.id}/chat?channel=PUBLIC`,
+        token,
+      );
+      assertEquals(messagesResponse.status, 200);
+      assertEquals(messagesResponse.data.length, 0);
+    }
+
+    // 後処理：ゲームの削除
+    for (const game of games) {
+      await api.delete(`/api/games/${game.id}`, token);
+    }
   },
 });
 
 Deno.test({
-  name: "チャット - グローバルチャンネルでメッセージの送受信",
-  sanitizeOps: false,
-  sanitizeResources: false,
+  name: "チャット - ゲーム内のすべてのチャットメッセージを削除できるか",
   async fn() {
-    await setupTests();
-    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+    const auth = await createAuthenticatedUser(api);
+    const token = auth.token;
 
-    // ゲームの作成
-    const createResponse = await apiRequest("POST", "/games", {
-      name: "Chat Test Game",
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Test Game",
       maxPlayers: 5,
-    }, ownerAuth.token);
-    const game = await consumeResponse<{ id: string }>(createResponse);
-    gameId = game.id;
+    }, token);
 
-    // プレイヤーの参加（必要な人数を確保）
-    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
-    for (const player of players) {
-      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
-      await consumeResponse(joinResponse);
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 複数のチャットメッセージを送信
+    for (let i = 0; i < 5; i++) {
+      const messageResponse = await api.post(
+        `/api/games/${gameId}/chat`,
+        {
+          content: `Message ${i}`,
+          channel: "PUBLIC",
+        },
+        token,
+      );
+      assertEquals(messageResponse.status, 200);
     }
 
-    // ゲーム開始
-    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
-    await consumeResponse(startResponse);
+    // メッセージが送信されたことを確認
+    let messagesResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PUBLIC`,
+      token,
+    );
+    assertEquals(messagesResponse.status, 200);
+    assertEquals(messagesResponse.data.length, 5);
 
-    // メッセージの送信
-    const sendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "GLOBAL",
-      content: "Hello, world!",
-    }, ownerAuth.token);
-    const sendResult = await consumeResponse<{ success: boolean }>(sendResponse);
-    assertEquals(sendResult.success, true);
+    // ゲーム内のすべてのチャットメッセージを削除
+    await repositories.deleteGameChatMessages(gameId);
 
-    // メッセージの取得
-    const getResponse = await apiRequest("GET", `/chat/${gameId}/messages/GLOBAL`, undefined, ownerAuth.token);
-    const getResult = await consumeResponse<{ messages: ChatMessage[] }>(getResponse);
-    assertEquals(getResult.messages.length, 1);
-    assertEquals(getResult.messages[0].content, "Hello, world!");
-    assertEquals(getResult.messages[0].channel, "GLOBAL");
+    // メッセージが削除されたことを確認
+    messagesResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PUBLIC`,
+      token,
+    );
+    assertEquals(messagesResponse.status, 200);
+    assertEquals(messagesResponse.data.length, 0);
 
-    await cleanupTests();
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, token);
   },
 });
 
+// 役割別チャットのテスト
 Deno.test({
-  name: "チャット - 人狼チャンネルのアクセス制御",
-  sanitizeOps: false,
-  sanitizeResources: false,
+  name: "チャット - 役割別チャットが適切に機能するか",
   async fn() {
-    await setupTests();
-    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+    // 5人のユーザーを作成
+    const ownerAuth = await createAuthenticatedUser(api, "owner");
+    const werewolfAuth = await createAuthenticatedUser(api, "werewolf");
+    const seerAuth = await createAuthenticatedUser(api, "seer");
+    const bodyguardAuth = await createAuthenticatedUser(api, "bodyguard");
+    const villagerAuth = await createAuthenticatedUser(api, "villager");
 
-    // ゲームの作成
-    const createResponse = await apiRequest("POST", "/games", {
-      name: "Chat Test Game",
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Role Chat Test",
       maxPlayers: 5,
     }, ownerAuth.token);
-    const game = await consumeResponse<{ id: string }>(createResponse);
-    gameId = game.id;
 
-    // 全プレイヤーの参加
-    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
-    for (const player of players) {
-      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
-      await consumeResponse(joinResponse);
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 全プレイヤーをゲームに参加させる
+    await api.post(`/api/games/${gameId}/join`, {}, werewolfAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, seerAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, bodyguardAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, villagerAuth.token);
+
+    // ゲームを開始
+    await api.post(`/api/games/${gameId}/start`, {}, ownerAuth.token);
+
+    // ゲームインスタンスを取得して役職を割り当て
+    let gameInstance = await getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
     }
-
-    // ゲーム開始と役職の設定
-    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
-    await consumeResponse(startResponse);
-
-    const gameInstance = gameModel.getGameById(gameId)!;
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
 
-    // 人狼からのメッセージ送信（成功するはず）
-    const werewolfSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "WEREWOLF",
-      content: "Secret message",
-    }, werewolfAuth.token);
-    const werewolfSendResult = await consumeResponse<{ success: boolean }>(werewolfSendResponse);
-    assertEquals(werewolfSendResult.success, true);
-
-    // 村人からのメッセージ送信（失敗するはず）
-    const villagerSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "WEREWOLF",
-      content: "Try to send secret",
-    }, villagerAuth.token);
-
-    // エラー応答のステータスコードを検証（403 Forbiddenが返されることを期待）
-    assertEquals(villagerSendResponse.status, 403, "Expected error response with status 403");
-
-    // テストコードではエラーの内容までは検証しない
-    // エラーメッセージの内容が「アクセス権がない」旨を示していれば良い
-
-    // 村人のメッセージ取得（空配列が返るはず）
-    const villagerGetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/WEREWOLF`,
-      undefined,
-      villagerAuth.token,
-    );
-    const villagerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(villagerGetResponse);
-    assertEquals(villagerGetResult.messages.length, 0);
-
-    // 人狼のメッセージ取得（メッセージが見えるはず）
-    const werewolfGetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/WEREWOLF`,
-      undefined,
+    // 人狼チャットのテスト
+    // 人狼がWEREWOLFチャンネルにメッセージを送信
+    const werewolfMessageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Wolf message",
+        channel: "WEREWOLF",
+      },
       werewolfAuth.token,
     );
-    const werewolfGetResult = await consumeResponse<{ messages: ChatMessage[] }>(werewolfGetResponse);
-    assertEquals(werewolfGetResult.messages.length, 1);
-    assertEquals(werewolfGetResult.messages[0].content, "Secret message");
+    assertEquals(werewolfMessageResponse.status, 200);
 
-    await cleanupTests();
-  },
-});
-
-Deno.test({
-  name: "チャット - 霊界チャンネルのアクセス制御",
-  sanitizeOps: false,
-  sanitizeResources: false,
-  async fn() {
-    await setupTests();
-    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
-
-    // ゲームの作成
-    const createResponse = await apiRequest("POST", "/games", {
-      name: "Spirit Chat Test Game",
-      maxPlayers: 5,
-    }, ownerAuth.token);
-    const game = await consumeResponse<{ id: string }>(createResponse);
-    gameId = game.id;
-
-    // 全プレイヤーの参加
-    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
-    for (const player of players) {
-      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
-      await consumeResponse(joinResponse);
-    }
-
-    // ゲーム開始
-    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
-    await consumeResponse(startResponse);
-
-    // 一部のプレイヤーを死亡状態に設定
-    const gameInstance = gameModel.getGameById(gameId)!;
-    const deadPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
-    const alivePlayer = gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!;
-    
-    deadPlayer.isAlive = false;
-    deadPlayer.deathCause = "WEREWOLF_ATTACK";
-    
-    // 死亡プレイヤーからの霊界メッセージ送信（成功するはず）
-    const deadPlayerSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "SPIRIT",
-      content: "Message from the afterlife",
-    }, seerAuth.token);
-    const deadPlayerSendResult = await consumeResponse<{ success: boolean }>(deadPlayerSendResponse);
-    assertEquals(deadPlayerSendResult.success, true);
-
-    // 生存プレイヤーからの霊界メッセージ送信（失敗するはず）
-    const alivePlayerSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "SPIRIT",
-      content: "Try to send to spirit realm",
-    }, villagerAuth.token);
-
-    // エラー応答のステータスコードを検証（403 Forbiddenが返されることを期待）
-    assertEquals(alivePlayerSendResponse.status, 403, "Expected error response with status 403");
-
-    // 死亡プレイヤーのメッセージ取得（メッセージが見えるはず）
-    const deadPlayerGetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/SPIRIT`,
-      undefined,
-      seerAuth.token,
-    );
-    const deadPlayerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayerGetResponse);
-    assertEquals(deadPlayerGetResult.messages.length, 1);
-    assertEquals(deadPlayerGetResult.messages[0].content, "Message from the afterlife");
-
-    // 生存プレイヤーのメッセージ取得（空配列が返るはず）
-    const alivePlayerGetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/SPIRIT`,
-      undefined,
+    // 村人が人狼チャンネルにメッセージを送信しようとする（失敗するはず）
+    const villagerToWerewolfResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Villager trying to message wolves",
+        channel: "WEREWOLF",
+      },
       villagerAuth.token,
     );
-    const alivePlayerGetResult = await consumeResponse<{ messages: ChatMessage[] }>(alivePlayerGetResponse);
-    assertEquals(alivePlayerGetResult.messages.length, 0);
+    assertEquals(villagerToWerewolfResponse.status, 403);
 
-    await cleanupTests();
+    // 人狼が人狼チャンネルのメッセージを取得
+    const werewolfChatResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=WEREWOLF`,
+      werewolfAuth.token,
+    );
+    assertEquals(werewolfChatResponse.status, 200);
+    assertEquals(werewolfChatResponse.data.length, 1);
+    assertEquals(werewolfChatResponse.data[0].content, "Wolf message");
+
+    // 村人が人狼チャンネルのメッセージを取得しようとする（失敗するはず）
+    const villagerWerewolfChatResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=WEREWOLF`,
+      villagerAuth.token,
+    );
+    assertEquals(villagerWerewolfChatResponse.status, 403);
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, ownerAuth.token);
   },
 });
 
+// デッドチャットのテスト
 Deno.test({
-  name: "チャット - 複数の死亡プレイヤーの霊界チャットでの会話",
-  sanitizeOps: false,
-  sanitizeResources: false,
+  name: "チャット - 死亡プレイヤーのみがデッドチャットにアクセスできるか",
   async fn() {
-    await setupTests();
-    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
+    // 5人のユーザーを作成
+    const ownerAuth = await createAuthenticatedUser(api, "owner");
+    const werewolfAuth = await createAuthenticatedUser(api, "werewolf");
+    const seerAuth = await createAuthenticatedUser(api, "seer");
+    const bodyguardAuth = await createAuthenticatedUser(api, "bodyguard");
+    const villagerAuth = await createAuthenticatedUser(api, "villager");
 
-    // ゲームの作成 - リクエストボディを明示的に変数に格納
-    const gameData = {
-      name: "Multiple Dead Test Game", // 短くシンプルな名前に変更
-      maxPlayers: 5,
-    };
-    console.log("ゲーム作成リクエスト:", gameData); // デバッグ用ログ追加
-
-    const createResponse = await apiRequest("POST", "/games", gameData, ownerAuth.token);
-    const game = await consumeResponse<{ id: string }>(createResponse);
-    gameId = game.id;
-
-    // 全プレイヤーの参加
-    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
-    for (const player of players) {
-      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
-      await consumeResponse(joinResponse);
-    }
-
-    // ゲーム開始
-    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
-    await consumeResponse(startResponse);
-
-    // 複数のプレイヤーを死亡状態に設定
-    const gameInstance = gameModel.getGameById(gameId)!;
-    const deadPlayer1 = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
-    const deadPlayer2 = gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!;
-    
-    deadPlayer1.isAlive = false;
-    deadPlayer1.deathCause = "WEREWOLF_ATTACK";
-    
-    deadPlayer2.isAlive = false;
-    deadPlayer2.deathCause = "EXECUTION";
-    
-    // 1人目の死亡プレイヤーが霊界チャットにメッセージを送信
-    const deadPlayer1SendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "SPIRIT",
-      content: "Hello from the other side",
-    }, seerAuth.token);
-    await consumeResponse<{ success: boolean }>(deadPlayer1SendResponse);
-
-    // 2人目の死亡プレイヤーが霊界チャットにメッセージを送信
-    const deadPlayer2SendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "SPIRIT",
-      content: "I can hear you!",
-    }, bodyguardAuth.token);
-    await consumeResponse<{ success: boolean }>(deadPlayer2SendResponse);
-
-    // 1人目の死亡プレイヤーがメッセージを取得（両方のメッセージが見えるはず）
-    const deadPlayer1GetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/SPIRIT`,
-      undefined,
-      seerAuth.token,
-    );
-    const deadPlayer1GetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayer1GetResponse);
-    assertEquals(deadPlayer1GetResult.messages.length, 2);
-    assertEquals(deadPlayer1GetResult.messages[0].content, "Hello from the other side");
-    assertEquals(deadPlayer1GetResult.messages[1].content, "I can hear you!");
-
-    // 2人目の死亡プレイヤーがメッセージを取得（両方のメッセージが見えるはず）
-    const deadPlayer2GetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/SPIRIT`,
-      undefined,
-      bodyguardAuth.token,
-    );
-    const deadPlayer2GetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadPlayer2GetResponse);
-    assertEquals(deadPlayer2GetResult.messages.length, 2);
-    assertEquals(deadPlayer2GetResult.messages[0].content, "Hello from the other side");
-    assertEquals(deadPlayer2GetResult.messages[1].content, "I can hear you!");
-
-    await cleanupTests();
-  },
-});
-
-Deno.test({
-  name: "チャット - 死亡プレイヤーの霊界チャットと全体チャットへのアクセス",
-  sanitizeOps: false,
-  sanitizeResources: false,
-  async fn() {
-    await setupTests();
-    const { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth } = users;
-
-    // ゲームの作成
-    const createResponse = await apiRequest("POST", "/games", {
-      name: "Dead Player Access Test",
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Dead Chat Test",
       maxPlayers: 5,
     }, ownerAuth.token);
-    const game = await consumeResponse<{ id: string }>(createResponse);
-    gameId = game.id;
 
-    // 全プレイヤーの参加
-    const players = [werewolfAuth, seerAuth, bodyguardAuth, villagerAuth];
-    for (const player of players) {
-      const joinResponse = await apiRequest("POST", `/games/${gameId}/join`, undefined, player.token);
-      await consumeResponse(joinResponse);
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 全プレイヤーをゲームに参加させる
+    await api.post(`/api/games/${gameId}/join`, {}, werewolfAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, seerAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, bodyguardAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, villagerAuth.token);
+
+    // ゲームを開始
+    await api.post(`/api/games/${gameId}/start`, {}, ownerAuth.token);
+
+    // ゲームインスタンスを取得して役職を割り当て
+    let gameInstance = await getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
+
+    // 一人のプレイヤーを死亡状態にする
+    const deadPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
+    const alivePlayer = gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!;
+    deadPlayer.isAlive = false;
+    deadPlayer.deathCause = "WEREWOLF_ATTACK";
+
+    // 死亡プレイヤーがDEADチャンネルにメッセージを送信
+    const deadMessageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Message from the dead",
+        channel: "DEAD",
+      },
+      seerAuth.token,
+    );
+    assertEquals(deadMessageResponse.status, 200);
+
+    // 生存プレイヤーがDEADチャンネルにメッセージを送信しようとする（失敗するはず）
+    const aliveToDeadResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Alive trying to message dead",
+        channel: "DEAD",
+      },
+      villagerAuth.token,
+    );
+    assertEquals(aliveToDeadResponse.status, 403);
+
+    // 死亡プレイヤーがDEADチャンネルのメッセージを取得
+    const deadChatResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=DEAD`,
+      seerAuth.token,
+    );
+    assertEquals(deadChatResponse.status, 200);
+    assertEquals(deadChatResponse.data.length, 1);
+    assertEquals(deadChatResponse.data[0].content, "Message from the dead");
+
+    // 生存プレイヤーがDEADチャンネルのメッセージを取得しようとする（失敗するはず）
+    const aliveDeadChatResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=DEAD`,
+      villagerAuth.token,
+    );
+    assertEquals(aliveDeadChatResponse.status, 403);
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, ownerAuth.token);
+  },
+});
+
+// すべての役割チャットのアクセス制御のテスト
+Deno.test({
+  name: "チャット - 各役割チャットのアクセス制御が正しく機能するか",
+  async fn() {
+    // 5人のユーザーを作成
+    const ownerAuth = await createAuthenticatedUser(api, "owner");
+    const werewolfAuth = await createAuthenticatedUser(api, "werewolf");
+    const seerAuth = await createAuthenticatedUser(api, "seer");
+    const bodyguardAuth = await createAuthenticatedUser(api, "bodyguard");
+    const villagerAuth = await createAuthenticatedUser(api, "villager");
+
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Role Access Test",
+      maxPlayers: 5,
+    }, ownerAuth.token);
+
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 全プレイヤーをゲームに参加させる
+    await api.post(`/api/games/${gameId}/join`, {}, werewolfAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, seerAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, bodyguardAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, villagerAuth.token);
+
+    // ゲームを開始
+    await api.post(`/api/games/${gameId}/start`, {}, ownerAuth.token);
+
+    // ゲームインスタンスを取得して役職を割り当て
+    let gameInstance = await getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
+
+    // 2人のプレイヤーを死亡状態にする
+    const deadPlayer1 = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
+    const deadPlayer2 = gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!;
+    deadPlayer1.isAlive = false;
+    deadPlayer1.deathCause = "WEREWOLF_ATTACK";
+    deadPlayer2.isAlive = false;
+    deadPlayer2.deathCause = "EXECUTION";
+
+    // チャンネルとアクセス権限のマップ
+    const channelAccessMap = [
+      {
+        channel: "PUBLIC",
+        canAccess: [ownerAuth, werewolfAuth, villagerAuth],
+        cannotAccess: [], // 全員アクセス可能
+      },
+      {
+        channel: "WEREWOLF",
+        canAccess: [werewolfAuth],
+        cannotAccess: [ownerAuth, villagerAuth], // 人狼以外はアクセス不可
+      },
+      {
+        channel: "SEER",
+        canAccess: [seerAuth],
+        cannotAccess: [ownerAuth, werewolfAuth, villagerAuth], // 占い師以外はアクセス不可
+      },
+      {
+        channel: "BODYGUARD",
+        canAccess: [bodyguardAuth],
+        cannotAccess: [ownerAuth, werewolfAuth, villagerAuth, seerAuth], // 守護者以外はアクセス不可
+      },
+      {
+        channel: "DEAD",
+        canAccess: [seerAuth, bodyguardAuth], // 死亡プレイヤー
+        cannotAccess: [ownerAuth, werewolfAuth, villagerAuth], // 生存プレイヤーはアクセス不可
+      },
+    ];
+
+    // 各チャンネルのアクセス制御をテスト
+    for (const testCase of channelAccessMap) {
+      const { channel, canAccess, cannotAccess } = testCase;
+
+      // アクセス可能なユーザーのテスト
+      for (const auth of canAccess) {
+        const messageResponse = await api.post(
+          `/api/games/${gameId}/chat`,
+          {
+            content: `${auth.user.username} in ${channel}`,
+            channel,
+          },
+          auth.token,
+        );
+
+        if (
+          // 死亡プレイヤーはDEAD以外のチャンネルに送信できない
+          (channel !== "DEAD" && auth === seerAuth || auth === bodyguardAuth)
+        ) {
+          assertEquals(messageResponse.status, 403);
+        } else {
+          assertEquals(messageResponse.status, 200, `${auth.user.username} should be able to send to ${channel}`);
+        }
+
+        const chatResponse = await api.get(
+          `/api/games/${gameId}/chat?channel=${channel}`,
+          auth.token,
+        );
+        assertEquals(chatResponse.status, 200, `${auth.user.username} should be able to read ${channel}`);
+      }
+
+      // アクセス不可のユーザーのテスト
+      for (const auth of cannotAccess) {
+        const messageResponse = await api.post(
+          `/api/games/${gameId}/chat`,
+          {
+            content: `${auth.user.username} trying ${channel}`,
+            channel,
+          },
+          auth.token,
+        );
+        assertEquals(messageResponse.status, 403, `${auth.user.username} should not be able to send to ${channel}`);
+
+        const chatResponse = await api.get(
+          `/api/games/${gameId}/chat?channel=${channel}`,
+          auth.token,
+        );
+        assertEquals(chatResponse.status, 403, `${auth.user.username} should not be able to read ${channel}`);
+      }
     }
 
-    // ゲーム開始
-    const startResponse = await apiRequest("POST", `/games/${gameId}/start`, undefined, ownerAuth.token);
-    await consumeResponse(startResponse);
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, ownerAuth.token);
+  },
+});
 
-    // プレイヤーが生きている間に全体チャットにメッセージを送信
-    const aliveGlobalSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "GLOBAL",
-      content: "I'm still alive",
-    }, seerAuth.token);
-    await consumeResponse<{ success: boolean }>(aliveGlobalSendResponse);
+// ゲーム内のプライベートメッセージのテスト
+Deno.test({
+  name: "チャット - プライベートメッセージが正しく機能するか",
+  async fn() {
+    // 5人のユーザーを作成
+    const ownerAuth = await createAuthenticatedUser(api, "owner");
+    const werewolfAuth = await createAuthenticatedUser(api, "werewolf");
+    const seerAuth = await createAuthenticatedUser(api, "seer");
+    const bodyguardAuth = await createAuthenticatedUser(api, "bodyguard");
+    const villagerAuth = await createAuthenticatedUser(api, "villager");
 
-    // プレイヤーを死亡状態に設定
-    const gameInstance = gameModel.getGameById(gameId)!;
+    // ゲームを作成
+    const gameResponse = await api.post("/api/games", {
+      name: "Private Message Test",
+      maxPlayers: 5,
+    }, ownerAuth.token);
+
+    assertEquals(gameResponse.status, 200);
+    const gameId = gameResponse.data.id;
+
+    // 全プレイヤーをゲームに参加させる
+    await api.post(`/api/games/${gameId}/join`, {}, werewolfAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, seerAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, bodyguardAuth.token);
+    await api.post(`/api/games/${gameId}/join`, {}, villagerAuth.token);
+
+    // ゲームを開始
+    await api.post(`/api/games/${gameId}/start`, {}, ownerAuth.token);
+
+    // ゲームインスタンスを取得して役職を割り当て
+    let gameInstance = await getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
+    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
+    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
+    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
+    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
+
+    // 一人のプレイヤーを死亡状態にする
     const deadPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
     deadPlayer.isAlive = false;
     deadPlayer.deathCause = "WEREWOLF_ATTACK";
-    
-    // 死亡プレイヤーが全体チャットにメッセージを送信しようとする（失敗するはず）
-    const deadGlobalSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "GLOBAL",
-      content: "Can you hear me?",
-    }, seerAuth.token);
-    
-    // エラー応答のステータスコードを検証
-    assertEquals(deadGlobalSendResponse.status, 403, "Expected error response with status 403");
 
-    // 死亡プレイヤーが霊界チャットにメッセージを送信（成功するはず）
-    const deadSpiritSendResponse = await apiRequest("POST", `/chat/${gameId}/messages`, {
-      channel: "SPIRIT",
-      content: "Hello from spirit realm",
-    }, seerAuth.token);
-    const deadSpiritSendResult = await consumeResponse<{ success: boolean }>(deadSpiritSendResponse);
-    assertEquals(deadSpiritSendResult.success, true);
+    // プライベートメッセージを送信
+    const privateMessageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Private message",
+        channel: "PRIVATE",
+        recipientId: villagerAuth.user.id,
+      },
+      ownerAuth.token,
+    );
+    assertEquals(privateMessageResponse.status, 200);
 
-    // 死亡プレイヤーは全体チャットのメッセージを読むことができる（過去のメッセージが見えるはず）
-    const deadGlobalGetResponse = await apiRequest(
-      "GET",
-      `/chat/${gameId}/messages/GLOBAL`,
-      undefined,
+    // 死亡プレイヤーからプライベートメッセージを送信（失敗するはず）
+    const deadPrivateMessageResponse = await api.post(
+      `/api/games/${gameId}/chat`,
+      {
+        content: "Private message from dead",
+        channel: "PRIVATE",
+        recipientId: villagerAuth.user.id,
+      },
       seerAuth.token,
     );
-    const deadGlobalGetResult = await consumeResponse<{ messages: ChatMessage[] }>(deadGlobalGetResponse);
-    assertEquals(deadGlobalGetResult.messages.length, 1);
-    assertEquals(deadGlobalGetResult.messages[0].content, "I'm still alive");
+    assertEquals(deadPrivateMessageResponse.status, 403);
 
-    await cleanupTests();
+    // 送信者がプライベートメッセージを取得
+    const senderPrivateResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PRIVATE`,
+      ownerAuth.token,
+    );
+    assertEquals(senderPrivateResponse.status, 200);
+    assertEquals(senderPrivateResponse.data.length, 1);
+    assertEquals(senderPrivateResponse.data[0].content, "Private message");
+
+    // 受信者がプライベートメッセージを取得
+    const recipientPrivateResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PRIVATE`,
+      villagerAuth.token,
+    );
+    assertEquals(recipientPrivateResponse.status, 200);
+    assertEquals(recipientPrivateResponse.data.length, 1);
+    assertEquals(recipientPrivateResponse.data[0].content, "Private message");
+
+    // 第三者がプライベートメッセージを取得（メッセージが表示されないはず）
+    const thirdPartyPrivateResponse = await api.get(
+      `/api/games/${gameId}/chat?channel=PRIVATE`,
+      werewolfAuth.token,
+    );
+    assertEquals(thirdPartyPrivateResponse.status, 200);
+    assertEquals(thirdPartyPrivateResponse.data.length, 0);
+
+    // 後処理：ゲームの削除
+    await api.delete(`/api/games/${gameId}`, ownerAuth.token);
   },
 });

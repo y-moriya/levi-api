@@ -26,7 +26,7 @@ export const sendMessage = async (c: Context) => {
     }
 
     // ゲームの存在確認
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -37,7 +37,7 @@ export const sendMessage = async (c: Context) => {
     }
 
     // プレイヤーの参加確認
-    const player = game.players.find((p) => p.playerId === userId);
+    const player = game.players.find((p: { playerId: string }) => p.playerId === userId);
     if (!player) {
       throw new GameError(
         "UNAUTHORIZED",
@@ -125,7 +125,7 @@ export const sendMessage = async (c: Context) => {
   }
 };
 
-export const getMessages = (c: Context) => {
+export const getMessages = async (c: Context) => {
   const gameId = c.req.param("gameId");
   const channel = c.req.param("channel");
   const userId = c.get("userId");
@@ -133,7 +133,7 @@ export const getMessages = (c: Context) => {
 
   try {
     // ゲームの存在確認
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -144,7 +144,7 @@ export const getMessages = (c: Context) => {
     }
 
     // プレイヤーの参加確認
-    const player = game.players.find((p) => p.playerId === userId);
+    const player = game.players.find((p: { playerId: string }) => p.playerId === userId);
     if (!player) {
       throw new GameError(
         "UNAUTHORIZED",
@@ -169,7 +169,7 @@ export const getMessages = (c: Context) => {
     }
 
     // メッセージの取得
-    const messages = chatService.getGameMessages(gameId, channel as "GLOBAL" | "WEREWOLF" | "GENERAL" | "SPIRIT", userId, game);
+    const messages = await chatService.getGameMessages(gameId, channel as "GLOBAL" | "WEREWOLF" | "GENERAL" | "SPIRIT", userId, game);
     logger.info("Messages retrieved", { gameId, channel, count: messages.length });
     return c.json({ messages });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { Hono } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { AuthResponse, GameResponse, UserResponse } from "./types.ts";
+import { AuthResponse, ExtendedResponse, GameResponse, UserResponse } from "./types.ts";
 import { logger } from "../../utils/logger.ts";
 import { Game, GamePhase } from "../../types/game.ts";
 import * as gameActions from "../../services/game-actions.ts";
@@ -129,6 +129,58 @@ export async function apiRequest(
   return response;
 }
 
+// APIクライアントクラス - メソッドチェーンインターフェースを提供する
+export class ApiClient {
+  constructor() {}
+
+  // GETリクエスト
+  async get(path: string, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+    const response = await apiRequest("GET", path, undefined, token, customHeaders) as ExtendedResponse;
+    try {
+      response.data = await response.clone().json();
+    } catch (e) {
+      // JSONデータの取得に失敗した場合は無視
+    }
+    return response;
+  }
+
+  // POSTリクエスト
+  async post(path: string, body?: unknown, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+    const response = await apiRequest("POST", path, body, token, customHeaders) as ExtendedResponse;
+    try {
+      response.data = await response.clone().json();
+    } catch (e) {
+      // JSONデータの取得に失敗した場合は無視
+    }
+    return response;
+  }
+
+  // PUTリクエスト
+  async put(path: string, body?: unknown, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+    const response = await apiRequest("PUT", path, body, token, customHeaders) as ExtendedResponse;
+    try {
+      response.data = await response.clone().json();
+    } catch (e) {
+      // JSONデータの取得に失敗した場合は無視
+    }
+    return response;
+  }
+
+  // DELETEリクエスト
+  async delete(path: string, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+    const response = await apiRequest("DELETE", path, undefined, token, customHeaders) as ExtendedResponse;
+    try {
+      response.data = await response.clone().json();
+    } catch (e) {
+      // JSONデータの取得に失敗した場合は無視
+    }
+    return response;
+  }
+}
+
+// APIクライアントのインスタンスを作成して公開
+export const api = new ApiClient();
+
 // レスポンスボディを安全に消費するヘルパー関数
 export async function consumeResponse<T>(response: Response): Promise<T> {
   try {
@@ -218,7 +270,7 @@ export async function createTestUser(
     password: "password123",
   },
 ) {
-  const response = await apiRequest("POST", "/auth/register", userData);
+  const response = await api.post("/auth/register", userData);
   const user = await consumeResponse<UserResponse>(response);
   return { user, response };
 }
@@ -230,25 +282,76 @@ export async function loginTestUser(
     password: "password123",
   },
 ) {
-  const response = await apiRequest("POST", "/auth/login", credentials);
+  const response = await api.post("/auth/login", credentials);
   const data = await consumeResponse<AuthResponse>(response);
   return { token: data.token, user: data.user, response };
 }
 
 // テストユーザーを作成して認証トークンを取得
 export async function createAuthenticatedUser(
-  userData = {
-    username: "testuser",
-    email: `test${Date.now()}@example.com`,
-    password: "password123",
+  apiClientOrUserNameOrData?: ApiClient | string | {
+    username: string;
+    email: string;
+    password: string;
   },
+  roleOrUserData?: string | {
+    username: string;
+    email: string;
+    password: string;
+  }
 ): Promise<{ token: string; user: UserResponse }> {
+  let userData;
+  let role: string | undefined;
+  
+  // 引数の解析
+  if (apiClientOrUserNameOrData instanceof ApiClient) {
+    // 第1引数がApiClientの場合
+    if (typeof roleOrUserData === 'string') {
+      // 第2引数が文字列（ロール名）の場合
+      const userRole = roleOrUserData || '';
+      userData = {
+        username: `testuser${userRole ? `-${userRole}` : ''}`,
+        email: `testuser${userRole ? `.${userRole}` : ''}${Date.now()}@example.com`,
+        password: "password123",
+      };
+    } else if (roleOrUserData && typeof roleOrUserData === 'object') {
+      // 第2引数がユーザーデータオブジェクトの場合
+      userData = roleOrUserData;
+    } else {
+      // デフォルトのユーザーデータ
+      userData = {
+        username: "testuser",
+        email: `test${Date.now()}@example.com`,
+        password: "password123",
+      };
+    }
+  } else if (typeof apiClientOrUserNameOrData === 'string') {
+    // 第1引数が文字列（ユーザー名）の場合
+    const userName = apiClientOrUserNameOrData || 'testuser';
+    role = typeof roleOrUserData === 'string' ? roleOrUserData : undefined;
+    userData = {
+      username: `${userName}${role ? `-${role}` : ''}`,
+      email: `${userName}${role ? `.${role}` : ''}${Date.now()}@example.com`,
+      password: "password123",
+    };
+  } else if (apiClientOrUserNameOrData && typeof apiClientOrUserNameOrData === 'object') {
+    // 第1引数がユーザーデータオブジェクトの場合
+    userData = apiClientOrUserNameOrData;
+  } else {
+    // デフォルトのユーザーデータ
+    userData = {
+      username: "testuser",
+      email: `test${Date.now()}@example.com`,
+      password: "password123",
+    };
+  }
+
   // Register the user
-  const registerResponse = await apiRequest("POST", "/auth/register", userData);
+  const registerResponse = await api.post("/auth/register", userData);
   const user = await consumeResponse<UserResponse>(registerResponse);
 
   // Login to get the token
-  const loginResponse = await apiRequest("POST", "/auth/login", {
+  const loginResponse = await api.post("/auth/login", {
     email: userData.email,
     password: userData.password,
   });
@@ -265,7 +368,7 @@ export async function createTestGame(
     maxPlayers: 5,
   },
 ) {
-  const response = await apiRequest("POST", "/games", gameData, token);
+  const response = await api.post("/games", gameData, token);
   const game = await consumeResponse<GameResponse>(response);
   return { game, response };
 }

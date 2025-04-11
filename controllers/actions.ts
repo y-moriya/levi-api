@@ -29,7 +29,7 @@ export const vote = async (c: Context) => {
 
     const targetPlayerId = data.targetPlayerId;
 
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -47,7 +47,7 @@ export const vote = async (c: Context) => {
       currentDay: game.currentDay,
     });
 
-    const result = gameActions.handleVoteAction(game, userId, targetPlayerId);
+    const result = await gameActions.handleVoteAction(game, userId, targetPlayerId);
     logger.info("Vote action result", {
       gameId,
       playerId: userId,
@@ -107,7 +107,7 @@ export const attack = async (c: Context) => {
 
     const targetPlayerId = data.targetPlayerId;
 
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -184,7 +184,7 @@ export const divine = async (c: Context) => {
 
     const targetPlayerId = data.targetPlayerId;
 
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -203,7 +203,7 @@ export const divine = async (c: Context) => {
       gameActions: JSON.stringify(gameActions.getGameActions(gameId)),
     });
 
-    const result = gameActions.handleDivineAction(game, userId, targetPlayerId);
+    const result = await gameActions.handleDivineAction(game, userId, targetPlayerId);
     logger.info("Divine action result", {
       gameId,
       playerId: userId,
@@ -270,7 +270,7 @@ export const guard = async (c: Context) => {
 
     const targetPlayerId = data.targetPlayerId;
 
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -347,7 +347,7 @@ export const medium = async (c: Context) => {
 
     const targetPlayerId = data.targetPlayerId;
 
-    const game = gameModel.getGameById(gameId);
+    const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
         "GAME_NOT_FOUND",
@@ -366,7 +366,7 @@ export const medium = async (c: Context) => {
       gameActions: JSON.stringify(gameActions.getGameActions(gameId)),
     });
 
-    const result = gameActions.handleMediumAction(game, userId, targetPlayerId);
+    const result = await gameActions.handleMediumAction(game, userId, targetPlayerId);
     logger.info("Medium action result", {
       gameId,
       playerId: userId,
@@ -377,7 +377,7 @@ export const medium = async (c: Context) => {
       if (result.message.includes("霊能者以外は霊能を使えません")) {
         throw new GameError(
           "NOT_MEDIUM",
-          "霊能者以外は霊能を使えません",
+          getMessage("NOT_MEDIUM", lang),
           "WARN",
           { gameId, playerId: userId },
         );
@@ -406,7 +406,7 @@ export const medium = async (c: Context) => {
       });
       throw new GameError(
         "MEDIUM_ERROR",
-        "霊能の使用中にエラーが発生しました",
+        getMessage("MEDIUM_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },
       );

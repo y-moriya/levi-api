@@ -40,8 +40,11 @@ Deno.test({
     assertEquals(startResponse.status, 200);
     assertEquals(startedGame.status, "IN_PROGRESS");
 
-    // 役職の割り当て（テスト用に固定）
-    const gameInstance = gameModel.getGameById(gameId)!;
+    // ゲームインスタンスを取得して役職を割り当て
+    const gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found");
+    }
     gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
     gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
     gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
@@ -52,7 +55,7 @@ Deno.test({
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
 
     // Day 1: 投票フェーズへ移行
-    gameLogic.advancePhase(gameInstance);
+    await gameLogic.advancePhase(gameId);
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
     // アクション状態の初期化を待機
@@ -67,7 +70,7 @@ Deno.test({
     }
 
     // ゲームフェーズの進行（投票の処理を含む）
-    gameLogic.handlePhaseEnd(gameInstance);
+    await gameLogic.handlePhaseEnd(gameId);
 
     const werewolfPlayer = gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!;
     assertEquals(werewolfPlayer.isAlive, false);
