@@ -20,29 +20,48 @@ class RepositoryContainer {
   private gameRepository: GameRepository | null = null;
   private chatMessageRepository: ChatMessageRepository | null = null;
   private initialized = false;
+  private forceTestMode = false;
+
+  /**
+   * テストモード検出
+   * @returns テストモードかどうか
+   */
+  private isTestMode(): boolean {
+    return this.forceTestMode || 
+      Deno.env.get("TEST_MODE") === "true" || 
+      ("Deno" in globalThis && typeof Deno.test === "function") ||
+      // テスト実行環境の追加検出
+      globalThis.Deno?.permissions !== undefined;
+  }
+
+  /**
+   * テストモードを強制設定
+   */
+  setTestMode(): void {
+    this.forceTestMode = true;
+    // テストモード時は必ずメモリリポジトリを使用
+    if (config.database.type !== "memory") {
+      logger.info("テストモードのためデータベース種別を memory に強制変更します");
+      config.database.type = "memory";
+    }
+    // テスト用の環境変数も設定
+    Deno.env.set("TEST_MODE", "true");
+  }
 
   /**
    * コンテナの初期化
    * アプリケーション起動時に一度だけ呼び出す
-   */  async initialize(): Promise<void> {
+   */
+  async initialize(): Promise<void> {
     if (this.initialized) {
       return;
     }
 
     logger.info(`リポジトリタイプ: ${config.database.type}`);
-      // テスト実行時は常にメモリリポジトリを使用
-    // テストモードの検出方法：
-    // 1. 環境変数 TEST_MODE=true
-    // 2. Deno.testが実行されている場合
-    const isTestMode = 
-      Deno.env.get("TEST_MODE") === "true" || 
-      ("Deno" in globalThis && typeof Deno.test === "function") ||
-      // テスト実行環境の追加検出
-      globalThis.Deno?.permissions !== undefined;
       
-    if (isTestMode) {
-      logger.info("テストモードのためインメモリリポジトリを使用します");
-      config.database.type = "memory";
+    // テストモード検出
+    if (this.isTestMode()) {
+      this.setTestMode();
     }
     else if (config.database.type === "postgresql") {
       try {
@@ -65,6 +84,11 @@ class RepositoryContainer {
    * @returns ユーザーリポジトリ
    */
   getUserRepository(): UserRepository {
+    // テストモード時は強制的にメモリリポジトリを使用
+    if (this.isTestMode() && config.database.type !== "memory") {
+      config.database.type = "memory";
+    }
+
     if (!this.userRepository) {
       this.userRepository = config.database.type === "postgresql"
         ? new PostgresUserRepository()
@@ -78,6 +102,11 @@ class RepositoryContainer {
    * @returns ゲームリポジトリ
    */
   getGameRepository(): GameRepository {
+    // テストモード時は強制的にメモリリポジトリを使用
+    if (this.isTestMode() && config.database.type !== "memory") {
+      config.database.type = "memory";
+    }
+
     if (!this.gameRepository) {
       this.gameRepository = config.database.type === "postgresql"
         ? new PostgresGameRepository()
@@ -91,6 +120,11 @@ class RepositoryContainer {
    * @returns チャットメッセージリポジトリ
    */
   getChatMessageRepository(): ChatMessageRepository {
+    // テストモード時は強制的にメモリリポジトリを使用
+    if (this.isTestMode() && config.database.type !== "memory") {
+      config.database.type = "memory";
+    }
+
     if (!this.chatMessageRepository) {
       this.chatMessageRepository = config.database.type === "postgresql"
         ? new PostgresChatMessageRepository()

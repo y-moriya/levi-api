@@ -2,7 +2,7 @@ import { Context } from "https://deno.land/x/hono@v3.11.7/context.ts";
 import * as authService from "../services/auth.ts";
 import { Login, UserRegistration } from "../types/user.ts";
 import { logger } from "../utils/logger.ts";
-import { GameError } from "../types/error.ts";
+import { ErrorCode, GameError } from "../types/error.ts";
 import { getMessage } from "../utils/messages.ts";
 import { getLang, getValidatedBody } from "../utils/context.ts";
 
@@ -10,7 +10,7 @@ import { getLang, getValidatedBody } from "../utils/context.ts";
 const validateRegistration = (data: unknown): UserRegistration => {
   // ここでより詳細なバリデーションが必要な場合は実装する
   if (!data || typeof data !== "object") {
-    throw new GameError("VALIDATION_ERROR", "Invalid request body", "WARN");
+    throw new GameError(ErrorCode.VALIDATION_ERROR, "Invalid request body", "WARN");
   }
 
   const { username, email, password } = data as Record<string, unknown>;
@@ -20,7 +20,7 @@ const validateRegistration = (data: unknown): UserRegistration => {
     !email || typeof email !== "string" ||
     !password || typeof password !== "string"
   ) {
-    throw new GameError("VALIDATION_ERROR", "Missing required fields", "WARN");
+    throw new GameError(ErrorCode.VALIDATION_ERROR, "Missing required fields", "WARN");
   }
 
   return { username, email, password } as UserRegistration;
@@ -28,7 +28,7 @@ const validateRegistration = (data: unknown): UserRegistration => {
 
 const validateLogin = (data: unknown): Login => {
   if (!data || typeof data !== "object") {
-    throw new GameError("VALIDATION_ERROR", "Invalid request body", "WARN");
+    throw new GameError(ErrorCode.VALIDATION_ERROR, "Invalid request body", "WARN");
   }
 
   const { email, password } = data as Record<string, unknown>;
@@ -37,7 +37,7 @@ const validateLogin = (data: unknown): Login => {
     !email || typeof email !== "string" ||
     !password || typeof password !== "string"
   ) {
-    throw new GameError("VALIDATION_ERROR", "Missing required fields", "WARN");
+    throw new GameError(ErrorCode.VALIDATION_ERROR, "Missing required fields", "WARN");
   }
 
   return { email, password } as Login;
@@ -56,7 +56,7 @@ export const register = async (c: Context) => {
         throw validationError;
       }
       const error = new GameError(
-        "VALIDATION_ERROR",
+        ErrorCode.VALIDATION_ERROR,
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
@@ -75,7 +75,7 @@ export const register = async (c: Context) => {
       if (error instanceof Error) {
         if (error.message === "Email already exists") {
           const emailError = new GameError(
-            "EMAIL_EXISTS",
+            ErrorCode.EMAIL_EXISTS,
             getMessage("EMAIL_EXISTS", lang),
             "WARN",
             { email: data.email },
@@ -94,7 +94,7 @@ export const register = async (c: Context) => {
     }
     const lang = getLang(c);
     const serverError = new GameError(
-      "INTERNAL_SERVER_ERROR",
+      ErrorCode.INTERNAL_SERVER_ERROR,
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },
@@ -117,7 +117,7 @@ export const login = async (c: Context) => {
         throw validationError;
       }
       const error = new GameError(
-        "VALIDATION_ERROR",
+        ErrorCode.VALIDATION_ERROR,
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
@@ -136,7 +136,7 @@ export const login = async (c: Context) => {
       if (error instanceof Error) {
         if (error.message === "Invalid credentials") {
           const credError = new GameError(
-            "INVALID_CREDENTIALS",
+            ErrorCode.INVALID_CREDENTIALS,
             getMessage("INVALID_CREDENTIALS", lang),
             "WARN",
             { email: data.email },
@@ -155,7 +155,7 @@ export const login = async (c: Context) => {
     }
     const lang = getLang(c);
     const serverError = new GameError(
-      "INTERNAL_SERVER_ERROR",
+      ErrorCode.INTERNAL_SERVER_ERROR,
       getMessage("INTERNAL_SERVER_ERROR", lang),
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },

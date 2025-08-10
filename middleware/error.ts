@@ -1,5 +1,5 @@
 import { Context, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
-import { ErrorContext, GameError } from "../types/error.ts";
+import { ErrorCode, ErrorContext, GameError } from "../types/error.ts";
 import { logger } from "../utils/logger.ts";
 import { config } from "../config.ts";
 import { setRequestId } from "../utils/context.ts";
@@ -63,7 +63,7 @@ export const errorHandler = async (c: Context, next: Next) => {
     };
 
     // エラーの変換（すでにGameErrorの場合もコンテキスト情報を追加）
-    const gameError = GameError.fromError(error, "INTERNAL_SERVER_ERROR", errorContext);
+    const gameError = GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, errorContext);
 
     // ステータスコードの決定
     const status = errorStatusMap[gameError.code] || 500;

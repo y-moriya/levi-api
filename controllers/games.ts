@@ -2,7 +2,7 @@ import { Context } from "https://deno.land/x/hono@v3.11.7/context.ts";
 import * as gameModel from "../models/game.ts";
 import { logger } from "../utils/logger.ts";
 import { GameCreation } from "../types/game.ts";
-import { GameError } from "../types/error.ts";
+import { ErrorCode, GameError } from "../types/error.ts";
 import { getMessage } from "../utils/messages.ts";
 import { getLang } from "../utils/context.ts";
 
@@ -16,7 +16,7 @@ export const getAllGames = async (c: Context) => {
     logger.error("Failed to fetch games", error instanceof Error ? error : new Error(String(error)));
     if (!(error instanceof GameError)) {
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { originalError: error instanceof Error ? error.message : String(error) },
@@ -36,7 +36,7 @@ export const getGame = async (c: Context) => {
 
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -48,7 +48,7 @@ export const getGame = async (c: Context) => {
     if (!(error instanceof GameError)) {
       logger.error("Failed to fetch game", error instanceof Error ? error : new Error(String(error)), { gameId });
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { gameId, originalError: error instanceof Error ? error.message : String(error) },
@@ -71,7 +71,7 @@ export const createGame = async (c: Context) => {
       // バリデーション
       if (!data.name || typeof data.name !== "string") {
         throw new GameError(
-          "VALIDATION_ERROR",
+          ErrorCode.VALIDATION_ERROR,
           getMessage("VALIDATION_ERROR", lang),
           "WARN",
           { error: "Game name is required" },
@@ -79,7 +79,7 @@ export const createGame = async (c: Context) => {
       }
     } catch (jsonError) {
       throw new GameError(
-        "VALIDATION_ERROR",
+        ErrorCode.VALIDATION_ERROR,
         getMessage("VALIDATION_ERROR", lang),
         "WARN",
         { error: jsonError instanceof Error ? jsonError.message : "Invalid request body" },
@@ -95,7 +95,7 @@ export const createGame = async (c: Context) => {
       if (modelError instanceof Error) {
         if (modelError.message === "Owner not found") {
           throw new GameError(
-            "OWNER_NOT_FOUND",
+            ErrorCode.OWNER_NOT_FOUND,
             getMessage("UNAUTHORIZED", lang),
             "WARN",
             { userId },
@@ -108,7 +108,7 @@ export const createGame = async (c: Context) => {
     if (!(error instanceof GameError)) {
       logger.error("Failed to create game", error instanceof Error ? error : new Error(String(error)), { userId });
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { userId, originalError: error instanceof Error ? error.message : String(error) },
@@ -132,7 +132,7 @@ export const joinGame = async (c: Context) => {
       if (modelError instanceof Error) {
         if (modelError.message === "Game not found") {
           throw new GameError(
-            "GAME_NOT_FOUND",
+            ErrorCode.GAME_NOT_FOUND,
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
             { gameId },
@@ -140,7 +140,7 @@ export const joinGame = async (c: Context) => {
         }
         if (modelError.message === "Game is full") {
           throw new GameError(
-            "GAME_FULL",
+            ErrorCode.GAME_FULL,
             getMessage("GAME_FULL", lang),
             "WARN",
             { gameId },
@@ -148,7 +148,7 @@ export const joinGame = async (c: Context) => {
         }
         if (modelError.message === "Player already in game") {
           throw new GameError(
-            "JOIN_ERROR",
+            ErrorCode.JOIN_ERROR,
             modelError.message,
             "WARN",
             { gameId, userId },
@@ -164,7 +164,7 @@ export const joinGame = async (c: Context) => {
         userId,
       });
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },
@@ -188,7 +188,7 @@ export const leaveGame = async (c: Context) => {
       if (modelError instanceof Error) {
         if (modelError.message === "Game not found") {
           throw new GameError(
-            "GAME_NOT_FOUND",
+            ErrorCode.GAME_NOT_FOUND,
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
             { gameId },
@@ -197,14 +197,14 @@ export const leaveGame = async (c: Context) => {
         if (modelError.message === "Game deleted as owner left") {
           logger.info("Game deleted as owner left", { gameId, userId });
           return c.json({
-            code: "GAME_DELETED",
+            code: ErrorCode.GAME_DELETED,
             message: "Game has been deleted as the owner left",
             timestamp: new Date().toISOString(),
           });
         }
         if (modelError.message === "Cannot leave game in progress" || modelError.message === "Player not in game") {
           throw new GameError(
-            "LEAVE_ERROR",
+            ErrorCode.LEAVE_ERROR,
             modelError.message,
             "WARN",
             { gameId, userId },
@@ -220,7 +220,7 @@ export const leaveGame = async (c: Context) => {
         userId,
       });
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },
@@ -244,7 +244,7 @@ export const startGame = async (c: Context) => {
       if (modelError instanceof Error) {
         if (modelError.message === "Game not found") {
           throw new GameError(
-            "GAME_NOT_FOUND",
+            ErrorCode.GAME_NOT_FOUND,
             getMessage("GAME_NOT_FOUND", lang),
             "WARN",
             { gameId },
@@ -252,7 +252,7 @@ export const startGame = async (c: Context) => {
         }
         if (modelError.message === "Only the game owner can start the game") {
           throw new GameError(
-            "NOT_GAME_OWNER",
+            ErrorCode.NOT_GAME_OWNER,
             getMessage("NOT_GAME_OWNER", lang),
             "WARN",
             { gameId, userId },
@@ -260,7 +260,7 @@ export const startGame = async (c: Context) => {
         }
         if (modelError.message === "Game is already in progress") {
           throw new GameError(
-            "GAME_ALREADY_STARTED",
+            ErrorCode.GAME_ALREADY_STARTED,
             getMessage("GAME_ALREADY_STARTED", lang),
             "WARN",
             { gameId, userId },
@@ -273,7 +273,7 @@ export const startGame = async (c: Context) => {
           modelError.message === "At least 1 werewolf is required"
         ) {
           throw new GameError(
-            "START_ERROR",
+            ErrorCode.START_ERROR,
             modelError.message,
             "WARN",
             { gameId, userId },
@@ -289,7 +289,7 @@ export const startGame = async (c: Context) => {
         userId,
       });
       throw new GameError(
-        "INTERNAL_SERVER_ERROR",
+        ErrorCode.INTERNAL_SERVER_ERROR,
         getMessage("INTERNAL_SERVER_ERROR", lang),
         "ERROR",
         { gameId, userId, originalError: error instanceof Error ? error.message : String(error) },

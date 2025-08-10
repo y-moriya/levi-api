@@ -10,7 +10,7 @@ import { errorHandler } from "./middleware/error.ts";
 import { getMessage, SupportedLanguage } from "./utils/messages.ts";
 import { config } from "./config.ts";
 import { getLang, getRequestId, setLang } from "./utils/context.ts";
-import { ErrorContext, GameError } from "./types/error.ts";
+import { ErrorCategory, ErrorCode, ErrorContext, GameError } from "./types/error.ts";
 import { repositoryContainer } from "./repositories/repository-container.ts";
 
 const app = new Hono();
@@ -32,6 +32,7 @@ const errorStatusMap: Record<string, number> = {
   NOT_SEER: 403,
   NOT_BODYGUARD: 403,
   NOT_GAME_OWNER: 403,
+  PERMISSION_DENIED: 403,
   CHANNEL_ACCESS_DENIED: 403,
   INVALID_CHANNEL: 400,
   VOTE_ERROR: 400,
@@ -60,7 +61,8 @@ app.use("*", errorHandler);
 // ルート
 app.route("/v1/auth", auth);
 app.route("/v1/games", games);
-app.route("/v1/chat", chat);
+// チャットはゲーム配下にマウントして /v1/games/:gameId/chat を提供
+app.route("/v1/games", chat);
 app.route("/v1/actions", actions);
 
 // 404ハンドラ
@@ -68,7 +70,7 @@ app.notFound((c: Context) => {
   const _lang = getLang(c);
   const requestId = getRequestId(c);
 
-  // リクエストID生成（存在しない場合）
+  // リクエストID生成（存在しない場合） 
   const actualRequestId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   // 404エラーをログに記録
@@ -114,7 +116,7 @@ app.onError((err, c) => {
   };
 
   // GameErrorに変換
-  const gameError = GameError.fromError(err, "INTERNAL_SERVER_ERROR", errorContext);
+  const gameError = GameError.fromError(err, ErrorCode.INTERNAL_SERVER_ERROR, errorContext);
 
   // ステータスコードの決定
   const status = errorStatusMap[gameError.code] || 500;

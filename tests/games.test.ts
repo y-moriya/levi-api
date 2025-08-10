@@ -26,8 +26,20 @@ let user2: { id: string };
 
 // テストの前処理用の関数
 async function setupTest() {
+  // テストモードを強制して確実にインメモリリポジトリを使用
+  Deno.env.set("TEST_MODE", "true");
+  const { repositoryContainer } = await import("../repositories/repository-container.ts");
+  await repositoryContainer.initialize();
+  
+  // リポジトリのリセットとクリア
+  repositoryContainer.resetRepositories();
+  await repositoryContainer.clearAllRepositories();
+  
+  // ゲームとユーザーストアのリセット
   gameModel.resetGames();
   authService.resetStore();
+  
+  // テストユーザーの登録
   user1 = await authService.register(testUser1);
   user2 = await authService.register(testUser2);
 }
@@ -42,52 +54,128 @@ async function cleanupTest() {
 
 Deno.test({
   name: "ゲーム作成 - 新しいゲームを正常に作成できるか",
-  async fn() {
-    await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
+  fn: async () => {
+    try {
+      // テストモードを強制して確実にインメモリリポジトリを使用
+      Deno.env.set("TEST_MODE", "true");
+      
+      // リポジトリコンテナを確実に初期化
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.initialize();
+      
+      // すべてのリポジトリをクリア
+      repositoryContainer.resetRepositories();
+      await repositoryContainer.clearAllRepositories();
+      
+      // ゲームとユーザーストアのリセット
+      gameModel.resetGames();
+      await authService.resetStore();
+      
+      // テストユーザーの登録
+      user1 = await authService.register(testUser1);
+      user2 = await authService.register(testUser2);
+      
+      // ゲームの作成
+      const game = await gameModel.createGame(testGameData, user1.id);
 
-    assertEquals(game.name, testGameData.name);
-    assertEquals(game.maxPlayers, testGameData.maxPlayers);
-    assertEquals(game.owner.id, user1.id);
-    assertEquals(game.status, "WAITING");
-    assertEquals(game.currentPlayers, 1);
-    assertEquals(game.players.length, 1);
-    assertEquals(game.players[0].playerId, user1.id);
-
-    await cleanupTest();
+      assertEquals(game.name, testGameData.name);
+      assertEquals(game.maxPlayers, testGameData.maxPlayers);
+      assertEquals(game.owner.id, user1.id);
+      assertEquals(game.status, "WAITING");
+      assertEquals(game.currentPlayers, 1);
+      assertEquals(game.players.length, 1);
+      assertEquals(game.players[0].playerId, user1.id);
+    } finally {
+      // 確実にクリーンアップを実行
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.clearAllRepositories();
+      await gamePhase.clearAllTimers();
+    }
   },
 });
 
 Deno.test({
   name: "ゲーム作成 - オーナーが存在しない場合は失敗するか",
-  async fn() {
-    await setupTest();
-    await assertRejects(
-      async () => {
+  fn: async () => {
+    try {
+      // テストモードを強制して確実にインメモリリポジトリを使用
+      Deno.env.set("TEST_MODE", "true");
+      
+      // リポジトリコンテナを確実に初期化
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.initialize();
+      
+      // すべてのリポジトリをクリア
+      repositoryContainer.resetRepositories();
+      await repositoryContainer.clearAllRepositories();
+      
+      // ゲームとユーザーストアのリセット
+      gameModel.resetGames();
+      await authService.resetStore();
+      
+      // テストユーザーの登録
+      user1 = await authService.register(testUser1);
+      user2 = await authService.register(testUser2);
+      
+      let errorThrown = false;
+      try {
         await gameModel.createGame(testGameData, "non-existent-id");
-      },
-      Error,
-      "Owner not found",
-    );
-    await cleanupTest();
+      } catch (error) {
+        errorThrown = true;
+        if (error instanceof Error) {
+          assertEquals(error.message, "Owner not found");
+        } else {
+          throw new Error("期待された型のエラーではありません");
+        }
+      }
+      assertEquals(errorThrown, true, "エラーが発生しませんでした");
+    } finally {
+      // 確実にクリーンアップを実行
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.clearAllRepositories();
+      await gamePhase.clearAllTimers();
+    }
   },
 });
 
 Deno.test({
   name: "ゲーム作成 - デフォルト設定でゲームを作成できるか",
-  async fn() {
-    await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
+  fn: async () => {
+    try {
+      // テストモードを強制して確実にインメモリリポジトリを使用
+      Deno.env.set("TEST_MODE", "true");
+      
+      // リポジトリコンテナを確実に初期化
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.initialize();
+      
+      // すべてのリポジトリをクリア
+      repositoryContainer.resetRepositories();
+      await repositoryContainer.clearAllRepositories();
+      
+      // ゲームとユーザーストアのリセット
+      gameModel.resetGames();
+      await authService.resetStore();
+      
+      // テストユーザーの登録
+      user1 = await authService.register(testUser1);
+      user2 = await authService.register(testUser2);
+      
+      const game = await gameModel.createGame(testGameData, user1.id);
 
-    assertEquals(game.settings.dayTimeSeconds, 300);
-    assertEquals(game.settings.nightTimeSeconds, 180);
-    assertEquals(game.settings.voteTimeSeconds, 60);
-    assertEquals(game.settings.roles.werewolfCount, 2);
-    assertEquals(game.settings.roles.seerCount, 1);
-    assertEquals(game.settings.roles.bodyguardCount, 1);
-    assertEquals(game.settings.roles.mediumCount, 0);
-
-    await cleanupTest();
+      assertEquals(game.settings.dayTimeSeconds, 300);
+      assertEquals(game.settings.nightTimeSeconds, 180);
+      assertEquals(game.settings.voteTimeSeconds, 60);
+      assertEquals(game.settings.roles.werewolfCount, 2);
+      assertEquals(game.settings.roles.seerCount, 1);
+      assertEquals(game.settings.roles.bodyguardCount, 1);
+      assertEquals(game.settings.roles.mediumCount, 0);
+    } finally {
+      // 確実にクリーンアップを実行
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.clearAllRepositories();
+      await gamePhase.clearAllTimers();
+    }
   },
 });
 
@@ -96,67 +184,138 @@ Deno.test({
   name: "ゲーム参加 - プレイヤーがゲームに参加できるか",
   async fn() {
     await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
-    const joinedGame = await gameModel.joinGame(game.id, user2.id);
+    try {
+      const game = await gameModel.createGame(testGameData, user1.id);
+      const joinedGame = await gameModel.joinGame(game.id, user2.id);
 
-    assertEquals(joinedGame.currentPlayers, 2);
-    assertEquals(joinedGame.players.length, 2);
-    assertEquals(joinedGame.players[1].playerId, user2.id);
-    assertEquals(joinedGame.players[1].username, testUser2.username);
-
-    await cleanupTest();
+      assertEquals(joinedGame.currentPlayers, 2);
+      assertEquals(joinedGame.players.length, 2);
+      assertEquals(joinedGame.players[1].playerId, user2.id);
+      assertEquals(joinedGame.players[1].username, testUser2.username);
+    } finally {
+      await cleanupTest();
+    }
   },
 });
 
 Deno.test({
   name: "ゲーム参加 - 存在しないゲームには参加できないか",
-  async fn() {
-    await setupTest();
-    await assertRejects(
-      async () => {
+  fn: async () => {
+    try {
+      // テストモードを強制して確実にインメモリリポジトリを使用
+      Deno.env.set("TEST_MODE", "true");
+      
+      // リポジトリコンテナを確実に初期化
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.initialize();
+      
+      // すべてのリポジトリをクリア
+      repositoryContainer.resetRepositories();
+      await repositoryContainer.clearAllRepositories();
+      
+      // ゲームとユーザーストアのリセット
+      gameModel.resetGames();
+      await authService.resetStore();
+      
+      // テストユーザーの登録
+      user1 = await authService.register(testUser1);
+      user2 = await authService.register(testUser2);
+      
+      let errorThrown = false;
+      try {
         await gameModel.joinGame("non-existent-id", user2.id);
-      },
-      Error,
-      "Game not found",
-    );
-    await cleanupTest();
+      } catch (error) {
+        errorThrown = true;
+        if (error instanceof Error) {
+          assertEquals(error.message, "Game not found");
+        } else {
+          throw new Error("期待された型のエラーではありません");
+        }
+      }
+      
+      // エラーが発生したか確認
+      assertEquals(errorThrown, true, "エラーが発生しませんでした");
+    } finally {
+      // 確実にクリーンアップを実行
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.clearAllRepositories();
+      await gamePhase.clearAllTimers();
+    }
   },
 });
 
 Deno.test({
   name: "ゲーム参加 - 満員のゲームには参加できないか",
-  async fn() {
-    await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
+  fn: async () => {
+    try {
+      // テストモードを強制して確実にインメモリリポジトリを使用
+      Deno.env.set("TEST_MODE", "true");
+      
+      // リポジトリコンテナを確実に初期化
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.initialize();
+      
+      // すべてのリポジトリをクリア
+      repositoryContainer.resetRepositories();
+      await repositoryContainer.clearAllRepositories();
+      
+      // ゲームとユーザーストアのリセット
+      gameModel.resetGames();
+      await authService.resetStore();
+      
+      // テストユーザーの登録
+      user1 = await authService.register(testUser1);
+      user2 = await authService.register(testUser2);
+      
+      // 少ない最大プレイヤー数でゲームを作成
+      const game = await gameModel.createGame({
+        ...testGameData,
+        maxPlayers: 5
+      }, user1.id);
 
-    // 一意のユーザーでゲームを満員にする
-    const additionalUsers = [];
-    for (let i = 2; i <= testGameData.maxPlayers; i++) {
-      const testUser = {
-        username: `player${i}`,
-        email: `player${i}_${Date.now()}@example.com`,
+      // 一意のタイムスタンプを使用
+      const timestamp = Date.now();
+      
+      // ゲームを満員にする
+      const additionalUsers = [];
+      for (let i = 2; i <= game.maxPlayers; i++) {
+        const testUser = {
+          username: `player${i}_${timestamp}`,
+          email: `player${i}_${timestamp}@example.com`,
+          password: "password123",
+        };
+        const user = await authService.register(testUser);
+        additionalUsers.push(user);
+        await gameModel.joinGame(game.id, user.id);
+      }
+
+      // 追加のプレイヤーを作成
+      const extraUser = await authService.register({
+        username: `extra_${timestamp}`,
+        email: `extra_${timestamp}@example.com`,
         password: "password123",
-      };
-      const user = await authService.register(testUser);
-      additionalUsers.push(user);
-      await gameModel.joinGame(game.id, user.id);
-    }
+      });
 
-    // もう一人プレイヤーを追加しようとする
-    const extraUser = await authService.register({
-      username: "extra",
-      email: `extra_${Date.now()}@example.com`,
-      password: "password123",
-    });
-
-    await assertRejects(
-      async () => {
+      // 満員のゲームに参加しようとしてエラーが発生するか確認
+      let errorThrown = false;
+      try {
         await gameModel.joinGame(game.id, extraUser.id);
-      },
-      Error,
-      "Game is full",
-    );
-    await cleanupTest();
+      } catch (error) {
+        errorThrown = true;
+        if (error instanceof Error) {
+          assertEquals(error.message, "Game is full");
+        } else {
+          throw new Error("期待された型のエラーではありません");
+        }
+      }
+      
+      assertEquals(errorThrown, true, "エラーが発生しませんでした");
+    } finally {
+      // 確実にクリーンアップを実行
+      const { repositoryContainer } = await import("../repositories/repository-container.ts");
+      await repositoryContainer.clearAllRepositories();
+      await gamePhase.clearAllTimers();
+    }
   },
 });
 
@@ -183,15 +342,17 @@ Deno.test({
   name: "ゲーム退出 - プレイヤーがゲームから退出できるか",
   async fn() {
     await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
-    await gameModel.joinGame(game.id, user2.id);
-    const updatedGame = await gameModel.leaveGame(game.id, user2.id);
+    try {
+      const game = await gameModel.createGame(testGameData, user1.id);
+      await gameModel.joinGame(game.id, user2.id);
+      const updatedGame = await gameModel.leaveGame(game.id, user2.id);
 
-    assertEquals(updatedGame.currentPlayers, 1);
-    assertEquals(updatedGame.players.length, 1);
-    assertEquals(updatedGame.players[0].playerId, user1.id);
-
-    await cleanupTest();
+      assertEquals(updatedGame.currentPlayers, 1);
+      assertEquals(updatedGame.players.length, 1);
+      assertEquals(updatedGame.players[0].playerId, user1.id);
+    } finally {
+      await cleanupTest();
+    }
   },
 });
 
@@ -199,21 +360,32 @@ Deno.test({
   name: "ゲーム退出 - オーナーが退出した場合、ゲームが削除されるか",
   async fn() {
     await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
-    await gameModel.joinGame(game.id, user2.id);
+    try {
+      const game = await gameModel.createGame(testGameData, user1.id);
+      await gameModel.joinGame(game.id, user2.id);
 
-    await assertRejects(
-      async () => {
+      // オーナーが退出したらゲームが削除されるはず
+      let errorThrown = false;
+      try {
         await gameModel.leaveGame(game.id, user1.id);
-      },
-      Error,
-      "Game deleted as owner left",
-    );
+      } catch (error) {
+        errorThrown = true;
+        if (error instanceof Error) {
+          assertEquals(error.message, "Game deleted as owner left");
+        } else {
+          throw new Error("期待された型のエラーではありません");
+        }
+      }
+      
+      // エラーが投げられたことを確認
+      assertEquals(errorThrown, true, "オーナー退出時にエラーが発生しませんでした");
 
-    const deletedGame = await gameModel.getGameById(game.id);
-    assertEquals(deletedGame, undefined);
-
-    await cleanupTest();
+      // ゲームが削除されたことを確認
+      const deletedGame = await gameModel.getGameById(game.id);
+      assertEquals(deletedGame, undefined);
+    } finally {
+      await cleanupTest();
+    }
   },
 });
 
@@ -257,14 +429,20 @@ Deno.test({
   name: "ゲーム取得 - IDによってゲームを取得できるか",
   async fn() {
     await setupTest();
-    const game = await gameModel.createGame(testGameData, user1.id);
-    const retrievedGame = await gameModel.getGameById(game.id);
-
-    assertNotEquals(retrievedGame, undefined);
-    assertEquals(retrievedGame?.id, game.id);
-    assertEquals(retrievedGame?.name, testGameData.name);
-
-    await cleanupTest();
+    try {
+      const game = await gameModel.createGame(testGameData, user1.id);
+      
+      // 非同期処理を確実に完了させるため、少し待機
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      const retrievedGame = await gameModel.getGameById(game.id);
+      
+      assertNotEquals(retrievedGame, undefined);
+      assertEquals(retrievedGame?.id, game.id);
+      assertEquals(retrievedGame?.name, testGameData.name);
+    } finally {
+      await cleanupTest();
+    }
   },
 });
 
@@ -288,11 +466,14 @@ Deno.test({
       maxPlayers: 6,
     }, user1.id);
 
+    // タイムスタンプで一意性を確保
+    const timestamp = Date.now();
+    
     // 最小要件を満たすのに十分なプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const testUser = {
-        username: `player${i + 3}`,
-        email: `player${i + 3}_${Date.now()}@example.com`,
+        username: `game_start_player${i + 3}_${timestamp}`,
+        email: `game_start_${i + 3}_${timestamp}@example.com`,
         password: "password123",
       };
       const user = await authService.register(testUser);
@@ -339,11 +520,14 @@ Deno.test({
       maxPlayers: 6,
     }, user1.id);
 
+    // タイムスタンプで一意性を確保
+    const timestamp = Date.now();
+    
     // 5人のプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const testUser = {
-        username: `player${i + 3}`,
-        email: `player${i + 3}_${Date.now()}@example.com`,
+        username: `game_progress_player${i + 3}_${timestamp}`,
+        email: `game_progress_${i + 3}_${timestamp}@example.com`,
         password: "password123",
       };
       const user = await authService.register(testUser);
@@ -375,11 +559,14 @@ Deno.test({
       maxPlayers: 6,
     }, user1.id);
 
+    // タイムスタンプで一意性を確保
+    const timestamp = Date.now();
+    
     // 十分なプレイヤーを追加
     for (let i = 0; i < 4; i++) {
       const testUser = {
-        username: `player${i + 3}`,
-        email: `player${i + 3}_${Date.now()}@example.com`,
+        username: `role_assign_player${i + 3}_${timestamp}`,
+        email: `role_assign_${i + 3}_${timestamp}@example.com`,
         password: "password123",
       };
       const user = await authService.register(testUser);

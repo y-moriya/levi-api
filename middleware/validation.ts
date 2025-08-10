@@ -1,6 +1,6 @@
 import { Context, MiddlewareHandler, Next } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
-import { GameError } from "../types/error.ts";
+import { ErrorCode, GameError } from "../types/error.ts";
 import { getMessage, SupportedLanguage } from "../utils/messages.ts";
 import { logger } from "../utils/logger.ts";
 
@@ -88,7 +88,7 @@ export const createValidationMiddleware = (schema: z.ZodType): MiddlewareHandler
 
         // 明示的に VALIDATION_ERROR コードを設定する
         const gameError = new GameError(
-          "VALIDATION_ERROR", // この行が重要: エラーコードを明示的に設定
+          ErrorCode.VALIDATION_ERROR, // この行が重要: エラーコードを明示的に設定
           getMessage("VALIDATION_ERROR", lang),
           "WARN",
           {

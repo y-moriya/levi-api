@@ -152,10 +152,16 @@ Deno.test({
 Deno.test({
   name: "襲撃アクション - 人狼以外は襲撃できないべき",
   async fn() {
-    await setupTest();
-    game.currentPhase = "NIGHT";
-    const result = await gameActions.handleAttackAction(game, villager.playerId, seer.playerId);
-    assertEquals((await result).success, false);
+    try {
+      await setupTest();
+      game.currentPhase = "NIGHT";
+      const result = await gameActions.handleAttackAction(game, villager.playerId, seer.playerId);
+      assertEquals((await result).success, false);
+    } finally {
+      // しっかりとクリーンアップする
+      const gameRepo = gameModel.gameStore;
+      await gameRepo.clear();
+    }
   },
 });
 
@@ -459,15 +465,12 @@ Deno.test({
     const result = await gameActions.handleMediumAction(game, medium.playerId, werewolf.playerId);
     assertEquals((await result).success, true);
     
-    // processPhaseActions を実行して game オブジェクトに反映させる
-    await gameActions.processPhaseActions(game);
+    // アクション状態を取得
+    const actions = await gameActions.getGameActions(game.id);
     
-    // アクションマップに記録されているか確認
-    const mediumKey = `medium_${game.currentDay}` as const;
-    const mediums = await getActionMap(game, mediumKey);
-    
-    assertEquals(mediums.has(medium.playerId), true);
-    assertEquals(mediums.get(medium.playerId), werewolf.playerId);
+    // 霊能アクションが記録されているか確認
+    assertEquals(actions?.mediums.has(medium.playerId), true);
+    assertEquals(actions?.mediums.get(medium.playerId), werewolf.playerId);
   },
 });
 
@@ -485,31 +488,20 @@ Deno.test({
     // 投票のランダム割り当てを処理
     await gameActions.processPhaseActions(game);
 
-    // game-logicの投票結果処理を実行
-    const voteKey = `vote_${game.currentDay}` as const;
-    const votes = await getActionMap(game, voteKey);
-    const voteCount = new Map<string, number>();
-
-    // 投票を集計
-    for (const [_, targetId] of votes) {
-      voteCount.set(targetId, (voteCount.get(targetId) || 0) + 1);
-    }
-
-    // 最多得票者を処刑
-    const maxVotes = Math.max(...voteCount.values());
-    const executedPlayers = Array.from(voteCount.entries())
-      .filter(([_, count]) => count === maxVotes)
-      .map(([playerId]) => playerId);
-
-    if (executedPlayers.length > 0) {
-      const executedPlayerId = executedPlayers[Math.floor(Math.random() * executedPlayers.length)];
-      const executedPlayer = game.players.find((p) => p.playerId === executedPlayerId)!;
-      executedPlayer.isAlive = false;
-      executedPlayer.deathCause = "EXECUTION";
-    }
-
-    assertEquals(werewolf.isAlive, false);
-    assertEquals(werewolf.deathCause, "EXECUTION");
+    // 投票結果を確認
+    const actions = await gameActions.getGameActions(game.id);
+    assertEquals(actions?.votes.size, 4); // 全プレイヤーが投票
+    
+    // werewolfはランダムで誰かに投票しているので、それを含めて確認
+    let votesForWerewolf = 0;
+    actions?.votes.forEach((targetId) => {
+      if (targetId === werewolf.playerId) {
+        votesForWerewolf++;
+      }
+    });
+    
+    // 少なくとも村人3人はwerewolfに投票しているはず
+    assertEquals(votesForWerewolf >= 3, true);
   },
 });
 

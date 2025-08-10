@@ -256,10 +256,10 @@ Deno.test({
 // フェーズに関するエラーテスト
 Deno.test({
   name: "エラーハンドリング - 不正なフェーズでのアクション実行テスト",
-  fn: async () => {
-    try {
-      await setupErrorHandlingTest();
+  async fn() {
+    await setupErrorHandlingTest();
 
+    try {
       // ゲームを昼フェーズに設定
       testGame.status = "IN_PROGRESS";
       testGame.currentPhase = "DAY_VOTE";
@@ -290,6 +290,7 @@ Deno.test({
         throw new Error(`予期しない結果: ${result.success}, ${result.message}`);
       }
     } finally {
+      // 確実にテストのクリーンアップが実行されるようにする
       await cleanupErrorHandlingTest();
     }
   },

@@ -206,8 +206,8 @@ export function createMockChatMessage(overrides: Partial<ChatMessage> = {}): Cha
     senderId: `user_${Date.now()}`,
     senderUsername: "モックユーザー",
     content: "テストメッセージ",
-    channel: "GENERAL",
-    timestamp: new Date().toISOString(),
+  channel: "PUBLIC",
+  createdAt: new Date().toISOString(),
     ...overrides,
   };
 }

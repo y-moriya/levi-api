@@ -41,28 +41,53 @@ Deno.test({
     assertEquals(startedGame.status, "IN_PROGRESS");
 
     // ゲームインスタンスを取得して役職を割り当て
-    const gameInstance = await gameModel.getGameById(gameId);
+    let gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found");
     }
-    gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!.role = "WEREWOLF";
-    gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
-    gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
-    gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
-    gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!.role = "VILLAGER";
-
+    
+    // テストの安定性のために明示的に役職を割り当て
+    gameInstance = {
+      ...gameInstance,
+      players: gameInstance.players.map(p => {
+        if (p.playerId === werewolfAuth.user.id) {
+          return { ...p, role: "WEREWOLF" };
+        } else if (p.playerId === seerAuth.user.id) {
+          return { ...p, role: "SEER" };
+        } else if (p.playerId === bodyguardAuth.user.id) {
+          return { ...p, role: "BODYGUARD" };
+        } else if (p.playerId === villagerAuth.user.id) {
+          return { ...p, role: "VILLAGER" };
+        } else if (p.playerId === ownerAuth.user.id) {
+          return { ...p, role: "VILLAGER" };
+        }
+        return p;
+      })
+    };
+    
+    // 更新されたゲームを保存
+    await gameModel.gameStore.update(gameInstance);
+    
     // Day 1: 昼フェーズから開始
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
 
     // Day 1: 投票フェーズへ移行
     await gameLogic.advancePhase(gameId);
+    
+    // 更新されたゲームインスタンスを再取得
+    gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found after advancing phase");
+    }
+    
+    // フェーズが変更されたことを確認
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
     // アクション状態の初期化を待機
     await waitForActionInitialization(gameId);
 
     // 投票の実行（全員がwerewolfに投票）
-    for (const player of [ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth]) {
+    for (const player of [ownerAuth, seerAuth, bodyguardAuth, villagerAuth]) {
       const voteResponse = await apiRequest("POST", `/games/${gameId}/vote`, {
         targetPlayerId: werewolfAuth.user.id,
       }, player.token);
@@ -70,8 +95,14 @@ Deno.test({
     }
 
     // ゲームフェーズの進行（投票の処理を含む）
-    await gameLogic.handlePhaseEnd(gameId);
-
+    await gameLogic.advancePhase(gameId);
+    
+    // 更新後のゲームインスタンスを取得
+    gameInstance = await gameModel.getGameById(gameId);
+    if (!gameInstance) {
+      throw new Error("Game not found after processing votes");
+    }
+    
     const werewolfPlayer = gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!;
     assertEquals(werewolfPlayer.isAlive, false);
     assertEquals(werewolfPlayer.deathCause, "EXECUTION");

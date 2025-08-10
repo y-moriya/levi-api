@@ -11,16 +11,17 @@ chat.use("/*", authMiddleware);
 
 // チャットメッセージのバリデーションスキーマ
 const messageSchema = z.object({
-  channel: z.enum(["GLOBAL", "WEREWOLF", "GENERAL", "SPIRIT"]),
+  channel: z.enum(["PUBLIC", "WEREWOLF", "SEER", "BODYGUARD", "MEDIUM", "DEAD", "PRIVATE"]),
   content: z.string().min(1).max(500),
+  recipientId: z.string().optional(), // プライベートメッセージの場合に使用
 });
 
 const messageValidation = createValidationMiddleware(messageSchema);
 
 // メッセージ送信
-chat.post("/:gameId/messages", messageValidation, chatController.sendMessage);
+chat.post("/:gameId/chat", messageValidation, chatController.sendMessage);
 
 // メッセージ取得
-chat.get("/:gameId/messages/:channel", chatController.getMessages);
+chat.get("/:gameId/chat", chatController.getMessages);
 
 export default chat;

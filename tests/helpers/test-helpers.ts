@@ -170,7 +170,21 @@ export function withQuietLogs(testFn: () => Promise<void> | void): () => Promise
 /**
  * テストケース実行前の初期化処理を行う
  */
-export function setupTest(): void {
+export async function setupTest(): Promise<void> {
+  // テスト実行中であることを示す環境変数を設定
+  Deno.env.set("TEST_MODE", "true");
+  
+  // リポジトリのコンテナを初期化
+  const { repositoryContainer } = await import("../../repositories/repository-container.ts");
+  await repositoryContainer.initialize();
+  
+  // すべてのリポジトリをリセット
+  repositoryContainer.resetRepositories();
+  
+  // すべてのデータをクリア
+  await repositoryContainer.clearAllRepositories();
+  
+  // ゲームとユーザーストアをリセット
   resetTestState();
 }
 

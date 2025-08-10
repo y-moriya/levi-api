@@ -1,6 +1,6 @@
 import { Context } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import { SupportedLanguage } from "./messages.ts";
-import { GameError } from "../types/error.ts";
+import { ErrorCode, GameError } from "../types/error.ts";
 
 /**
  * 言語設定をコンテキストに保存
@@ -46,7 +46,7 @@ export async function getValidatedBody<T>(
   } catch (error) {
     const _lang = getLang(c);
     throw new GameError(
-      "VALIDATION_ERROR",
+      ErrorCode.VALIDATION_ERROR,
       "リクエストデータが無効です",
       "ERROR", // ErrorSeverity型の明示的な値を指定
       {

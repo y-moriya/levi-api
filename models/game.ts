@@ -162,7 +162,7 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<Game>
   if (game.creatorId === playerId) {
     await gameRepo.delete(gameId);
     logger.info("Game deleted from repository", { gameId });
-    return game; // 削除前のゲームオブジェクトを返す（テスト用）
+    throw new Error("Game deleted as owner left");
   }
 
   // プレイヤーを削除

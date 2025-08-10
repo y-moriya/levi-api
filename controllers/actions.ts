@@ -2,7 +2,7 @@ import { Context } from "https://deno.land/x/hono@v3.11.7/mod.ts";
 import * as gameActions from "../services/game-actions.ts";
 import * as gameModel from "../models/game.ts";
 import { logger } from "../utils/logger.ts";
-import { GameError } from "../types/error.ts";
+import { ErrorCode, GameError } from "../types/error.ts";
 import { getMessage, SupportedLanguage } from "../utils/messages.ts";
 
 export const vote = async (c: Context) => {
@@ -20,7 +20,7 @@ export const vote = async (c: Context) => {
 
     if (!data.targetPlayerId) {
       throw new GameError(
-        "INVALID_REQUEST",
+        ErrorCode.INVALID_REQUEST,
         getMessage("INVALID_REQUEST", lang),
         "WARN",
         { gameId, playerId: userId },
@@ -32,7 +32,7 @@ export const vote = async (c: Context) => {
     const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -58,14 +58,14 @@ export const vote = async (c: Context) => {
     if (!result.success) {
       if (result.message.includes("投票フェーズではありません")) {
         throw new GameError(
-          "INVALID_PHASE",
+          ErrorCode.INVALID_PHASE,
           getMessage("INVALID_PHASE", lang),
           "WARN",
           { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
-        "VOTE_ERROR",
+        ErrorCode.VOTE_ERROR,
         result.message,
         "WARN",
         { gameId, playerId: userId, targetPlayerId },
@@ -79,7 +79,7 @@ export const vote = async (c: Context) => {
         playerId: userId,
       });
       throw new GameError(
-        "VOTE_ERROR",
+        ErrorCode.VOTE_ERROR,
         getMessage("VOTE_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },
@@ -98,7 +98,7 @@ export const attack = async (c: Context) => {
     const data = await c.req.json();
     if (!data.targetPlayerId) {
       throw new GameError(
-        "INVALID_REQUEST",
+        ErrorCode.INVALID_REQUEST,
         getMessage("INVALID_REQUEST", lang),
         "WARN",
         { gameId, playerId: userId },
@@ -110,7 +110,7 @@ export const attack = async (c: Context) => {
     const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -121,7 +121,7 @@ export const attack = async (c: Context) => {
     if (!result.success) {
       if (result.message.includes("人狼以外は襲撃できません")) {
         throw new GameError(
-          "NOT_WEREWOLF",
+          ErrorCode.NOT_WEREWOLF,
           getMessage("NOT_WEREWOLF", lang),
           "WARN",
           { gameId, playerId: userId },
@@ -129,14 +129,14 @@ export const attack = async (c: Context) => {
       }
       if (result.message.includes("夜フェーズではありません")) {
         throw new GameError(
-          "INVALID_PHASE",
+          ErrorCode.INVALID_PHASE,
           getMessage("INVALID_PHASE", lang),
           "WARN",
           { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
-        "ATTACK_ERROR",
+        ErrorCode.ATTACK_ERROR,
         result.message,
         "WARN",
         { gameId, playerId: userId, targetPlayerId },
@@ -150,7 +150,7 @@ export const attack = async (c: Context) => {
         playerId: userId,
       });
       throw new GameError(
-        "ATTACK_ERROR",
+        ErrorCode.ATTACK_ERROR,
         getMessage("ATTACK_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },
@@ -175,7 +175,7 @@ export const divine = async (c: Context) => {
 
     if (!data.targetPlayerId) {
       throw new GameError(
-        "INVALID_REQUEST",
+        ErrorCode.INVALID_REQUEST,
         getMessage("INVALID_REQUEST", lang),
         "WARN",
         { gameId, playerId: userId },
@@ -187,7 +187,7 @@ export const divine = async (c: Context) => {
     const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -213,7 +213,7 @@ export const divine = async (c: Context) => {
     if (!result.success) {
       if (result.message.includes("占い師以外は占いできません")) {
         throw new GameError(
-          "NOT_SEER",
+          ErrorCode.NOT_SEER,
           getMessage("NOT_SEER", lang),
           "WARN",
           { gameId, playerId: userId },
@@ -221,14 +221,14 @@ export const divine = async (c: Context) => {
       }
       if (result.message.includes("夜フェーズではありません")) {
         throw new GameError(
-          "INVALID_PHASE",
+          ErrorCode.INVALID_PHASE,
           getMessage("INVALID_PHASE", lang),
           "WARN",
           { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
-        "DIVINE_ERROR",
+        ErrorCode.DIVINE_ERROR,
         result.message,
         "WARN",
         { gameId, playerId: userId, targetPlayerId },
@@ -242,7 +242,7 @@ export const divine = async (c: Context) => {
         playerId: userId,
       });
       throw new GameError(
-        "DIVINE_ERROR",
+        ErrorCode.DIVINE_ERROR,
         getMessage("DIVINE_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },
@@ -261,7 +261,7 @@ export const guard = async (c: Context) => {
     const data = await c.req.json();
     if (!data.targetPlayerId) {
       throw new GameError(
-        "INVALID_REQUEST",
+        ErrorCode.INVALID_REQUEST,
         getMessage("INVALID_REQUEST", lang),
         "WARN",
         { gameId, playerId: userId },
@@ -273,7 +273,7 @@ export const guard = async (c: Context) => {
     const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -284,7 +284,7 @@ export const guard = async (c: Context) => {
     if (!result.success) {
       if (result.message.includes("狩人以外は護衛できません")) {
         throw new GameError(
-          "NOT_BODYGUARD",
+          ErrorCode.NOT_BODYGUARD,
           getMessage("NOT_BODYGUARD", lang),
           "WARN",
           { gameId, playerId: userId },
@@ -292,14 +292,14 @@ export const guard = async (c: Context) => {
       }
       if (result.message.includes("夜フェーズではありません")) {
         throw new GameError(
-          "INVALID_PHASE",
+          ErrorCode.INVALID_PHASE,
           getMessage("INVALID_PHASE", lang),
           "WARN",
           { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
-        "GUARD_ERROR",
+        ErrorCode.GUARD_ERROR,
         result.message,
         "WARN",
         { gameId, playerId: userId, targetPlayerId },
@@ -313,7 +313,7 @@ export const guard = async (c: Context) => {
         playerId: userId,
       });
       throw new GameError(
-        "GUARD_ERROR",
+        ErrorCode.GUARD_ERROR,
         getMessage("GUARD_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },
@@ -338,7 +338,7 @@ export const medium = async (c: Context) => {
 
     if (!data.targetPlayerId) {
       throw new GameError(
-        "INVALID_REQUEST",
+        ErrorCode.INVALID_REQUEST,
         getMessage("INVALID_REQUEST", lang),
         "WARN",
         { gameId, playerId: userId },
@@ -350,7 +350,7 @@ export const medium = async (c: Context) => {
     const game = await gameModel.getGameById(gameId);
     if (!game) {
       throw new GameError(
-        "GAME_NOT_FOUND",
+        ErrorCode.GAME_NOT_FOUND,
         getMessage("GAME_NOT_FOUND", lang),
         "WARN",
         { gameId },
@@ -376,7 +376,7 @@ export const medium = async (c: Context) => {
     if (!result.success) {
       if (result.message.includes("霊能者以外は霊能を使えません")) {
         throw new GameError(
-          "NOT_MEDIUM",
+          ErrorCode.NOT_MEDIUM,
           getMessage("NOT_MEDIUM", lang),
           "WARN",
           { gameId, playerId: userId },
@@ -384,14 +384,14 @@ export const medium = async (c: Context) => {
       }
       if (result.message.includes("昼または夜のフェーズでしか霊能は使えません")) {
         throw new GameError(
-          "INVALID_PHASE",
+          ErrorCode.INVALID_PHASE,
           getMessage("INVALID_PHASE", lang),
           "WARN",
           { gameId, currentPhase: game.currentPhase, playerId: userId },
         );
       }
       throw new GameError(
-        "MEDIUM_ERROR",
+        ErrorCode.MEDIUM_ERROR,
         result.message,
         "WARN",
         { gameId, playerId: userId, targetPlayerId },
@@ -405,7 +405,7 @@ export const medium = async (c: Context) => {
         playerId: userId,
       });
       throw new GameError(
-        "MEDIUM_ERROR",
+        ErrorCode.MEDIUM_ERROR,
         getMessage("MEDIUM_ERROR", lang),
         "ERROR",
         { gameId, playerId: userId },

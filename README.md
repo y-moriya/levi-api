@@ -74,6 +74,12 @@ To run tests:
 deno test -A
 ```
 
-## 📄 License
+## � Developer Handoff
+
+For the current development state, decisions, recent changes, known failures, and prioritized next steps, see:
+
+- docs/handoff-summary.md
+
+## �📄 License
 
 [MIT]

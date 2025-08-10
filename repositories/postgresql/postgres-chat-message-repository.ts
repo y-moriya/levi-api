@@ -1,8 +1,9 @@
 import { ChatChannel, ChatMessage } from "../../types/chat.ts";
+import { Role } from "../../types/game.ts";
 import { ChatMessageRepository } from "../interfaces/chat-message-repository.ts";
-import { getClient, PostgresClient } from "./pg-client.ts";
+import { getClient } from "./pg-client.ts";
 import { logger } from "../../utils/logger.ts";
-import { ErrorContext, GameError } from "../../types/error.ts";
+import { ErrorCode, ErrorContext, GameError } from "../../types/error.ts";
 
 /**
  * チャットメッセージリポジトリのPostgreSQL実装
@@ -24,8 +25,8 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         message.senderId,
         message.senderUsername,
         message.senderRole,
-        message.content,
-        message.timestamp
+  message.content,
+  message.createdAt
       ]);
       
       logger.info("Chat message added to PostgreSQL repository", {
@@ -43,7 +44,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error adding chat message to PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -77,8 +78,8 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         message.senderId,
         message.senderUsername,
         message.senderRole,
-        message.content,
-        message.timestamp,
+  message.content,
+  message.createdAt,
         id
       ]);
       
@@ -91,7 +92,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error updating chat message in PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -108,7 +109,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-        timestamp: string;
+  timestamp: string;
       }>(`
         SELECT * FROM chat_messages WHERE id = $1
       `, [id]);
@@ -125,9 +126,9 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-        senderRole: messageData.sender_role as any || undefined,
+  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        timestamp: messageData.timestamp
+        createdAt: messageData.timestamp
       };
     } catch (error: unknown) {
       const err = error as Error;
@@ -136,7 +137,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error finding chat message by ID in PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -163,7 +164,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error deleting chat message from PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -180,7 +181,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-        timestamp: string;
+  timestamp: string;
       }>("SELECT * FROM chat_messages ORDER BY timestamp ASC");
       
       return rows.map(messageData => ({
@@ -189,9 +190,9 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-        senderRole: messageData.sender_role as any || undefined,
+  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        timestamp: messageData.timestamp
+        createdAt: messageData.timestamp
       }));
     } catch (error: unknown) {
       const err = error as Error;
@@ -199,7 +200,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error finding all chat messages in PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -216,7 +217,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-        timestamp: string;
+  timestamp: string;
       }>(`
         SELECT * FROM chat_messages 
         WHERE game_id = $1 AND channel = $2
@@ -229,9 +230,9 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-        senderRole: messageData.sender_role as any || undefined,
+  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        timestamp: messageData.timestamp
+        createdAt: messageData.timestamp
       }));
     } catch (error: unknown) {
       const err = error as Error;
@@ -241,7 +242,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error finding chat messages by game and channel in PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -258,7 +259,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-        timestamp: string;
+  timestamp: string;
       }>(`
         SELECT * FROM chat_messages 
         WHERE game_id = $1
@@ -271,9 +272,9 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-        senderRole: messageData.sender_role as any || undefined,
+  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        timestamp: messageData.timestamp
+        createdAt: messageData.timestamp
       }));
     } catch (error: unknown) {
       const err = error as Error;
@@ -282,7 +283,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error finding chat messages by game in PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -309,7 +310,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error deleting chat messages by game from PostgreSQL repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
@@ -326,7 +327,7 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         error: err.message
       };
       logger.error("Error clearing PostgreSQL chat message repository", context);
-      throw GameError.fromError(error, "INTERNAL_SERVER_ERROR", context as ErrorContext);
+      throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
     } finally {
       client.release();
     }
