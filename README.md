@@ -1,85 +1,37 @@
 # Levi API - Werewolf Game REST API
 
-A RESTful API implementation of the Werewolf (Mafia) game built with Deno and Hono framework. This project implements an
-in-memory game state management system with essential game functionalities.
+Deno + Hono で構築した人狼ゲームの REST API です。オンメモリ実装を基盤に、JWT 認証と各種ゲーム機能を提供します。
 
-## 🚀 Tech Stack
+## ドキュメント
 
-- **Runtime**: Deno
-- **Framework**: Hono
-- **Storage**: In-memory (Object-based)
-- **Authentication**: JWT
+- ドキュメント集約: docs/（[docs/README.md](./docs/README.md)）
+   - 開発ルール: [docs/contributing.md](./docs/contributing.md)
+   - ハンドオフサマリー（現状/次のタスク）: [docs/handoff-summary.md](./docs/handoff-summary.md)
+   - ロードマップ: [docs/roadmap.md](./docs/roadmap.md)
+   - ゲームルール: [docs/game-rules.md](./docs/game-rules.md)
+   - テストシナリオ: [docs/test-scenarios.md](./docs/test-scenarios.md)
+   - OpenAPI: [openapi.yaml](./openapi.yaml)
 
-## 📦 Project Structure
+## セットアップ
 
-```
-/
-├── main.ts                # Entry point
-├── config.ts              # Configuration
-├── routes/                # Route definitions
-├── controllers/           # Request handlers
-├── models/               # Data models
-├── services/             # Business logic
-├── middleware/           # Middleware functions
-├── utils/                # Utilities
-└── types/               # Type definitions
-```
+1. Deno をインストール
+2. 開発サーバー起動
+    ```bash
+    deno run --allow-net --allow-env main.ts
+    ```
 
-## 🛠 Setup and Development
-
-1. Make sure you have Deno installed
-2. Clone the repository
-3. Copy `.env.example` to `.env` and update the values:
-   ```bash
-   cp .env.example .env
-   ```
-4. Run the development server:
-   ```bash
-   deno run --allow-net --allow-env main.ts
-   ```
-
-## ⚠️ Important Notes
-
-- Data is stored in-memory and will be lost on server restart
-- Concurrent request handling requires careful consideration
-- Phase transitions are managed through Deno's timer functionality
-- Comprehensive error handling and validation is implemented
-- Test coverage includes unit tests and integration tests
-
-## 🔄 Current State
-
-- Basic authentication system
-- Game management features
-- Core game logic implementation
-- In-memory state management
-- RESTful API endpoints
-
-## 🚧 Future Enhancements
-
-1. Database integration (MongoDB/PostgreSQL)
-2. WebSocket support for real-time communication
-3. Frontend client development
-4. Additional role implementations
-5. Detailed game event logging
-
-## 📝 API Documentation
-
-For detailed API documentation, please refer to the `openapi.yaml` file in the repository.
-
-## 🧪 Testing
-
-To run tests:
+## テスト
 
 ```bash
 deno test -A
 ```
 
-## � Developer Handoff
+## 注意事項
 
-For the current development state, decisions, recent changes, known failures, and prioritized next steps, see:
+- データはオンメモリで、再起動で消えます。
+- フェーズ進行はタイマーで管理します。
+- エラー処理とバリデーションを実装済みです。
 
-- docs/handoff-summary.md
+## ライセンス
 
-## �📄 License
-
-[MIT]
+MIT
