@@ -5,7 +5,8 @@
   },
   "tasks": {
     "dev": "deno run --watch --allow-net --allow-read --allow-env main.ts",
-    "test": "deno test --allow-net --allow-read --allow-env"
+    "clear_test_data": "deno run --allow-net --allow-env scripts/clear_test_data.ts --yes",
+    "test": "deno task clear_test_data && deno test --allow-net --allow-read --allow-env"
   },
   "nodeModulesDir": "auto",
   "fmt": {

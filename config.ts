@@ -1,4 +1,23 @@
-import "https://deno.land/x/dotenv@v3.2.2/load.ts";
+import { load } from "https://deno.land/std@0.210.0/dotenv/mod.ts";
+
+// Decide which env file to load: .env.test for tests, otherwise .env
+const isDenoTest = typeof Deno !== "undefined" && typeof (Deno as { test?: unknown }).test === "function";
+const nodeEnv = Deno.env.get("NODE_ENV");
+const envPath = isDenoTest || nodeEnv === "test" ? ".env.test" : ".env";
+
+try {
+  // Try to load the chosen file; if missing, fallback to .env silently
+  await load({ envPath, export: true });
+} catch (_e) {
+  // Fallback to .env if .env.test is missing
+  if (envPath !== ".env") {
+    try {
+      await load({ envPath: ".env", export: true });
+    } catch (_e2) {
+      // No .env present; proceed with process env only
+    }
+  }
+}
 
 /**
  * 環境変数を取得し、指定された型に変換する関数

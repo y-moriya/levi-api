@@ -8,9 +8,14 @@ import { getGameById } from "../models/game.ts";
 
 // テスト用のリセット関数
 export const resetStore = async () => {
-  const userRepo = repositoryContainer.getUserRepository();
-  await userRepo.clear();
-  logger.info("User store reset");
+  // テストモードを強制し、既存のリポジトリインスタンスをリセットしてからクリアする
+  // これにより、既に作成済みの Postgres リポジトリが残っている場合でも
+  // メモリリポジトリに切り替わりデータが分離されます。
+  repositoryContainer.setTestMode();
+  repositoryContainer.resetRepositories();
+  // 外部キー依存関係に配慮して chat_messages -> games -> users の順でクリア
+  await repositoryContainer.clearAllRepositories();
+  logger.info("All repositories cleared for test reset");
 };
 
 export const register = async (data: UserRegistration): Promise<User> => {
@@ -94,7 +99,7 @@ export const updateUserStats = async (
 };
 
 // 互換性を維持するためのヘルパー関数
-export const getUserByIdSync = (userId: string): Omit<User, "password"> | undefined => {
+export const getUserByIdSync = (_userId: string): Omit<User, "password"> | undefined => {
   // 非同期版をラップする同期APIを提供
   // 注意: テスト環境以外では使用しないことを推奨
   logger.warn("getUserByIdSync is deprecated, use async getUserById instead");

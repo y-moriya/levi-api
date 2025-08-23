@@ -123,10 +123,10 @@ export function setPlayerAliveStatus(
 /**
  * テスト前の状態をリセットする
  */
-export function resetTestState() {
-  gameModel.resetGames();
-  authService.resetStore();
-  gamePhase.clearAllTimers();
+export async function resetTestState() {
+  await gameModel.resetGames();
+  await authService.resetStore();
+  await gamePhase.clearAllTimers();
 }
 
 /**
@@ -185,7 +185,7 @@ export async function setupTest(): Promise<void> {
   await repositoryContainer.clearAllRepositories();
   
   // ゲームとユーザーストアをリセット
-  resetTestState();
+  await resetTestState();
 }
 
 /**

@@ -4,13 +4,13 @@ import { Context } from "https://deno.land/x/hono@v3.11.7/context.ts";
 import auth from "./routes/auth.ts";
 import games from "./routes/games.ts";
 import chat from "./routes/chat.ts";
-import actions from "./routes/actions.ts";
+import users from "./routes/users.ts";
 import { logger } from "./utils/logger.ts";
 import { errorHandler } from "./middleware/error.ts";
 import { getMessage, SupportedLanguage } from "./utils/messages.ts";
 import { config } from "./config.ts";
 import { getLang, getRequestId, setLang } from "./utils/context.ts";
-import { ErrorCategory, ErrorCode, ErrorContext, GameError } from "./types/error.ts";
+import { ErrorCode, ErrorContext, GameError } from "./types/error.ts";
 import { repositoryContainer } from "./repositories/repository-container.ts";
 
 const app = new Hono();
@@ -61,9 +61,9 @@ app.use("*", errorHandler);
 // ルート
 app.route("/v1/auth", auth);
 app.route("/v1/games", games);
+app.route("/v1/users", users);
 // チャットはゲーム配下にマウントして /v1/games/:gameId/chat を提供
 app.route("/v1/games", chat);
-app.route("/v1/actions", actions);
 
 // 404ハンドラ
 app.notFound((c: Context) => {

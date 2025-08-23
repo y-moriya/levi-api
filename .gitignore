@@ -1,5 +1,7 @@
 # Deno
 .env
+.env.*
+!.env.example
 .DS_Store
 
 # Dependencies

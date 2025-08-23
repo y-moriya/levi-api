@@ -30,7 +30,7 @@ export function initializeGameActions(gameId: string): void {
 export function requireActions(game: Game): GameActionsState {
   let actions = actionCache.get(game.id);
   if (!actions) {
-    logger.error("Game actions not initialized");
+    logger.warn("Game actions not initialized");
     initializeGameActions(game.id);
     actions = actionCache.get(game.id)!;
   }

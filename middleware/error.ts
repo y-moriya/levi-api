@@ -7,7 +7,7 @@ import { setRequestId } from "../utils/context.ts";
 // エラーコードとHTTPステータスコードのマッピング
 const errorStatusMap: Record<string, number> = {
   INVALID_CREDENTIALS: 401,
-  EMAIL_EXISTS: 400,
+  EMAIL_EXISTS: 409,
   TOKEN_EXPIRED: 401,
   TOKEN_INVALID: 401,
   UNAUTHORIZED: 401,
@@ -65,8 +65,8 @@ export const errorHandler = async (c: Context, next: Next) => {
     // エラーの変換（すでにGameErrorの場合もコンテキスト情報を追加）
     const gameError = GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, errorContext);
 
-    // ステータスコードの決定
-    const status = errorStatusMap[gameError.code] || 500;
+    // ステータスコードの決定（GameErrorの持つstatusCodeを優先）
+    const status = gameError.statusCode ?? errorStatusMap[gameError.code] ?? 500;
 
     // パフォーマンス測定終了（エラー時）
     logger.endTimer(`request-${c.req.path}`, {

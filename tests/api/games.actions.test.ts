@@ -32,6 +32,7 @@ Deno.test({
     gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!.role = "SEER";
     gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!.role = "BODYGUARD";
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
+    await gameModel.gameStore.update(gameInstance);
 
     const voteResponse = await apiRequest("POST", `/games/${gameId}/vote`, { targetPlayerId: werewolfAuth.user.id }, villagerAuth.token);
     const voteResult = await consumeResponse<{ success: boolean }>(voteResponse);
@@ -71,6 +72,7 @@ Deno.test({
     gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!.role = "VILLAGER";
 
     gameInstance.currentPhase = "NIGHT";
+    await gameModel.gameStore.update(gameInstance);
     const attackResponse = await apiRequest("POST", `/games/${gameId}/attack`, { targetPlayerId: villagerAuth.user.id }, werewolfAuth.token);
     const attackResult = await consumeResponse<{ success: boolean }>(attackResponse);
     assertEquals(attackResponse.status, 200);

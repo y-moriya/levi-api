@@ -1,5 +1,5 @@
 {
-  "version": "4",
+  "version": "5",
   "specifiers": {
     "npm:ajv-formats@2.1.1": "2.1.1_ajv@8.12.0",
     "npm:ajv@8.12.0": "8.12.0"
@@ -8,6 +8,9 @@
     "ajv-formats@2.1.1_ajv@8.12.0": {
       "integrity": "sha512-Wx0Kx52hxE7C18hkMEggYlEifqWZtYaRgouJor+WMdPnQyEK13vgEWyVNup7SoeeoLMsr4kf5h6dOW11I15MUA==",
       "dependencies": [
+        "ajv"
+      ],
+      "optionalPeers": [
         "ajv"
       ]
     },
@@ -116,6 +119,9 @@
     "https://deno.land/std@0.210.0/assert/mod.ts": "37c49a26aae2b254bbe25723434dc28cd7532e444cf0b481a97c045d110ec085",
     "https://deno.land/std@0.210.0/assert/unimplemented.ts": "4e3e504792c87c485dbc5f4020489d8806ef697741403af2008dfa7b5a4711e8",
     "https://deno.land/std@0.210.0/assert/unreachable.ts": "1af8c99421cc5fb7332454b2b9eca074a4e394895a180bc837750dedcca75338",
+    "https://deno.land/std@0.210.0/dotenv/mod.ts": "55d51d0c244da70e10ccbbdb68644064ce19c8af1683289d16ac802ceef64c8c",
+    "https://deno.land/std@0.210.0/dotenv/parse.ts": "d76ff5a59bd7c374a40249dc28bd15c740da0428559c838b1ea5644f561bff20",
+    "https://deno.land/std@0.210.0/dotenv/stringify.ts": "df8c503a9d46c567f1daa6554211dcfbe05179f9b3ca3d9adc9d92a14987442e",
     "https://deno.land/std@0.210.0/fmt/colors.ts": "2685c524bef9b16b3059a417daf6860c754eb755e19e812762ef5dff62f24481",
     "https://deno.land/std@0.210.0/testing/_test_suite.ts": "30f018feeb3835f12ab198d8a518f9089b1bcb2e8c838a8b615ab10d5005465c",
     "https://deno.land/std@0.210.0/testing/bdd.ts": "c41f019786c4a9112aadb7e5a7bbcc711f58429ac5904b3855fa248ba5fa0ba6",

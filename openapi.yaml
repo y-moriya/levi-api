@@ -14,6 +14,16 @@ servers:
     description: 開発環境
 
 paths:
+  # ヘルスチェック
+  /health:
+    get:
+      tags:
+        - system
+      summary: ヘルスチェック
+      responses:
+        "200":
+          description: OK
+
   # ユーザー関連エンドポイント
   /users:
     post:
@@ -122,6 +132,8 @@ paths:
       tags:
         - games
       summary: 利用可能なゲーム一覧を取得
+      security:
+        - bearerAuth: []
       responses:
         "200":
           description: ゲーム一覧
@@ -528,15 +540,9 @@ paths:
           in: query
           schema:
             type: string
-            enum: [village, werewolf]
-            default: village
-          description: 取得するチャットチャンネル（村全体または人狼間）
-        - name: since
-          in: query
-          schema:
-            type: string
-            format: date-time
-          description: この時間以降のメッセージを取得
+            enum: [PUBLIC, WEREWOLF, SEER, BODYGUARD, MEDIUM, DEAD, PRIVATE]
+            default: PUBLIC
+          description: 取得するチャットチャンネル
       responses:
         "200":
           description: チャットメッセージ一覧
@@ -907,16 +913,19 @@ components:
     ChatMessagePost:
       type: object
       required:
-        - message
+        - content
         - channel
       properties:
-        message:
+        content:
           type: string
           maxLength: 500
         channel:
           type: string
-          enum: [village, werewolf]
-          default: village
+          enum: [PUBLIC, WEREWOLF, SEER, BODYGUARD, MEDIUM, DEAD, PRIVATE]
+          default: PUBLIC
+        recipientId:
+          type: string
+          description: プライベートメッセージの送信先プレイヤーID
 
     ChatMessage:
       type: object
@@ -927,14 +936,24 @@ components:
         gameId:
           type: string
           format: uuid
-        sender:
-          $ref: "#/components/schemas/User"
-        message:
+        content:
           type: string
         channel:
           type: string
-          enum: [village, werewolf, system]
-        timestamp:
+          enum: [PUBLIC, WEREWOLF, SEER, BODYGUARD, MEDIUM, DEAD, PRIVATE]
+        sender:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            username:
+              type: string
+        recipientId:
+          type: string
+          nullable: true
+          description: プライベートメッセージの受信者ID
+        createdAt:
           type: string
           format: date-time
 

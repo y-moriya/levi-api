@@ -1,4 +1,5 @@
 import app from "../../main.ts";
+import { repositoryContainer } from "../../repositories/repository-container.ts";
 import * as gameModel from "../../models/game.ts";
 import * as authService from "../../services/auth.ts";
 import * as gamePhase from "../../services/game-phase.ts";
@@ -10,12 +11,17 @@ let isServerRunning = false;
 export interface AuthenticatedUser { token: string; user: UserResponse }
 
 export async function setupTests(): Promise<{ ownerAuth: AuthenticatedUser; playerAuth: AuthenticatedUser }> {
-  // Reset in-memory stores and timers
+  // まずテスト状態のリセット（メモリ側）
   gameModel.resetGames();
   authService.resetStore();
   gamePhase.clearAllTimers();
 
+  // 毎テストでDBも必ず初期化・クリア（IT_USE_POSTGRES=true でも）
+  await repositoryContainer.initialize();
+  await repositoryContainer.clearAllRepositories();
+
   if (!isServerRunning) {
+    // サーバ未起動なら起動（initialize は冪等）
     await testServer.start(app);
     isServerRunning = true;
   }

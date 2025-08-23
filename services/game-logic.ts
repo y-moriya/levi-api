@@ -1,6 +1,6 @@
-import { Game, GameAction, GameActionType, GamePlayer, VoteType, Winner } from "../types/game.ts";
+import { Game, GameAction, GameActionType, GamePlayer as _GamePlayer, VoteType, Winner } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
-import { generatePlayerRoleMessages, generatePhaseEndMessage } from "../utils/messages.ts";
+import { generatePlayerRoleMessages } from "../utils/messages.ts";
 import { getGameById, gameStore } from "../models/game.ts";
 import * as gamePhase from "./game-phase.ts";
 import { ErrorCode, GameError } from "../types/error.ts";
@@ -12,7 +12,7 @@ import { advancePhaseCore, postPhaseEndMessage } from "./game-logic/phase-advanc
 import { resolveNight, resolveVoting } from "./game-logic/phase-resolve.ts";
 import { updateGame } from "./game-logic/update.ts";
 import { upsertAction as upsertActionCore } from "./game-logic/actions.ts";
-import { processPhaseActions } from "./game-actions.ts";
+import { processPhaseActions, initializeGameActions } from "./game-actions.ts";
 
 export { assignRoles };
 
@@ -32,6 +32,8 @@ export async function startGame(gameId: string): Promise<Game> {
   if (game.players.length < 4) throw new GameError(ErrorCode.NOT_ENOUGH_PLAYERS, "ゲームを開始するには最低4人のプレイヤーが必要です");
 
   const playersWithRoles = assignRoles(game);
+  // アクションキャッシュを初期化（投票/夜行動の蓄積先）
+  initializeGameActions(game.id);
 
   const updated: Game = {
     ...game,

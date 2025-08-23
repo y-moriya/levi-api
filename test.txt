@@ -1,0 +1,731 @@
+[0m[38;5;245mrunning 8 tests from ./tests/api/auth.test.ts[0m
+認証API - サーバーセットアップ ... [0m[32mok[0m [0m[38;5;245m(318ms)[0m
+ユーザー登録 - 新規ユーザーを正常に登録できるか ... [0m[32mok[0m [0m[38;5;245m(313ms)[0m
+ユーザー登録 - 同じメールアドレスでの重複登録を許可しないか ...
+[0m[38;5;245m------- output -------[0m
+Created EMAIL_EXISTS GameError with code: EMAIL_EXISTS
+Rethrowing GameError with code: EMAIL_EXISTS
+{"timestamp":"2025-08-16T22:38:52.970Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: EMAIL_EXISTS - このメールアドレスは既に登録されています","requestId":"req_1755383932968_778p3kj61","errorCode":"EMAIL_EXISTS","errorCategory":"AUTH","statusCode":400,"path":"/v1/auth/register","method":"POST"}
+{"timestamp":"2025-08-16T22:38:52.973Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"EMAIL_EXISTS","message":"このメールアドレスは既に登録されています","severity":"WARN","category":"AUTH","timestamp":"2025-08-16T22:38:52.972Z","requestId":"req_1755383932968_778p3kj61","details":{"stack":"GameError: このメールアドレスは既に登録されています\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"email":"test@example.com","requestPath":"/v1/auth/register","requestMethod":"POST","operationName":"POST /v1/auth/register"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:83:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:38:52.974Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:83:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- output end -----[0m
+ユーザー登録 - 同じメールアドレスでの重複登録を許可しないか ... [0m[32mok[0m [0m[38;5;245m(329ms)[0m
+ユーザー登録 - 入力データのバリデーションが行われるか ...
+[0m[38;5;245m------- output -------[0m
+{"timestamp":"2025-08-16T22:38:53.288Z","level":"WARN","message":"Validation error","errors":[{"path":"username","message":"Username must be between 3 and 20 characters"},{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password must be at least 8 characters"}],"requestPath":"/v1/auth/register"}
+{"timestamp":"2025-08-16T22:38:53.288Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: VALIDATION_ERROR - リクエストデータが無効です","requestId":"req_1755383933287_ydgieegsz","errorCode":"VALIDATION_ERROR","errorCategory":"VAL","statusCode":400,"path":"/v1/auth/register","method":"POST"}
+{"timestamp":"2025-08-16T22:38:53.289Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"VALIDATION_ERROR","message":"リクエストデータが無効です","severity":"WARN","category":"VAL","timestamp":"2025-08-16T22:38:53.289Z","requestId":"req_1755383933287_ydgieegsz","details":{"stack":"GameError: リクエストデータが無効です\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async cors (https://deno.land/x/hono@v3.11.7/middleware/cors/index.ts:59:7)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"validationErrors":[{"path":"username","message":"Username must be between 3 and 20 characters"},{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password must be at least 8 characters"}],"requestPath":"/v1/auth/register","requestMethod":"POST","operationName":"POST /v1/auth/register"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:112:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:38:53.290Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:112:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- output end -----[0m
+ユーザー登録 - 入力データのバリデーションが行われるか ... [0m[32mok[0m [0m[38;5;245m(315ms)[0m
+ログイン - 正しい認証情報で正常にログインできるか ... [0m[32mok[0m [0m[38;5;245m(314ms)[0m
+ログイン - 不正なパスワードでログイン失敗するか ...
+[0m[38;5;245m------- output -------[0m
+Created INVALID_CREDENTIALS GameError with code: INVALID_CREDENTIALS
+Rethrowing login GameError with code: INVALID_CREDENTIALS
+{"timestamp":"2025-08-16T22:38:53.928Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 401 エラー: INVALID_CREDENTIALS - 無効なメールアドレスまたはパスワードです","requestId":"req_1755383933927_sf0wqsr5x","errorCode":"INVALID_CREDENTIALS","errorCategory":"AUTH","statusCode":401,"path":"/v1/auth/login","method":"POST"}
+{"timestamp":"2025-08-16T22:38:53.929Z","level":"ERROR","message":"HTTP error response","statusCode":401,"responseData":{"code":"INVALID_CREDENTIALS","message":"無効なメールアドレスまたはパスワードです","severity":"WARN","category":"AUTH","timestamp":"2025-08-16T22:38:53.928Z","requestId":"req_1755383933927_sf0wqsr5x","details":{"stack":"GameError: 無効なメールアドレスまたはパスワードです\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"email":"test@example.com","requestPath":"/v1/auth/login","requestMethod":"POST","operationName":"POST /v1/auth/login"}}},"error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:167:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:38:53.929Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:167:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- output end -----[0m
+ログイン - 不正なパスワードでログイン失敗するか ... [0m[32mok[0m [0m[38;5;245m(324ms)[0m
+ログイン - 存在しないメールアドレスでログイン失敗するか ...
+[0m[38;5;245m------- output -------[0m
+Created INVALID_CREDENTIALS GameError with code: INVALID_CREDENTIALS
+Rethrowing login GameError with code: INVALID_CREDENTIALS
+{"timestamp":"2025-08-16T22:38:54.234Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 401 エラー: INVALID_CREDENTIALS - 無効なメールアドレスまたはパスワードです","requestId":"req_1755383934232_l6hs67sf9","errorCode":"INVALID_CREDENTIALS","errorCategory":"AUTH","statusCode":401,"path":"/v1/auth/login","method":"POST"}
+{"timestamp":"2025-08-16T22:38:54.234Z","level":"ERROR","message":"HTTP error response","statusCode":401,"responseData":{"code":"INVALID_CREDENTIALS","message":"無効なメールアドレスまたはパスワードです","severity":"WARN","category":"AUTH","timestamp":"2025-08-16T22:38:54.234Z","requestId":"req_1755383934232_l6hs67sf9","details":{"stack":"GameError: 無効なメールアドレスまたはパスワードです\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"email":"nonexistent@example.com","requestPath":"/v1/auth/login","requestMethod":"POST","operationName":"POST /v1/auth/login"}}},"error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:193:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:38:54.235Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:193:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- output end -----[0m
+ログイン - 存在しないメールアドレスでログイン失敗するか ... [0m[32mok[0m [0m[38;5;245m(305ms)[0m
+ログイン - 入力データのバリデーションが行われるか ...
+[0m[38;5;245m------- output -------[0m
+{"timestamp":"2025-08-16T22:38:54.542Z","level":"WARN","message":"Validation error","errors":[{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password is required"}],"requestPath":"/v1/auth/login"}
+{"timestamp":"2025-08-16T22:38:54.542Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: VALIDATION_ERROR - リクエストデータが無効です","requestId":"req_1755383934542_kuj2tsumv","errorCode":"VALIDATION_ERROR","errorCategory":"VAL","statusCode":400,"path":"/v1/auth/login","method":"POST"}
+{"timestamp":"2025-08-16T22:38:54.543Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"VALIDATION_ERROR","message":"リクエストデータが無効です","severity":"WARN","category":"VAL","timestamp":"2025-08-16T22:38:54.542Z","requestId":"req_1755383934542_kuj2tsumv","details":{"stack":"GameError: リクエストデータが無効です\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async cors (https://deno.land/x/hono@v3.11.7/middleware/cors/index.ts:59:7)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"validationErrors":[{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password is required"}],"requestPath":"/v1/auth/login","requestMethod":"POST","operationName":"POST /v1/auth/login"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:219:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:38:54.543Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/auth.test.ts:219:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- output end -----[0m
+ログイン - 入力データのバリデーションが行われるか ... [0m[32mok[0m [0m[38;5;245m(308ms)[0m
+[0m[38;5;245mrunning 2 tests from ./tests/api/chat.authz.test.ts[0m
+チャット - 認証なしでチャットにアクセスできないか ... [0m[32mok[0m [0m[38;5;245m(354ms)[0m
+チャット - ゲームに参加していないユーザーがチャットにアクセスできないか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:38:55.376Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: PERMISSION_DENIED - 認証が必要です","requestId":"req_1755383935368_o3x5csh4g","errorCode":"PERMISSION_DENIED","errorCategory":"AUTH","statusCode":403,"path":"/v1/games/a9c531f2-668c-4414-a24c-ff4eca44679b/chat","method":"POST"}
+[0m[38;5;245m----- post-test output end -----[0m
+チャット - ゲームに参加していないユーザーがチャットにアクセスできないか ... [0m[32mok[0m [0m[38;5;245m(337ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/chat.channel-access.test.ts[0m
+チャット - 各役割チャットのアクセス制御が正しく機能するか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:38:56.043Z","level":"WARN","message":"チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:56.044Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - このチャンネルにアクセスする権限がありません","requestId":"req_1755383936039_fo6sy71yu","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.050Z","level":"WARN","message":"人狼チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:56.050Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 人狼チャンネルへのアクセスが拒否されました","requestId":"req_1755383936046_bfp6b9ir0","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.054Z","level":"WARN","message":"チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:56.055Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - このチャンネルにアクセスする権限がありません","requestId":"req_1755383936051_dhmxjncq5","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.059Z","level":"WARN","message":"人狼チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:56.059Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 人狼チャンネルへのアクセスが拒否されました","requestId":"req_1755383936055_6zhjut27p","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.064Z","level":"WARN","message":"死亡プレイヤーの非DEADチャンネル投稿拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"888b2ff1-650d-46e0-aecc-9883d0858f7c","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.064Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡したプレイヤーは霊界以外のチャンネルにメッセージを送信できません","requestId":"req_1755383936060_w0o3lmb6u","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.069Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.069Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルには占い師のみがアクセスできます","requestId":"req_1755383936065_m89pu4dh5","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.074Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.074Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルへのアクセスが拒否されました","requestId":"req_1755383936070_uzjr5lwx3","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.078Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.078Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルには占い師のみがアクセスできます","requestId":"req_1755383936075_06ghhptnz","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.082Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.082Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルへのアクセスが拒否されました","requestId":"req_1755383936079_8dhwor0e5","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.086Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.086Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルには占い師のみがアクセスできます","requestId":"req_1755383936083_00k8v8z2k","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.090Z","level":"WARN","message":"占い師チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"SEER"}
+{"timestamp":"2025-08-16T22:38:56.091Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 占い師チャンネルへのアクセスが拒否されました","requestId":"req_1755383936087_cwdlvb0ne","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.094Z","level":"WARN","message":"死亡プレイヤーの非DEADチャンネル投稿拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"6c644614-9dce-414c-9b20-101e9488e7ce","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.094Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡したプレイヤーは霊界以外のチャンネルにメッセージを送信できません","requestId":"req_1755383936091_g94txsk0c","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.098Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.098Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルには守護者のみがアクセスできます","requestId":"req_1755383936095_x055w7z9f","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.102Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.102Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936099_7besrqwkf","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.107Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.107Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルには守護者のみがアクセスできます","requestId":"req_1755383936103_0vwf76lg4","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.111Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.111Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936108_kwlp8brb6","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.115Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.115Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルには守護者のみがアクセスできます","requestId":"req_1755383936112_rik8zvx16","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.118Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.119Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936116_tf72k8t1o","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.123Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"888b2ff1-650d-46e0-aecc-9883d0858f7c","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.123Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルには守護者のみがアクセスできます","requestId":"req_1755383936119_ax8e9vvot","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.128Z","level":"WARN","message":"守護者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"888b2ff1-650d-46e0-aecc-9883d0858f7c","channel":"BODYGUARD"}
+{"timestamp":"2025-08-16T22:38:56.128Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 守護者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936124_6m4r0vuhg","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.152Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.152Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルには死亡したプレイヤーのみがアクセスできます","requestId":"req_1755383936149_qerqjzaxd","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.156Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"d2284371-442f-4151-8055-bd0c0160dd37","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.156Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936153_9pptr307n","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.160Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.160Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルには死亡したプレイヤーのみがアクセスできます","requestId":"req_1755383936157_zxuigdcf8","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.164Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"39659509-6a88-47ee-ad83-91c1b05ddba8","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.164Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936161_o9ucql9qi","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+{"timestamp":"2025-08-16T22:38:56.168Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.168Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルには死亡したプレイヤーのみがアクセスできます","requestId":"req_1755383936165_k47vkzocy","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.172Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"c32a5a7d-072a-48c1-956c-2ca7302efc4c","userId":"b4ef323b-7910-49f1-a538-9017506276e6","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.173Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936168_561mybubk","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/c32a5a7d-072a-48c1-956c-2ca7302efc4c/chat","method":"GET"}
+[0m[38;5;245m----- post-test output end -----[0m
+チャット - 各役割チャットのアクセス制御が正しく機能するか ... [0m[32mok[0m [0m[38;5;245m(646ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/chat.dead-channel.test.ts[0m
+チャット - 死亡プレイヤーのみがデッドチャットにアクセスできるか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:38:56.796Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"823d5e72-a769-4d83-93c6-babc685e4a05","userId":"dd9b6955-1c3e-449a-afe6-cbc64f968961","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.796Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルには死亡したプレイヤーのみがアクセスできます","requestId":"req_1755383936792_r14m9hybg","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/823d5e72-a769-4d83-93c6-babc685e4a05/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:56.808Z","level":"WARN","message":"死亡者チャンネルアクセス拒否","gameId":"823d5e72-a769-4d83-93c6-babc685e4a05","userId":"dd9b6955-1c3e-449a-afe6-cbc64f968961","channel":"DEAD"}
+{"timestamp":"2025-08-16T22:38:56.808Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡者チャンネルへのアクセスが拒否されました","requestId":"req_1755383936804_de0s48dn9","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/823d5e72-a769-4d83-93c6-babc685e4a05/chat","method":"GET"}
+[0m[38;5;245m----- post-test output end -----[0m
+チャット - 死亡プレイヤーのみがデッドチャットにアクセスできるか ... [0m[32mok[0m [0m[38;5;245m(494ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/chat.private-message.test.ts[0m
+チャット - プライベートメッセージが正しく機能するか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:38:57.432Z","level":"WARN","message":"死亡プレイヤーの非DEADチャンネル投稿拒否","gameId":"6f5e11f4-78f3-4651-9d5f-99e13a4bf2ca","userId":"3eb895f7-d2e3-499a-8bc4-0f0f515c2a57","channel":"PRIVATE"}
+{"timestamp":"2025-08-16T22:38:57.433Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 死亡したプレイヤーは霊界以外のチャンネルにメッセージを送信できません","requestId":"req_1755383937429_684se4kn2","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/6f5e11f4-78f3-4651-9d5f-99e13a4bf2ca/chat","method":"POST"}
+[0m[38;5;245m----- post-test output end -----[0m
+チャット - プライベートメッセージが正しく機能するか ... [0m[31mFAILED[0m [0m[38;5;245m(491ms)[0m
+[0m[38;5;245mrunning 2 tests from ./tests/api/chat.repository.test.ts[0m
+チャット - すべてのゲームから全チャットメッセージを削除できるか ... [0m[32mok[0m [0m[38;5;245m(398ms)[0m
+チャット - ゲーム内のすべてのチャットメッセージを削除できるか ... [0m[32mok[0m [0m[38;5;245m(368ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/chat.role-channels.test.ts[0m
+チャット - 役割別チャットが適切に機能するか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:38:58.978Z","level":"WARN","message":"チャンネルアクセス拒否","gameId":"177849c6-67ff-4bc5-9743-98fc23b9dd81","userId":"b0bed5fa-1cc7-4491-a322-5054a9e80c6d","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:58.979Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - このチャンネルにアクセスする権限がありません","requestId":"req_1755383938974_igiphj1qd","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/177849c6-67ff-4bc5-9743-98fc23b9dd81/chat","method":"POST"}
+{"timestamp":"2025-08-16T22:38:58.991Z","level":"WARN","message":"人狼チャンネルアクセス拒否","gameId":"177849c6-67ff-4bc5-9743-98fc23b9dd81","userId":"b0bed5fa-1cc7-4491-a322-5054a9e80c6d","channel":"WEREWOLF"}
+{"timestamp":"2025-08-16T22:38:58.992Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 403 エラー: CHANNEL_ACCESS_DENIED - 人狼チャンネルへのアクセスが拒否されました","requestId":"req_1755383938987_miu1s9ips","errorCode":"CHANNEL_ACCESS_DENIED","errorCategory":"CHAT","statusCode":403,"path":"/v1/games/177849c6-67ff-4bc5-9743-98fc23b9dd81/chat","method":"GET"}
+[0m[38;5;245m----- post-test output end -----[0m
+チャット - 役割別チャットが適切に機能するか ... [0m[32mok[0m [0m[38;5;245m(486ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/chat.send-receive.test.ts[0m
+チャット - チャットメッセージを正常に送信できるか ... [0m[32mok[0m [0m[38;5;245m(366ms)[0m
+[0m[38;5;245mrunning 0 tests from ./tests/api/chat.test.ts[0m
+[0m[38;5;245mrunning 4 tests from ./tests/api/error-handling.test.ts[0m
+バリデーションエラーが適切に処理されることを検証 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:00.339Z","level":"WARN","message":"Validation error","errors":[{"path":"username","message":"Username must be between 3 and 20 characters"},{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password must be at least 8 characters"}],"requestPath":"/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:00.340Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: VALIDATION_ERROR - リクエストデータが無効です","requestId":"req_1755383940337_vrxwguvze","errorCode":"VALIDATION_ERROR","errorCategory":"VAL","statusCode":400,"path":"/v1/auth/register","method":"POST"}
+[0m[38;5;245m----- post-test output end -----[0m
+バリデーションエラーが適切に処理されることを検証 ... [0m[32mok[0m [0m[38;5;245m(317ms)[0m
+認証エラーが適切に処理されることを検証 ...
+[0m[38;5;245m------- post-test output -------[0m
+Created INVALID_CREDENTIALS GameError with code: INVALID_CREDENTIALS
+Rethrowing login GameError with code: INVALID_CREDENTIALS
+{"timestamp":"2025-08-16T22:39:00.651Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 401 エラー: INVALID_CREDENTIALS - 無効なメールアドレスまたはパスワードです","requestId":"req_1755383940647_w9zxexu2i","errorCode":"INVALID_CREDENTIALS","errorCategory":"AUTH","statusCode":401,"path":"/v1/auth/login","method":"POST"}
+[0m[38;5;245m----- post-test output end -----[0m
+認証エラーが適切に処理されることを検証 ... [0m[32mok[0m [0m[38;5;245m(309ms)[0m
+言語設定によって適切なエラーメッセージが返されることを検証 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:00.956Z","level":"WARN","message":"Validation error","errors":[{"path":"username","message":"Username must be between 3 and 20 characters"},{"path":"email","message":"Invalid email format"},{"path":"password","message":"Password must be at least 8 characters"}],"requestPath":"/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:00.956Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: VALIDATION_ERROR - Invalid request data","requestId":"req_1755383940955_3w0ihk2k0","errorCode":"VALIDATION_ERROR","errorCategory":"VAL","statusCode":400,"path":"/v1/auth/register","method":"POST"}
+[0m[38;5;245m----- post-test output end -----[0m
+言語設定によって適切なエラーメッセージが返されることを検証 ... [0m[32mok[0m [0m[38;5;245m(304ms)[0m
+リソースが見つからない場合のエラーが適切に処理されることを検証 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:01.268Z","level":"ERROR","message":"Error adding user to PostgreSQL repository","error":"ユーザー名 testuser は既に使用されています","userId":"0349a4c2-cf7b-45b2-a7ac-3e6a9548e5c0"}
+Created server GameError with code: INTERNAL_SERVER_ERROR
+{"timestamp":"2025-08-16T22:39:01.268Z","level":"ERROR","message":"グローバルエラーハンドラ: HTTP 500 エラー: INTERNAL_SERVER_ERROR - 内部サーバーエラーが発生しました","requestId":"req_1755383941263_fdk4guoqi","errorCode":"INTERNAL_SERVER_ERROR","errorCategory":"SYS","statusCode":500,"path":"/v1/auth/register","method":"POST","error":{"name":"GameError","message":"内部サーバーエラーが発生しました","stack":"GameError: 内部サーバーエラーが発生しました\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)"}}
+{"timestamp":"2025-08-16T22:39:01.270Z","level":"ERROR","message":"HTTP error response","statusCode":500,"responseData":{"code":"INTERNAL_SERVER_ERROR","message":"内部サーバーエラーが発生しました","severity":"ERROR","category":"SYS","timestamp":"2025-08-16T22:39:01.268Z","requestId":"req_1755383941263_fdk4guoqi","details":{"stack":"GameError: 内部サーバーエラーが発生しました\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"originalError":"ユーザー名 testuser は既に使用されています","requestPath":"/v1/auth/register","requestMethod":"POST","operationName":"POST /v1/auth/register"}}},"error":{"name":"Error","message":"HTTP error! status: 500","stack":"Error: HTTP error! status: 500\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async createAuthenticatedUser (file:///C:/Users/wellk/project/levi-api/tests/helpers/users.ts:45:16)\n    at async file:///C:/Users/wellk/project/levi-api/tests/api/error-handling.test.ts:131:21\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:39:01.271Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 500","stack":"Error: HTTP error! status: 500\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async createAuthenticatedUser (file:///C:/Users/wellk/project/levi-api/tests/helpers/users.ts:45:16)\n    at async file:///C:/Users/wellk/project/levi-api/tests/api/error-handling.test.ts:131:21\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- post-test output end -----[0m
+リソースが見つからない場合のエラーが適切に処理されることを検証 ... [0m[31mFAILED[0m [0m[38;5;245m(314ms)[0m
+[0m[38;5;245mrunning 2 tests from ./tests/api/games.actions.test.ts[0m
+ゲームアクション - 投票機能 ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+{"timestamp":"2025-08-16T22:39:01.911Z","level":"WARN","message":"Invalid phase for voting","gameId":"aac7ec07-bc43-4acf-8867-223e30db8078","expectedPhase":"DAY_VOTE","actualPhase":"DAY_DISCUSSION"}
+{"timestamp":"2025-08-16T22:39:01.912Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: INVALID_PHASE - 現在のフェーズではその操作は実行できません","requestId":"req_1755383941907_b7mhc8k4d","errorCode":"INVALID_PHASE","errorCategory":"GAME","statusCode":400,"path":"/v1/games/aac7ec07-bc43-4acf-8867-223e30db8078/vote","method":"POST"}
+{"timestamp":"2025-08-16T22:39:01.914Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"INVALID_PHASE","message":"現在のフェーズではその操作は実行できません","severity":"WARN","category":"GAME","timestamp":"2025-08-16T22:39:01.913Z","requestId":"req_1755383941907_b7mhc8k4d","details":{"stack":"GameError: 現在のフェーズではその操作は実行できません\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async authMiddleware (file:///C:/Users/wellk/project/levi-api/middleware/auth.ts:24:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"gameId":"aac7ec07-bc43-4acf-8867-223e30db8078","currentPhase":"DAY_DISCUSSION","playerId":"029b3e4a-e53f-4f76-85f6-21330c565a23","requestPath":"/v1/games/aac7ec07-bc43-4acf-8867-223e30db8078/vote","requestMethod":"POST","operationName":"POST /v1/games/aac7ec07-bc43-4acf-8867-223e30db8078/vote"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts:37:24)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:39:01.915Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts:37:24)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲームアクション - 投票機能 ... [0m[31mFAILED[0m [0m[38;5;245m(496ms)[0m
+ゲームアクション - 襲撃機能 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:02.233Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:02.235Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/login"}
+{"timestamp":"2025-08-16T22:39:02.362Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: INVALID_PHASE - 現在のフェーズではその操作は実行できません","requestId":"req_1755383942358_6qs4gmyth","errorCode":"INVALID_PHASE","errorCategory":"GAME","statusCode":400,"path":"/v1/games/1bf6111b-2722-4dc1-b40f-353b22373453/attack","method":"POST"}
+{"timestamp":"2025-08-16T22:39:02.362Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"INVALID_PHASE","message":"現在のフェーズではその操作は実行できません","severity":"WARN","category":"GAME","timestamp":"2025-08-16T22:39:02.362Z","requestId":"req_1755383942358_6qs4gmyth","details":{"stack":"GameError: 現在のフェーズではその操作は実行できません\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async file:///C:/Users/wellk/project/levi-api/middleware/validation.ts:75:7\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async authMiddleware (file:///C:/Users/wellk/project/levi-api/middleware/auth.ts:24:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"gameId":"1bf6111b-2722-4dc1-b40f-353b22373453","currentPhase":"DAY_DISCUSSION","playerId":"b0beed8f-9771-4a92-9eef-d913aee03c92","requestPath":"/v1/games/1bf6111b-2722-4dc1-b40f-353b22373453/attack","requestMethod":"POST","operationName":"POST /v1/games/1bf6111b-2722-4dc1-b40f-353b22373453/attack"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts:75:26)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:39:02.363Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts:75:26)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲームアクション - 襲撃機能 ... [0m[31mFAILED[0m [0m[38;5;245m(447ms)[0m
+[0m[38;5;245mrunning 3 tests from ./tests/api/games.create.test.ts[0m
+ゲーム作成 - 新しいゲームを正常に作成できるか ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム作成 - 新しいゲームを正常に作成できるか ... [0m[32mok[0m [0m[38;5;245m(392ms)[0m
+ゲーム作成 - 入力データのバリデーションが行われるか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:03.216Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:03.220Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/login"}
+{"timestamp":"2025-08-16T22:39:03.228Z","level":"WARN","message":"Validation error","errors":[{"path":"name","message":"Game name must be between 3 and 30 characters"},{"path":"maxPlayers","message":"Maximum players must be between 3 and 20"}],"requestPath":"/v1/games"}
+{"timestamp":"2025-08-16T22:39:03.228Z","level":"WARN","message":"グローバルエラーハンドラ: HTTP 400 エラー: VALIDATION_ERROR - リクエストデータが無効です","requestId":"req_1755383943227_ffyfqw860","errorCode":"VALIDATION_ERROR","errorCategory":"VAL","statusCode":400,"path":"/v1/games","method":"POST"}
+{"timestamp":"2025-08-16T22:39:03.230Z","level":"ERROR","message":"HTTP error response","statusCode":400,"responseData":{"code":"VALIDATION_ERROR","message":"リクエストデータが無効です","severity":"WARN","category":"VAL","timestamp":"2025-08-16T22:39:03.230Z","requestId":"req_1755383943227_ffyfqw860","details":{"stack":"GameError: リクエストデータが無効です\n    at GameError.fromError (file:///C:/Users/wellk/project/levi-api/types/error.ts:349:14)\n    at file:///C:/Users/wellk/project/levi-api/main.ts:119:31\n    at dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:51:25)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async authMiddleware (file:///C:/Users/wellk/project/levi-api/middleware/auth.ts:24:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async errorHandler (file:///C:/Users/wellk/project/levi-api/middleware/error.ts:48:5)\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)\n    at async file:///C:/Users/wellk/project/levi-api/main.ts:55:3\n    at async dispatch (https://deno.land/x/hono@v3.11.7/compose.ts:45:17)","context":{"validationErrors":[{"path":"name","message":"Game name must be between 3 and 30 characters"},{"path":"maxPlayers","message":"Maximum players must be between 3 and 20"}],"requestPath":"/v1/games","requestMethod":"POST","operationName":"POST /v1/games"}}},"error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.create.test.ts:35:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:39:03.231Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 400","stack":"Error: HTTP error! status: 400\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.create.test.ts:35:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム作成 - 入力データのバリデーションが行われるか ... [0m[32mok[0m [0m[38;5;245m(335ms)[0m
+ゲーム作成 - 認証が必要であることを確認する ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:03.555Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:03.558Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/login"}
+{"timestamp":"2025-08-16T22:39:03.558Z","level":"ERROR","message":"HTTP error response","statusCode":401,"responseData":{"code":"UNAUTHORIZED","message":"Authentication required"},"error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.create.test.ts:55:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+{"timestamp":"2025-08-16T22:39:03.559Z","level":"ERROR","message":"Failed to consume response","error":{"name":"Error","message":"HTTP error! status: 401","stack":"Error: HTTP error! status: 401\n    at consumeResponse (file:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts:8:19)\n    at eventLoopTick (ext:core/01_core.js:178:7)\n    at async fn (file:///C:/Users/wellk/project/levi-api/tests/api/games.create.test.ts:55:7)\n    at async innerWrapped (ext:cli/40_test.js:180:5)\n    at async exitSanitizer (ext:cli/40_test.js:96:27)\n    at async outerWrapped (ext:cli/40_test.js:123:14)"}}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム作成 - 認証が必要であることを確認する ... [0m[32mok[0m [0m[38;5;245m(327ms)[0m
+[0m[38;5;245mrunning 2 tests from ./tests/api/games.join-leave.test.ts[0m
+ゲーム参加 - プレイヤーがゲームに参加できるか ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム参加 - プレイヤーがゲームに参加できるか ... [0m[32mok[0m [0m[38;5;245m(401ms)[0m
+ゲーム退出 - プレイヤーがゲームから退出できるか ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:04.442Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:04.444Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/login"}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム退出 - プレイヤーがゲームから退出できるか ... [0m[32mok[0m [0m[38;5;245m(360ms)[0m
+[0m[38;5;245mrunning 2 tests from ./tests/api/games.list.test.ts[0m
+ゲーム一覧 - ゲームが存在しない場合、空の配列を返す ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム一覧 - ゲームが存在しない場合、空の配列を返す ... [0m[32mok[0m [0m[38;5;245m(381ms)[0m
+ゲーム一覧 - すべてのゲームのリストを返す ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:05.342Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/register"}
+{"timestamp":"2025-08-16T22:39:05.345Z","level":"WARN","message":"計測開始されていないラベルの計測終了が呼ばれました: request-/v1/auth/login"}
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム一覧 - すべてのゲームのリストを返す ... [0m[32mok[0m [0m[38;5;245m(363ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/games.setup.test.ts[0m
+ゲームAPI - サーバーセットアップ ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+ゲームAPI - サーバーセットアップ ... [0m[32mok[0m [0m[38;5;245m(380ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/games.start.test.ts[0m
+ゲーム開始 - ゲームを正常に開始できるか ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+ゲーム開始 - ゲームを正常に開始できるか ... [0m[32mok[0m [0m[38;5;245m(502ms)[0m
+[0m[38;5;245mrunning 0 tests from ./tests/api/games.test.ts[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/village-victory-scenario.test.ts[0m
+完全なゲームシナリオ - 村人陣営の勝利 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:09.272Z","level":"ERROR","message":"Game actions not initialized"}
+[0m[38;5;245m----- post-test output end -----[0m
+完全なゲームシナリオ - 村人陣営の勝利 ... [0m[31mFAILED[0m [0m[38;5;245m(2s)[0m
+[0m[38;5;245mrunning 1 test from ./tests/api/werewolf-victory-scenario.test.ts[0m
+完全なゲームシナリオ - 人狼陣営の勝利 ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:11.968Z","level":"ERROR","message":"Game actions not initialized"}
+[0m[38;5;245m----- post-test output end -----[0m
+完全なゲームシナリオ - 人狼陣営の勝利 ... [0m[31mFAILED[0m [0m[38;5;245m(2s)[0m
+[0m[38;5;245mrunning 5 tests from ./tests/auth.test.ts[0m
+登録 - 新規ユーザーの登録が正常に行われる ... [0m[31mFAILED[0m [0m[38;5;245m(26ms)[0m
+登録 - メールアドレスの重複登録を許可しない ... [0m[31mFAILED[0m [0m[38;5;245m(3ms)[0m
+ログイン - 正しい認証情報でログイン成功 ... [0m[31mFAILED[0m [0m[38;5;245m(6ms)[0m
+ログイン - 不正なパスワードでログイン失敗 ... [0m[31mFAILED[0m [0m[38;5;245m(1ms)[0m
+ログイン - 存在しないメールアドレスでログイン失敗 ... [0m[31mFAILED[0m [0m[38;5;245m(1ms)[0m
+[0m[38;5;245mrunning 1 test from ./tests/chat.send-and-list.test.ts[0m
+chat service - GLOBALに送信・取得できる ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+chat service - GLOBALに送信・取得できる ... [0m[31mFAILED[0m [0m[38;5;245m(44ms)[0m
+[0m[38;5;245mrunning 0 tests from ./tests/chat.test.ts[0m
+[0m[38;5;245mrunning 5 tests from ./tests/error-handling.test.ts[0m
+エラーハンドリング - ゲームオーナー権限のテスト ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+エラーハンドリング - ゲームオーナー権限のテスト ... [0m[31mFAILED[0m [0m[38;5;245m(102ms)[0m
+エラーハンドリング - 既に開始済みのゲームを再度開始しようとした場合のエラー ... [0m[31mFAILED[0m [0m[38;5;245m(98ms)[0m
+エラーハンドリング - 存在しないゲームIDを指定した場合のエラー ... [0m[31mFAILED[0m [0m[38;5;245m(21ms)[0m
+エラーハンドリング - 役職権限の確認テスト ... [0m[31mFAILED[0m [0m[38;5;245m(68ms)[0m
+エラーハンドリング - 不正なフェーズでのアクション実行テスト ... [0m[31mFAILED[0m [0m[38;5;245m(51ms)[0m
+[0m[38;5;245mrunning 4 tests from ./tests/game-actions.attack.test.ts[0m
+襲撃アクション - 人狼は夜間に襲撃できるべき ... [0m[31mFAILED[0m [0m[38;5;245m(93ms)[0m
+襲撃アクション - 人狼以外は襲撃できないべき ... [0m[32mok[0m [0m[38;5;245m(67ms)[0m
+襲撃アクション - 人狼は他の人狼を襲撃できないべき ... [0m[32mok[0m [0m[38;5;245m(58ms)[0m
+襲撃アクション - 昼間は襲撃できないべき ... [0m[32mok[0m [0m[38;5;245m(50ms)[0m
+[0m[38;5;245mrunning 4 tests from ./tests/game-actions.divine.test.ts[0m
+占いアクション - 占い師は夜間に占いができるべき ... [0m[31mFAILED[0m [0m[38;5;245m(81ms)[0m
+占いアクション - 占い師以外は占いができないべき ... [0m[32mok[0m [0m[38;5;245m(53ms)[0m
+占いアクション - 人狼でないプレイヤーを正しく識別するべき ... [0m[32mok[0m [0m[38;5;245m(54ms)[0m
+占いアクション - 昼間は占いができないべき ... [0m[32mok[0m [0m[38;5;245m(52ms)[0m
+[0m[38;5;245mrunning 4 tests from ./tests/game-actions.guard.test.ts[0m
+護衛アクション - 狩人は夜間に護衛ができるべき ... [0m[31mFAILED[0m [0m[38;5;245m(87ms)[0m
+護衛アクション - 狩人以外は護衛ができないべき ... [0m[32mok[0m [0m[38;5;245m(55ms)[0m
+護衛アクション - 死亡したプレイヤーは護衛できないべき ... [0m[32mok[0m [0m[38;5;245m(53ms)[0m
+護衛アクション - 昼間は護衛ができないべき ... [0m[32mok[0m [0m[38;5;245m(52ms)[0m
+[0m[38;5;245mrunning 12 tests from ./tests/game-actions.medium.test.ts[0m
+霊能アクション - 霊能者は前日に処刑された人狼を正しく識別できるべき ... [0m[31mFAILED[0m [0m[38;5;245m(87ms)[0m
+霊能アクション - 霊能者以外は霊能ができないべき ... [0m[32mok[0m [0m[38;5;245m(57ms)[0m
+霊能アクション - 前日に処刑されていないプレイヤーは対象にできないべき ... [0m[32mok[0m [0m[38;5;245m(55ms)[0m
+霊能アクション - 処刑以外の死因のプレイヤーは対象にできないべき ... [0m[32mok[0m [0m[38;5;245m(53ms)[0m
+霊能アクション - 昼のディスカッションフェーズでも使用できるべき ... [0m[32mok[0m [0m[38;5;245m(52ms)[0m
+霊能アクション - 投票フェーズでは使用できないべき ... [0m[32mok[0m [0m[38;5;245m(59ms)[0m
+霊能アクション - 非人狼プレイヤーを正しく識別するべき ... [0m[32mok[0m [0m[38;5;245m(57ms)[0m
+霊能アクション - 死亡した霊能者は霊能ができないべき ... [0m[32mok[0m [0m[38;5;245m(57ms)[0m
+霊能アクション - 2日以上前に処刑されたプレイヤーは対象にできないべき ... [0m[32mok[0m [0m[38;5;245m(53ms)[0m
+霊能アクション - 同じ処刑者に対して複数の霊能者が霊能できるべき ... [0m[32mok[0m [0m[38;5;245m(56ms)[0m
+霊能アクション - 処刑された霊能者は自分自身を霊能対象にできないべき ... [0m[32mok[0m [0m[38;5;245m(56ms)[0m
+霊能アクション - 実行後にアクションマップに正しく記録されるべき ... [0m[32mok[0m [0m[38;5;245m(53ms)[0m
+[0m[38;5;245mrunning 3 tests from ./tests/game-actions.phase-processing.test.ts[0m
+フェーズアクション処理 - 投票結果が正しく処理されるべき ... [0m[31mFAILED[0m [0m[38;5;245m(85ms)[0m
+フェーズアクション処理 - 護衛の保護を処理するべき ... [0m[31mFAILED[0m [0m[38;5;245m(57ms)[0m
+フェーズアクション処理 - 非アクティブプレイヤーのランダムアクションを処理するべき ... [0m[32mok[0m [0m[38;5;245m(58ms)[0m
+[0m[38;5;245mrunning 0 tests from ./tests/game-actions.test.ts[0m
+[0m[38;5;245mrunning 4 tests from ./tests/game-actions.vote.test.ts[0m
+投票アクション - 投票フェーズ中は投票が許可されるべき ... [0m[31mFAILED[0m [0m[38;5;245m(85ms)[0m
+投票アクション - 他のフェーズでは投票が許可されるべきではない ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:15.484Z","level":"WARN","message":"Invalid phase for voting","gameId":"31fc5142-2ff4-40dc-8518-25925e166eac","expectedPhase":"DAY_VOTE","actualPhase":"NIGHT"}
+[0m[38;5;245m----- post-test output end -----[0m
+投票アクション - 他のフェーズでは投票が許可されるべきではない ... [0m[32mok[0m [0m[38;5;245m(57ms)[0m
+投票アクション - 死亡したプレイヤーは投票できないべき ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:15.540Z","level":"WARN","message":"Dead player involved in vote","gameId":"97a8807e-2ace-4335-83d4-35b794b1b191","playerAlive":false,"targetAlive":true}
+[0m[38;5;245m----- post-test output end -----[0m
+投票アクション - 死亡したプレイヤーは投票できないべき ... [0m[32mok[0m [0m[38;5;245m(56ms)[0m
+投票アクション - 死亡したプレイヤーへの投票は許可されるべきではない ...
+[0m[38;5;245m------- post-test output -------[0m
+{"timestamp":"2025-08-16T22:39:15.591Z","level":"WARN","message":"Dead player involved in vote","gameId":"080e56c1-2376-4ebe-872d-55512a53a588","playerAlive":true,"targetAlive":false}
+[0m[38;5;245m----- post-test output end -----[0m
+投票アクション - 死亡したプレイヤーへの投票は許可されるべきではない ... [0m[32mok[0m [0m[38;5;245m(50ms)[0m
+[0m[38;5;245mrunning 6 tests from ./tests/game-logic.test.ts[0m
+checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する ...
+[0m[38;5;245m------- post-test output -------[0m
+[1m[33mNOTICE[39m[22m: relation "users" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "games" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_games_status" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "players" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_players_player_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_events" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_events_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "game_actions" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_game_id" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_game_actions_timestamp" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "chat_messages" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_game_channel" already exists, skipping
+[1m[33mNOTICE[39m[22m: relation "idx_chat_messages_timestamp" already exists, skipping
+[0m[38;5;245m----- post-test output end -----[0m
+checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する ... [0m[31mFAILED[0m [0m[38;5;245m(101ms)[0m
+checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する ... [0m[31mFAILED[0m [0m[38;5;245m(22ms)[0m
+handlePhaseEnd - フェーズ間の移行が正しく行われるか ... [0m[31mFAILED[0m [0m[38;5;245m(65ms)[0m
+assignRoles - ゲーム設定に従って役職が割り当てられるか ... [0m[31mFAILED[0m [0m[38;5;245m(31ms)[0m
+ゲーム終了条件 - 村人が全滅した場合の人狼勝利 ... [0m[32mok[0m [0m[38;5;245m(0ms)[0m
+ゲーム終了条件 - まだ両陣営が生存している場合はゲーム継続 ... [0m[32mok[0m [0m[38;5;245m(0ms)[0m
+[0m[38;5;245mrunning 0 tests from ./tests/games.test.ts[0m
+
+[0m[1m[37m[41m ERRORS [0m
+
+チャット - プライベートメッセージが正しく機能するか [0m[38;5;245m=> ./tests/api/chat.private-message.test.ts:8:6[0m
+[0m[1m[31merror[0m: AssertionError: Values are not equal.
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   0[22m[39m
+[32m[1m+   1[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://deno.land/std@0.210.0/assert/assert_equals.ts[0m:[0m[33m52[0m:[0m[33m9[0m)
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/chat.private-message.test.ts[0m:[0m[33m63[0m:[0m[33m5[0m)
+
+リソースが見つからない場合のエラーが適切に処理されることを検証 [0m[38;5;245m=> ./tests/api/error-handling.test.ts:130:6[0m
+[0m[1m[31merror[0m: Error: HTTP error! status: 500
+      const err = new Error(`HTTP error! status: ${response.status}`);
+[0m[31m                  ^[0m
+    at [0m[1m[3mconsumeResponse[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts[0m:[0m[33m8[0m:[0m[33m19[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3mcreateAuthenticatedUser[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/users.ts[0m:[0m[33m45[0m:[0m[33m16[0m)
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/error-handling.test.ts[0m:[0m[33m131[0m:[0m[33m21[0m
+
+ゲームアクション - 投票機能 [0m[38;5;245m=> ./tests/api/games.actions.test.ts:7:6[0m
+[0m[1m[31merror[0m: Error: HTTP error! status: 400
+      const err = new Error(`HTTP error! status: ${response.status}`);
+[0m[31m                  ^[0m
+    at [0m[1m[3mconsumeResponse[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts[0m:[0m[33m8[0m:[0m[33m19[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts[0m:[0m[33m37[0m:[0m[33m24[0m)
+
+ゲームアクション - 襲撃機能 [0m[38;5;245m=> ./tests/api/games.actions.test.ts:45:6[0m
+[0m[1m[31merror[0m: Error: HTTP error! status: 400
+      const err = new Error(`HTTP error! status: ${response.status}`);
+[0m[31m                  ^[0m
+    at [0m[1m[3mconsumeResponse[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/response.ts[0m:[0m[33m8[0m:[0m[33m19[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/games.actions.test.ts[0m:[0m[33m75[0m:[0m[33m26[0m)
+
+完全なゲームシナリオ - 村人陣営の勝利 [0m[38;5;245m=> ./tests/api/village-victory-scenario.test.ts:12:6[0m
+[0m[1m[31merror[0m: AssertionError: Values are not equal.
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   undefined[22m[39m
+[32m[1m+   "EXECUTION"[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://deno.land/std@0.210.0/assert/assert_equals.ts[0m:[0m[33m52[0m:[0m[33m9[0m)
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/village-victory-scenario.test.ts[0m:[0m[33m108[0m:[0m[33m5[0m)
+
+完全なゲームシナリオ - 人狼陣営の勝利 [0m[38;5;245m=> ./tests/api/werewolf-victory-scenario.test.ts:12:6[0m
+[0m[1m[31merror[0m: AssertionError: Values are not equal.
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   undefined[22m[39m
+[32m[1m+   "EXECUTION"[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://deno.land/std@0.210.0/assert/assert_equals.ts[0m:[0m[33m52[0m:[0m[33m9[0m)
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/api/werewolf-victory-scenario.test.ts[0m:[0m[33m109[0m:[0m[33m5[0m)
+
+登録 - 新規ユーザーの登録が正常に行われる [0m[38;5;245m=> ./tests/auth.test.ts:20:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+  - An async call to op_read was started in this test, but never completed.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+登録 - メールアドレスの重複登録を許可しない [0m[38;5;245m=> ./tests/auth.test.ts:31:6[0m
+[0m[1m[31merror[0m: Error: Email already exists
+    throw new Error("Email already exists");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.register[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/services/auth.ts[0m:[0m[33m22[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/auth.test.ts[0m:[0m[33m35[0m:[0m[33m5[0m)
+
+ログイン - 正しい認証情報でログイン成功 [0m[38;5;245m=> ./tests/auth.test.ts:48:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - An async call to op_read was started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+ログイン - 不正なパスワードでログイン失敗 [0m[38;5;245m=> ./tests/auth.test.ts:68:6[0m
+[0m[1m[31merror[0m: Error: Email already exists
+    throw new Error("Email already exists");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.register[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/services/auth.ts[0m:[0m[33m22[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/auth.test.ts[0m:[0m[33m72[0m:[0m[33m5[0m)
+
+ログイン - 存在しないメールアドレスでログイン失敗 [0m[38;5;245m=> ./tests/auth.test.ts:87:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 2 async calls to op_read were started in this test, but never completed.
+  - An async call to op_read was started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+chat service - GLOBALに送信・取得できる [0m[38;5;245m=> ./tests/chat.send-and-list.test.ts:5:6[0m
+[0m[1m[31merror[0m: Error: Owner not found
+    throw new Error("Owner not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.createGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m44[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupChatTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/chat.test-helpers.ts[0m:[0m[33m29[0m:[0m[33m16[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/chat.send-and-list.test.ts[0m:[0m[33m10[0m:[0m[33m29[0m)
+
+エラーハンドリング - ゲームオーナー権限のテスト [0m[38;5;245m=> ./tests/error-handling.test.ts:79:6[0m
+[0m[1m[31merror[0m: Error: Player not found
+    throw new Error("Player not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.joinGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m119[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupErrorHandlingTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m69[0m:[0m[33m5[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m83[0m:[0m[33m7[0m)
+
+エラーハンドリング - 既に開始済みのゲームを再度開始しようとした場合のエラー [0m[38;5;245m=> ./tests/error-handling.test.ts:127:6[0m
+[0m[1m[31merror[0m: Error: ゲーム状態チェックが正しく機能していません
+        throw new Error("ゲーム状態チェックが正しく機能していません");
+[0m[31m              ^[0m
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m146[0m:[0m[33m15[0m)
+
+エラーハンドリング - 存在しないゲームIDを指定した場合のエラー [0m[38;5;245m=> ./tests/error-handling.test.ts:172:6[0m
+[0m[1m[31merror[0m: Error: Player not found
+    throw new Error("Player not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.joinGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m119[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupErrorHandlingTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m69[0m:[0m[33m5[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m176[0m:[0m[33m7[0m)
+
+エラーハンドリング - 役職権限の確認テスト [0m[38;5;245m=> ./tests/error-handling.test.ts:206:6[0m
+[0m[1m[31merror[0m: Error: プレイヤーの役職が正しく設定されていません
+        throw new Error("プレイヤーの役職が正しく設定されていません");
+[0m[31m              ^[0m
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m230[0m:[0m[33m15[0m)
+
+エラーハンドリング - 不正なフェーズでのアクション実行テスト [0m[38;5;245m=> ./tests/error-handling.test.ts:257:6[0m
+[0m[1m[31merror[0m: Error: Player not found
+    throw new Error("Player not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.joinGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m119[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupErrorHandlingTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m69[0m:[0m[33m5[0m)
+    at async [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/error-handling.test.ts[0m:[0m[33m260[0m:[0m[33m5[0m)
+
+襲撃アクション - 人狼は夜間に襲撃できるべき [0m[38;5;245m=> ./tests/game-actions.attack.test.ts:6:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+占いアクション - 占い師は夜間に占いができるべき [0m[38;5;245m=> ./tests/game-actions.divine.test.ts:5:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+護衛アクション - 狩人は夜間に護衛ができるべき [0m[38;5;245m=> ./tests/game-actions.guard.test.ts:5:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+霊能アクション - 霊能者は前日に処刑された人狼を正しく識別できるべき [0m[38;5;245m=> ./tests/game-actions.medium.test.ts:6:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+フェーズアクション処理 - 投票結果が正しく処理されるべき [0m[38;5;245m=> ./tests/game-actions.phase-processing.test.ts:5:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+フェーズアクション処理 - 護衛の保護を処理するべき [0m[38;5;245m=> ./tests/game-actions.phase-processing.test.ts:27:6[0m
+[0m[1m[31merror[0m: AssertionError: Values are not equal.
+
+
+    [90m[1m[Diff][22m[39m [31m[1mActual[22m[39m / [32m[1mExpected[22m[39m
+
+
+[31m[1m-   undefined[22m[39m
+[32m[1m+   "NONE"[22m[39m
+
+  throw new AssertionError(message);
+[0m[31m        ^[0m
+    at [0m[1m[3massertEquals[0m ([0m[36mhttps://deno.land/std@0.210.0/assert/assert_equals.ts[0m:[0m[33m52[0m:[0m[33m9[0m)
+    at [0m[1m[3mfn[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-actions.phase-processing.test.ts[0m:[0m[33m38[0m:[0m[33m5[0m)
+
+投票アクション - 投票フェーズ中は投票が許可されるべき [0m[38;5;245m=> ./tests/game-actions.vote.test.ts:5:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する [0m[38;5;245m=> ./tests/game-logic.test.ts:85:6[0m
+[0m[1m[31merror[0m: Leaks detected:
+  - 10 async calls to op_read were started before the test, but completed during the test. Async operations should not complete in a test if they were not started in that test.
+To get more details where leaks occurred, run again with the --trace-leaks flag.
+
+checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する [0m[38;5;245m=> ./tests/game-logic.test.ts:104:6[0m
+[0m[1m[31merror[0m: Error: Player not found
+    throw new Error("Player not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.joinGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m119[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupGameLogicTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-logic.test.ts[0m:[0m[33m64[0m:[0m[33m5[0m)
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-logic.test.ts[0m:[0m[33m107[0m:[0m[33m5[0m
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/test-helpers.ts[0m:[0m[33m162[0m:[0m[33m7[0m
+
+handlePhaseEnd - フェーズ間の移行が正しく行われるか [0m[38;5;245m=> ./tests/game-logic.test.ts:124:6[0m
+[0m[1m[31merror[0m: GameError: Game is not in progress
+  if (game.status !== "IN_PROGRESS") throw new GameError(ErrorCode.GAME_NOT_IN_PROGRESS, "Game is not in progress");
+[0m[31m                                           ^[0m
+    at [0m[1m[3mModule.advancePhase[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/services/game-logic.ts[0m:[0m[33m58[0m:[0m[33m44[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-logic.test.ts[0m:[0m[33m134[0m:[0m[33m5[0m
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/test-helpers.ts[0m:[0m[33m162[0m:[0m[33m7[0m
+
+assignRoles - ゲーム設定に従って役職が割り当てられるか [0m[38;5;245m=> ./tests/game-logic.test.ts:155:6[0m
+[0m[1m[31merror[0m: Error: Player not found
+    throw new Error("Player not found");
+[0m[31m          ^[0m
+    at [0m[1m[3mModule.joinGame[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/models/game.ts[0m:[0m[33m119[0m:[0m[33m11[0m)
+    at [0m[1m[3meventLoopTick[0m ([0m[36mext:core/01_core.js[0m:[0m[33m178[0m:[0m[33m7[0m)
+    at async [0m[1m[3msetupGameLogicTest[0m ([0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-logic.test.ts[0m:[0m[33m64[0m:[0m[33m5[0m)
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/game-logic.test.ts[0m:[0m[33m158[0m:[0m[33m5[0m
+    at async [0m[36mfile:///C:/Users/wellk/project/levi-api/tests/helpers/test-helpers.ts[0m:[0m[33m162[0m:[0m[33m7[0m
+
+[0m[1m[37m[41m FAILURES [0m
+
+チャット - プライベートメッセージが正しく機能するか [0m[38;5;245m=> ./tests/api/chat.private-message.test.ts:8:6[0m
+リソースが見つからない場合のエラーが適切に処理されることを検証 [0m[38;5;245m=> ./tests/api/error-handling.test.ts:130:6[0m
+ゲームアクション - 投票機能 [0m[38;5;245m=> ./tests/api/games.actions.test.ts:7:6[0m
+ゲームアクション - 襲撃機能 [0m[38;5;245m=> ./tests/api/games.actions.test.ts:45:6[0m
+完全なゲームシナリオ - 村人陣営の勝利 [0m[38;5;245m=> ./tests/api/village-victory-scenario.test.ts:12:6[0m
+完全なゲームシナリオ - 人狼陣営の勝利 [0m[38;5;245m=> ./tests/api/werewolf-victory-scenario.test.ts:12:6[0m
+登録 - 新規ユーザーの登録が正常に行われる [0m[38;5;245m=> ./tests/auth.test.ts:20:6[0m
+登録 - メールアドレスの重複登録を許可しない [0m[38;5;245m=> ./tests/auth.test.ts:31:6[0m
+ログイン - 正しい認証情報でログイン成功 [0m[38;5;245m=> ./tests/auth.test.ts:48:6[0m
+ログイン - 不正なパスワードでログイン失敗 [0m[38;5;245m=> ./tests/auth.test.ts:68:6[0m
+ログイン - 存在しないメールアドレスでログイン失敗 [0m[38;5;245m=> ./tests/auth.test.ts:87:6[0m
+chat service - GLOBALに送信・取得できる [0m[38;5;245m=> ./tests/chat.send-and-list.test.ts:5:6[0m
+エラーハンドリング - ゲームオーナー権限のテスト [0m[38;5;245m=> ./tests/error-handling.test.ts:79:6[0m
+エラーハンドリング - 既に開始済みのゲームを再度開始しようとした場合のエラー [0m[38;5;245m=> ./tests/error-handling.test.ts:127:6[0m
+エラーハンドリング - 存在しないゲームIDを指定した場合のエラー [0m[38;5;245m=> ./tests/error-handling.test.ts:172:6[0m
+エラーハンドリング - 役職権限の確認テスト [0m[38;5;245m=> ./tests/error-handling.test.ts:206:6[0m
+エラーハンドリング - 不正なフェーズでのアクション実行テスト [0m[38;5;245m=> ./tests/error-handling.test.ts:257:6[0m
+襲撃アクション - 人狼は夜間に襲撃できるべき [0m[38;5;245m=> ./tests/game-actions.attack.test.ts:6:6[0m
+占いアクション - 占い師は夜間に占いができるべき [0m[38;5;245m=> ./tests/game-actions.divine.test.ts:5:6[0m
+護衛アクション - 狩人は夜間に護衛ができるべき [0m[38;5;245m=> ./tests/game-actions.guard.test.ts:5:6[0m
+霊能アクション - 霊能者は前日に処刑された人狼を正しく識別できるべき [0m[38;5;245m=> ./tests/game-actions.medium.test.ts:6:6[0m
+フェーズアクション処理 - 投票結果が正しく処理されるべき [0m[38;5;245m=> ./tests/game-actions.phase-processing.test.ts:5:6[0m
+フェーズアクション処理 - 護衛の保護を処理するべき [0m[38;5;245m=> ./tests/game-actions.phase-processing.test.ts:27:6[0m
+投票アクション - 投票フェーズ中は投票が許可されるべき [0m[38;5;245m=> ./tests/game-actions.vote.test.ts:5:6[0m
+checkGameEnd - すべての人狼が死亡した場合、村人の勝利を検出する [0m[38;5;245m=> ./tests/game-logic.test.ts:85:6[0m
+checkGameEnd - 人狼が村人陣営と同数または上回った場合、人狼の勝利を検出する [0m[38;5;245m=> ./tests/game-logic.test.ts:104:6[0m
+handlePhaseEnd - フェーズ間の移行が正しく行われるか [0m[38;5;245m=> ./tests/game-logic.test.ts:124:6[0m
+assignRoles - ゲーム設定に従って役職が割り当てられるか [0m[38;5;245m=> ./tests/game-logic.test.ts:155:6[0m
+
+[0m[31mFAILED[0m | 54 passed | 28 failed [0m[38;5;245m(23s)[0m
+

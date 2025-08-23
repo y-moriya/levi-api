@@ -55,6 +55,15 @@ export async function findGameById(id: string): Promise<Game | null> {
       is_completed: boolean;
     }>(`SELECT id, day, phase, type, actor_id, target_id, timestamp, is_completed FROM game_actions WHERE game_id = $1 ORDER BY timestamp ASC`, [id]);
 
+    const parseMaybeJson = <T = unknown>(value: unknown): T | undefined => {
+      if (value == null) return undefined;
+      if (typeof value === "string") {
+        try { return JSON.parse(value) as T; } catch { return undefined; }
+      }
+      // 既にオブジェクトの場合はそのまま
+      return value as T;
+    };
+
     const game: Game = {
       id: gameData.id,
       name: gameData.name,
@@ -70,7 +79,7 @@ export async function findGameById(id: string): Promise<Game | null> {
       currentPhase: gameData.current_phase as Game["currentPhase"],
       phaseEndTime: gameData.phase_end_time,
       winner: gameData.winner as Game["winner"] || null,
-      settings: JSON.parse(gameData.settings),
+      settings: parseMaybeJson<Game["settings"]>(gameData.settings) as Game["settings"],
       players: players.map(p => ({
         playerId: p.player_id,
         username: p.username,
@@ -87,7 +96,7 @@ export async function findGameById(id: string): Promise<Game | null> {
         timestamp: e.timestamp,
         actorId: e.actor_id || undefined,
         targetId: e.target_id || undefined,
-        result: e.result ? JSON.parse(e.result) : undefined
+        result: parseMaybeJson(e.result)
       })),
       gameActions: actions.map(a => ({
         id: a.id,

@@ -79,6 +79,8 @@ async function setupGameLogicTest() {
   testGame.status = "IN_PROGRESS";
   testGame.currentDay = 1;
   testGame.currentPhase = "DAY_DISCUSSION";
+  // リポジトリへ反映（advancePhase が最新状態を参照できるようにする）
+  await gameModel.gameStore.update(testGame);
 }
 
 // ゲーム終了条件のテスト
@@ -131,18 +133,21 @@ Deno.test({
 
     // DAY_DISCUSSIONからDAY_VOTEへのテスト
     testGame.currentPhase = "DAY_DISCUSSION";
+    await gameModel.gameStore.update(testGame);
     await gameLogic.advancePhase(testGame.id);
     testGame = await gameModel.getGameById(testGame.id) as Game;
     assertEquals(testGame.currentPhase, "DAY_VOTE");
 
     // DAY_VOTEからNIGHTへのテスト
     testGame.currentPhase = "DAY_VOTE";
+    await gameModel.gameStore.update(testGame);
     await gameLogic.advancePhase(testGame.id);
     testGame = await gameModel.getGameById(testGame.id) as Game;
     assertEquals(testGame.currentPhase, "NIGHT");
 
     // NIGHTからDAY_DISCUSSIONへのテスト
     testGame.currentPhase = "NIGHT";
+    await gameModel.gameStore.update(testGame);
     await gameLogic.advancePhase(testGame.id);
     testGame = await gameModel.getGameById(testGame.id) as Game;
     assertEquals(testGame.currentPhase, "DAY_DISCUSSION");

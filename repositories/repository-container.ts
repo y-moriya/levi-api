@@ -27,11 +27,17 @@ class RepositoryContainer {
    * @returns テストモードかどうか
    */
   private isTestMode(): boolean {
-    return this.forceTestMode || 
-      Deno.env.get("TEST_MODE") === "true" || 
+    // IT_USE_POSTGRES=true の場合はテスト下でも実DBを使いたい前提で test mode と見なさない
+    const itUsePg = Deno.env.get("IT_USE_POSTGRES");
+    const allowRealDb = itUsePg && itUsePg.toLowerCase() === "true";
+    if (allowRealDb) return false;
+    return (
+      this.forceTestMode ||
+      Deno.env.get("TEST_MODE") === "true" ||
       ("Deno" in globalThis && typeof Deno.test === "function") ||
       // テスト実行環境の追加検出
-      globalThis.Deno?.permissions !== undefined;
+      globalThis.Deno?.permissions !== undefined
+    );
   }
 
   /**
@@ -40,7 +46,9 @@ class RepositoryContainer {
   setTestMode(): void {
     this.forceTestMode = true;
     // テストモード時は必ずメモリリポジトリを使用
-    if (config.database.type !== "memory") {
+    const itUsePg = Deno.env.get("IT_USE_POSTGRES");
+    const allowRealDb = itUsePg && itUsePg.toLowerCase() === "true";
+    if (!allowRealDb && config.database.type !== "memory") {
       logger.info("テストモードのためデータベース種別を memory に強制変更します");
       config.database.type = "memory";
     }
@@ -141,9 +149,10 @@ class RepositoryContainer {
     const gameRepo = this.getGameRepository();
     const chatRepo = this.getChatMessageRepository();
 
-    await userRepo.clear();
-    await gameRepo.clear();
+    // 外部キー依存関係: chat_messages -> games -> users
     await chatRepo.clear();
+    await gameRepo.clear();
+    await userRepo.clear();
   }
 
   /**
