@@ -5,6 +5,7 @@ import * as authService from "../../services/auth.ts";
 import * as gamePhase from "../../services/game-phase.ts";
 import * as gameActions from "../../services/game-actions.ts";
 import app from "../../main.ts";
+import { logger } from "../../utils/logger.ts";
 
 // サーバー状態を追跡
 let isServerRunning = false;
@@ -72,7 +73,7 @@ export async function setupScenarioTest(): Promise<TestUsers> {
 
     return { ownerAuth, werewolfAuth, seerAuth, bodyguardAuth, villagerAuth, mediumAuth };
   } catch (error) {
-    console.error("Failed to setup scenario test:", error);
+    logger.error("Failed to setup scenario test:", error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }
@@ -91,7 +92,7 @@ export function cleanupScenarioTest() {
 
     // サーバーは停止せず、再利用
   } catch (error) {
-    console.error("Error during test cleanup:", error);
+    logger.error("Error during test cleanup:", error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }

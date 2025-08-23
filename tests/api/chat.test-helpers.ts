@@ -4,6 +4,7 @@ import * as authService from "../../services/auth.ts";
 import * as gameModel from "../../models/game.ts";
 import * as gamePhase from "../../services/game-phase.ts";
 import { repositoryContainer } from "../../repositories/repository-container.ts";
+import { logger } from "../../utils/logger.ts";
 
 let isServerRunning = false;
 
@@ -23,7 +24,7 @@ export async function setupTests() {
       isServerRunning = true;
     }
   } catch (error) {
-    console.error("テストサーバーの起動に失敗しました:", error);
+    logger.error("テストサーバーの起動に失敗しました:", error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }
@@ -39,7 +40,7 @@ export async function cleanupTests() {
     const chatRepo = repositoryContainer.getChatMessageRepository();
     await chatRepo.clear();
   } catch (error) {
-    console.error("テストのクリーンアップ中にエラーが発生しました:", error);
+    logger.error("テストのクリーンアップ中にエラーが発生しました:", error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }

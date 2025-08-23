@@ -8,6 +8,7 @@
 //  --force     本番っぽい DB ホストでも実行を許可
 
 import { Client } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
+import { logger } from "../utils/logger.ts";
 
 const DEFAULT_POSTGRES_URL = "postgres://postgres:postgres@localhost:5443/levi_api";
 const POSTGRES_URL = Deno.env.get("POSTGRES_URL") || DEFAULT_POSTGRES_URL;
@@ -32,17 +33,17 @@ async function main() {
   const skipConfirm = args.has("--yes") || args.has("-y");
   const force = args.has("--force");
 
-  console.log("POSTGRES_URL:", POSTGRES_URL);
+  logger.info(`POSTGRES_URL: ${POSTGRES_URL}`);
 
   if (looksLikeProduction(POSTGRES_URL) && !force) {
-    console.error("ERROR: POSTGRES_URL がローカルに見えません。誤操作を防ぐため --force を付けて実行してください。");
+  logger.error("ERROR: POSTGRES_URL がローカルに見えません。誤操作を防ぐため --force を付けて実行してください。");
     Deno.exit(2);
   }
 
   if (!skipConfirm) {
     const ok = await confirm("この操作は指定DBのテストデータを完全に削除します。続行しますか? (y/N): ");
     if (!ok) {
-      console.log("キャンセルしました。");
+  logger.info("キャンセルしました。");
       Deno.exit(0);
     }
   }
@@ -50,7 +51,7 @@ async function main() {
   const client = new Client(POSTGRES_URL);
   try {
     await client.connect();
-    console.log("DB に接続しました。トランザクションを開始します...");
+  logger.info("DB に接続しました。トランザクションを開始します...");
     await client.queryArray("BEGIN");
 
     // 削除順序は外部キー制約を考慮
@@ -68,13 +69,17 @@ async function main() {
       // 常に 1 を返す RETURNING 1 を使って削除件数を取得する
       const res = await client.queryObject(`DELETE FROM ${table} RETURNING 1;`);
       const rows: unknown[] = (res as unknown as { rows?: unknown[] }).rows || [];
-      console.log(`Deleted from ${table}: ${rows.length}`);
+  logger.info(`Deleted from ${table}: ${rows.length}`);
     }
 
     await client.queryArray("COMMIT");
-    console.log("テストデータの削除が完了しました。");
+  logger.info("テストデータの削除が完了しました。");
   } catch (err) {
-    console.error("エラー発生、ロールバックします:", err);
+    if (err instanceof Error) {
+      logger.error("エラー発生、ロールバックします:", err);
+    } else {
+      logger.error("エラー発生、ロールバックします:", { error: String(err) });
+    }
     try {
       await client.queryArray("ROLLBACK");
     } catch (_) {

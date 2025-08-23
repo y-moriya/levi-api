@@ -52,7 +52,7 @@ export const register = async (c: Context) => {
       data = await getValidatedBody<UserRegistration>(c, validateRegistration);
     } catch (validationError) {
       if (validationError instanceof GameError) {
-        console.log("Validation error caught with code:", validationError.code);
+        logger.warn(`Validation error caught with code: ${validationError.code}`);
         throw validationError;
       }
       const error = new GameError(
@@ -61,7 +61,7 @@ export const register = async (c: Context) => {
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
-      console.log("Created new validation GameError with code:", error.code);
+  logger.warn(`Created new validation GameError with code: ${error.code}`, { error: error });
       throw error;
     }
 
@@ -80,7 +80,7 @@ export const register = async (c: Context) => {
             "WARN",
             { email: data.email },
           );
-          console.log("Created EMAIL_EXISTS GameError with code:", emailError.code);
+          logger.warn(`Created EMAIL_EXISTS GameError with code: ${emailError.code}`, { email: data.email });
           throw emailError;
         }
       }
@@ -89,7 +89,7 @@ export const register = async (c: Context) => {
   } catch (error) {
     // GameErrorはそのままスロー、それ以外はGameErrorに変換
     if (error instanceof GameError) {
-      console.log("Rethrowing GameError with code:", error.code);
+      logger.warn(`Rethrowing GameError with code: ${error.code}`);
       throw error;
     }
     const lang = getLang(c);
@@ -99,7 +99,7 @@ export const register = async (c: Context) => {
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },
     );
-    console.log("Created server GameError with code:", serverError.code);
+  logger.error(`Created server GameError with code: ${serverError.code}`, { originalError: serverError });
     throw serverError;
   }
 };
@@ -113,7 +113,7 @@ export const login = async (c: Context) => {
       data = await getValidatedBody<Login>(c, validateLogin);
     } catch (validationError) {
       if (validationError instanceof GameError) {
-        console.log("Login validation error caught with code:", validationError.code);
+        logger.warn(`Login validation error caught with code: ${validationError.code}`);
         throw validationError;
       }
       const error = new GameError(
@@ -122,7 +122,7 @@ export const login = async (c: Context) => {
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
-      console.log("Created login validation GameError with code:", error.code);
+  logger.warn(`Created login validation GameError with code: ${error.code}`, { error });
       throw error;
     }
 
@@ -141,7 +141,7 @@ export const login = async (c: Context) => {
             "WARN",
             { email: data.email },
           );
-          console.log("Created INVALID_CREDENTIALS GameError with code:", credError.code);
+          logger.warn(`Created INVALID_CREDENTIALS GameError with code: ${credError.code}`, { email: data.email });
           throw credError;
         }
       }
@@ -150,7 +150,7 @@ export const login = async (c: Context) => {
   } catch (error) {
     // GameErrorはそのままスロー、それ以外はGameErrorに変換
     if (error instanceof GameError) {
-      console.log("Rethrowing login GameError with code:", error.code);
+      logger.warn(`Rethrowing login GameError with code: ${error.code}`);
       throw error;
     }
     const lang = getLang(c);
@@ -160,7 +160,7 @@ export const login = async (c: Context) => {
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },
     );
-    console.log("Created login server GameError with code:", serverError.code);
+  logger.error(`Created login server GameError with code: ${serverError.code}`, { originalError: serverError });
     throw serverError;
   }
 };

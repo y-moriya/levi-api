@@ -14,6 +14,7 @@ import {
 } from "./helpers/test-helpers.ts";
 import { gameFixtures } from "./helpers/fixtures.ts";
 import { createMockGame } from "./helpers/mocks.ts";
+import { logger } from "../utils/logger.ts";
 
 let testGame: Game;
 let testUsers: User[];
@@ -195,9 +196,9 @@ Deno.test({
       }
     });
 
-    // 期待される役職の数をログ出力
-    console.log(`期待される役職数: 人狼=${testGame.settings.roles.werewolfCount}, 占い師=${testGame.settings.roles.seerCount}, 狩人=${testGame.settings.roles.bodyguardCount}`);
-    console.log(`実際の役職数: 人狼=${roleCount.WEREWOLF}, 占い師=${roleCount.SEER}, 狩人=${roleCount.BODYGUARD}`);
+  // 期待される役職の数をログ出力
+  logger.info(`期待される役職数: 人狼=${testGame.settings.roles.werewolfCount}, 占い師=${testGame.settings.roles.seerCount}, 狩人=${testGame.settings.roles.bodyguardCount}`);
+  logger.info(`実際の役職数: 人狼=${roleCount.WEREWOLF}, 占い師=${roleCount.SEER}, 狩人=${roleCount.BODYGUARD}`);
 
     assertEquals(roleCount.WEREWOLF, testGame.settings.roles.werewolfCount);
     assertEquals(roleCount.SEER, testGame.settings.roles.seerCount);

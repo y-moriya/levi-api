@@ -19,3 +19,13 @@ Deno.env.set("TEST_MODE", "true");
 
 // テストの並行実行を有効化
 Deno.env.set("DENO_TEST_CONCURRENT", "1");
+
+// テスト実行時は詳細な標準出力を抑制する（logger へルーティング）
+import { logger } from "../utils/logger.ts";
+const isDenoTest = typeof Deno !== "undefined" && typeof (Deno as { test?: unknown }).test === "function";
+if (isDenoTest) {
+  // preserve error/warn but route verbose logs through logger so log level filtering applies
+  console.log = (...args: unknown[]) => logger.info(String(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')));
+  console.info = (...args: unknown[]) => logger.info(String(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')));
+  console.debug = (...args: unknown[]) => logger.debug(String(args.map(a => typeof a === 'string' ? a : JSON.stringify(a)).join(' ')));
+}

@@ -3,6 +3,7 @@ import { apiRequest, consumeResponse, testServer } from "../helpers/api.ts";
 import { AuthResponse, UserResponse } from "../helpers/types.ts";
 import app from "../../main.ts";
 import * as authService from "../../services/auth.ts";
+import { logger } from "../../utils/logger.ts";
 
 const validUser = {
   username: "testuser",
@@ -22,7 +23,7 @@ async function setupTests() {
       isServerRunning = true;
     }
   } catch (error) {
-    console.error("Failed to start test server:", error);
+    logger.error("Failed to start test server:", error instanceof Error ? error : { error: String(error) });
     throw error;
   }
 }
@@ -32,7 +33,7 @@ function cleanupTests() {
     // サーバーは停止せず、再利用する
     authService.resetStore();
   } catch (_error) {
-    console.error("Failed during test cleanup:");
+    logger.error("Failed during test cleanup:", { error: String(_error) });
     throw _error;
   }
 }

@@ -1,9 +1,13 @@
 import { load } from "https://deno.land/std@0.210.0/dotenv/mod.ts";
+import { logger } from "./utils/logger.ts";
 
 // Decide which env file to load: .env.test for tests, otherwise .env
 const isDenoTest = typeof Deno !== "undefined" && typeof (Deno as { test?: unknown }).test === "function";
 const nodeEnv = Deno.env.get("NODE_ENV");
 const envPath = isDenoTest || nodeEnv === "test" ? ".env.test" : ".env";
+
+// テスト実行時は出力を完全に抑えるため、デフォルトのログレベルを 'none' にする
+const defaultLogLevel = isDenoTest ? "none" : "info";
 
 try {
   // Try to load the chosen file; if missing, fallback to .env silently
@@ -43,9 +47,7 @@ function getEnv<T>(
   if (typeof defaultValue === "number") {
     typedValue = Number(envValue) as unknown as T;
     if (isNaN(typedValue as unknown as number)) {
-      console.warn(
-        `警告: 環境変数 ${key} の値 "${envValue}" は数値に変換できません。デフォルト値 ${defaultValue} を使用します。`,
-      );
+    logger.warn(`警告: 環境変数 ${key} の値 "${envValue}" は数値に変換できません。デフォルト値 ${defaultValue} を使用します。`);
       return defaultValue;
     }
   } else if (typeof defaultValue === "boolean") {
@@ -56,7 +58,7 @@ function getEnv<T>(
 
   // バリデーション処理
   if (validator && !validator(typedValue)) {
-    console.warn(`警告: 環境変数 ${key} の値 "${envValue}" は無効です。デフォルト値 ${defaultValue} を使用します。`);
+  logger.warn(`警告: 環境変数 ${key} の値 "${envValue}" は無効です。デフォルト値 ${defaultValue} を使用します。`);
     return defaultValue;
   }
 
@@ -102,7 +104,7 @@ export interface Config {
 const isValidEnvironment = (env: string): env is Environment =>
   ["development", "test", "production"].includes(env as Environment);
 
-const isValidLogLevel = (level: string): boolean => ["error", "warn", "info", "debug", "trace"].includes(level);
+const isValidLogLevel = (level: string): boolean => ["none", "error", "warn", "info", "debug", "trace"].includes(level);
 
 const isValidRepositoryType = (type: string): type is RepositoryType =>
   ["memory", "postgresql"].includes(type as RepositoryType);
@@ -128,7 +130,8 @@ export const config: Config = {
     saltRounds: getEnv("PASSWORD_SALT_ROUNDS", 10, (rounds) => rounds > 0 && rounds <= 20),
   },
   logging: {
-    level: getEnv("LOG_LEVEL", "info", isValidLogLevel),
+  // 環境変数 LOG_LEVEL が未設定の場合、テストランナー実行時は 'error' をデフォルトにする
+  level: getEnv("LOG_LEVEL", defaultLogLevel, isValidLogLevel),
   },
   database: {
     type: getEnv("DB_TYPE", "memory", isValidRepositoryType),
@@ -146,7 +149,7 @@ if (
   config.env === "production" &&
   config.jwt.secret === "fallback-secret-key-do-not-use-in-production"
 ) {
-  console.error(
+  logger.error(
     "警告: 本番環境で安全でないデフォルトのJWTシークレットキーを使用しています。環境変数 JWT_SECRET を設定してください。",
   );
 }
@@ -156,7 +159,7 @@ if (
   config.env === "production" &&
   config.database.type === "memory"
 ) {
-  console.warn(
+  logger.warn(
     "警告: 本番環境でインメモリストレージを使用しています。サーバー再起動時にデータが失われます。DB_TYPE=postgresql の設定を検討してください。"
   );
 }

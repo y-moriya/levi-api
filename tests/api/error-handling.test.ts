@@ -2,6 +2,7 @@ import { assertEquals } from "https://deno.land/std@0.217.0/assert/assert_equals
 import { assertObjectMatch } from "https://deno.land/std@0.217.0/assert/assert_object_match.ts";
 
 import { apiRequest, createAuthenticatedUser, testServer } from "../helpers/api.ts";
+import { logger } from "../../utils/logger.ts";
 import app from "../../main.ts";
 
 // テスト開始前にサーバーを起動
@@ -157,5 +158,5 @@ Deno.test("リソースが見つからない場合のエラーが適切に処理
 // Deno.addFinalizer は存在しないので、代わりにテスト終了時に自動的に実行される処理として
 // unload イベントにリスナーを追加
 addEventListener("unload", () => {
-  stopTestServer().catch(console.error);
+  stopTestServer().catch((e) => logger.error("Error stopping test server on unload:", e instanceof Error ? e : { error: String(e) }));
 });

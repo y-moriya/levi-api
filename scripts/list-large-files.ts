@@ -39,19 +39,27 @@ for await (const file of walk(Deno.cwd())) {
     const lines = await countLines(file);
     if (lines > THRESHOLD) entries.push({ path: toRelative(file), lines });
   } catch (e) {
-    console.error(`読み込み失敗: ${file}`, e);
+    // errors during reading should be surfaced
+    // Log read failures via the structured logger
+    if (e instanceof Error) {
+      logger.error(`読み込み失敗: ${file}`, e);
+    } else {
+      logger.error(`読み込み失敗: ${file}`, { error: String(e) });
+    }
   }
 }
 
 entries.sort((a, b) => b.lines - a.lines);
 
 // テーブル表示
-console.log(`閾値: ${THRESHOLD} 行\n`);
-console.log("行数\tパス");
+import { logger } from "../utils/logger.ts";
+
+logger.info(`閾値: ${THRESHOLD} 行\n`);
+logger.info("行数\tパス");
 for (const e of entries) {
-  console.log(`${e.lines}\t${e.path}`);
+  logger.info(`${e.lines}\t${e.path}`);
 }
 
 // JSONも併せて出力（機械可読）
-console.log("\nJSON:");
-console.log(JSON.stringify(entries, null, 2));
+logger.info("\nJSON:");
+logger.info(JSON.stringify(entries, null, 2));
