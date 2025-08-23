@@ -1,6 +1,6 @@
 import { Game } from "../../types/game.ts";
 import { User } from "../../types/user.ts";
-import { ChatMessage, ChatChannel } from "../../types/chat.ts";
+import { ChatChannel, ChatMessage } from "../../types/chat.ts";
 
 export interface ApiError {
   code: string;

@@ -35,7 +35,7 @@ export function processAction(
   playerId: string,
   actionType: GameActionType,
   targetId?: string,
-  voteType?: VoteType
+  voteType?: VoteType,
 ): Promise<GameAction> {
   return gameLogicImpl.processAction(gameId, playerId, actionType, targetId, voteType);
 }

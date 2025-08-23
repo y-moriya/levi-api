@@ -35,11 +35,11 @@ export async function setupChatTest(): Promise<ChatTestContext> {
   game.status = "IN_PROGRESS";
   game.currentDay = 1;
   game.currentPhase = "DAY_DISCUSSION";
-  game.players[0].role = "VILLAGER";   // owner
-  game.players[1].role = "WEREWOLF";   // player2
-  game.players[2].role = "SEER";       // player3
-  game.players[3].role = "BODYGUARD";  // player4
-  game.players[4].role = "VILLAGER";   // player5
+  game.players[0].role = "VILLAGER"; // owner
+  game.players[1].role = "WEREWOLF"; // player2
+  game.players[2].role = "SEER"; // player3
+  game.players[3].role = "BODYGUARD"; // player4
+  game.players[4].role = "VILLAGER"; // player5
 
   return { game, users };
 }

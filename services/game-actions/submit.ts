@@ -1,6 +1,12 @@
 import type { ActionResult, DivineResult, Game, MediumResult } from "../../types/game.ts";
 import { logger } from "../../utils/logger.ts";
-import { handleAttackAction, handleDivineAction, handleGuardAction, handleMediumAction, handleVoteAction } from "./handlers.ts";
+import {
+  handleAttackAction,
+  handleDivineAction,
+  handleGuardAction,
+  handleMediumAction,
+  handleVoteAction,
+} from "./handlers.ts";
 
 export async function submitAction(
   game: Game,

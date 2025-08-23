@@ -8,7 +8,7 @@ export async function findGamesByPlayerId(playerId: string): Promise<Game[]> {
   try {
     const { rows: gameIds } = await client.queryObject<{ game_id: string }>(
       "SELECT DISTINCT game_id FROM players WHERE player_id = $1",
-      [playerId]
+      [playerId],
     );
 
     const games: Game[] = [];

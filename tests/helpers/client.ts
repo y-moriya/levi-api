@@ -21,29 +21,49 @@ export async function apiRequest(
 export class ApiClient {
   constructor(private baseUrl: string) {}
 
-  private url(path: string) { return `${this.baseUrl}${path}`; }
+  private url(path: string) {
+    return `${this.baseUrl}${path}`;
+  }
 
   async get(path: string, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
     const response = await apiRequest("GET", this.url(path), undefined, token, customHeaders) as ExtendedResponse;
-    try { response.data = await response.clone().json(); } catch {}
+    try {
+      response.data = await response.clone().json();
+    } catch {}
     return response;
   }
 
-  async post(path: string, body?: unknown, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+  async post(
+    path: string,
+    body?: unknown,
+    token?: string,
+    customHeaders?: Record<string, string>,
+  ): Promise<ExtendedResponse> {
     const response = await apiRequest("POST", this.url(path), body, token, customHeaders) as ExtendedResponse;
-    try { response.data = await response.clone().json(); } catch {}
+    try {
+      response.data = await response.clone().json();
+    } catch {}
     return response;
   }
 
-  async put(path: string, body?: unknown, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
+  async put(
+    path: string,
+    body?: unknown,
+    token?: string,
+    customHeaders?: Record<string, string>,
+  ): Promise<ExtendedResponse> {
     const response = await apiRequest("PUT", this.url(path), body, token, customHeaders) as ExtendedResponse;
-    try { response.data = await response.clone().json(); } catch {}
+    try {
+      response.data = await response.clone().json();
+    } catch {}
     return response;
   }
 
   async delete(path: string, token?: string, customHeaders?: Record<string, string>): Promise<ExtendedResponse> {
     const response = await apiRequest("DELETE", this.url(path), undefined, token, customHeaders) as ExtendedResponse;
-    try { response.data = await response.clone().json(); } catch {}
+    try {
+      response.data = await response.clone().json();
+    } catch {}
     return response;
   }
 }

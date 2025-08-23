@@ -45,11 +45,11 @@ Deno.test({
     if (!gameInstance) {
       throw new Error("Game not found");
     }
-    
+
     // テストの安定性のために明示的に役職を割り当て
     gameInstance = {
       ...gameInstance,
-      players: gameInstance.players.map(p => {
+      players: gameInstance.players.map((p) => {
         if (p.playerId === werewolfAuth.user.id) {
           return { ...p, role: "WEREWOLF" };
         } else if (p.playerId === seerAuth.user.id) {
@@ -62,24 +62,24 @@ Deno.test({
           return { ...p, role: "VILLAGER" };
         }
         return p;
-      })
+      }),
     };
-    
+
     // 更新されたゲームを保存
     await gameModel.gameStore.update(gameInstance);
-    
+
     // Day 1: 昼フェーズから開始
     assertEquals(gameInstance.currentPhase, "DAY_DISCUSSION");
 
     // Day 1: 投票フェーズへ移行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after advancing phase");
     }
-    
+
     // フェーズが変更されたことを確認
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
@@ -96,13 +96,13 @@ Deno.test({
 
     // ゲームフェーズの進行（投票の処理を含む）
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新後のゲームインスタンスを取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after processing votes");
     }
-    
+
     const werewolfPlayer = gameInstance.players.find((p) => p.playerId === werewolfAuth.user.id)!;
     assertEquals(werewolfPlayer.isAlive, false);
     assertEquals(werewolfPlayer.deathCause, "EXECUTION");

@@ -66,12 +66,11 @@ class RepositoryContainer {
     }
 
     logger.info(`リポジトリタイプ: ${config.database.type}`);
-      
+
     // テストモード検出
     if (this.isTestMode()) {
       this.setTestMode();
-    }
-    else if (config.database.type === "postgresql") {
+    } else if (config.database.type === "postgresql") {
       try {
         logger.info("PostgreSQLマイグレーションを実行中...");
         await runMigrations();
@@ -173,7 +172,7 @@ class RepositoryContainer {
     const chatRepo = this.getChatMessageRepository();
     return await chatRepo.deleteByGame(gameId);
   }
-  
+
   /**
    * テスト用のチャットメッセージリポジトリへの安全なアクセスメソッド
    */

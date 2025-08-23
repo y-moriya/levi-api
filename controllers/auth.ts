@@ -61,7 +61,7 @@ export const register = async (c: Context) => {
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
-  logger.warn(`Created new validation GameError with code: ${error.code}`, { error: error });
+      logger.warn(`Created new validation GameError with code: ${error.code}`, { error: error });
       throw error;
     }
 
@@ -99,7 +99,7 @@ export const register = async (c: Context) => {
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },
     );
-  logger.error(`Created server GameError with code: ${serverError.code}`, { originalError: serverError });
+    logger.error(`Created server GameError with code: ${serverError.code}`, { originalError: serverError });
     throw serverError;
   }
 };
@@ -122,7 +122,7 @@ export const login = async (c: Context) => {
         "WARN",
         { error: validationError instanceof Error ? validationError.message : "Unknown validation error" },
       );
-  logger.warn(`Created login validation GameError with code: ${error.code}`, { error });
+      logger.warn(`Created login validation GameError with code: ${error.code}`, { error });
       throw error;
     }
 
@@ -160,7 +160,7 @@ export const login = async (c: Context) => {
       "ERROR",
       { originalError: error instanceof Error ? error.message : String(error) },
     );
-  logger.error(`Created login server GameError with code: ${serverError.code}`, { originalError: serverError });
+    logger.error(`Created login server GameError with code: ${serverError.code}`, { originalError: serverError });
     throw serverError;
   }
 };

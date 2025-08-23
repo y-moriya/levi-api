@@ -20,9 +20,7 @@ const isTestMode = (() => {
 const POSTGRES_URL = Deno.env.get("POSTGRES_URL") || "postgres://postgres:postgres@localhost:5443/levi_api";
 
 // プール接続を作成（テストモード時は作成しない）
-export const pool = isTestMode
-  ? null
-  : new Pool(POSTGRES_URL, 10);
+export const pool = isTestMode ? null : new Pool(POSTGRES_URL, 10);
 
 /**
  * PostgreSQLクライアントを取得し、エラーハンドリングを追加するヘルパー関数

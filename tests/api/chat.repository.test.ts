@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers/api.ts";
-import { GameResponse, ChatMessageResponse } from "../helpers/types.ts";
+import { ChatMessageResponse, GameResponse } from "../helpers/types.ts";
 import { repositoryContainer } from "../../repositories/repository-container.ts";
-import { setupTests, cleanupTests } from "./chat.test-helpers.ts";
+import { cleanupTests, setupTests } from "./chat.test-helpers.ts";
 
 Deno.test({
   name: "チャット - すべてのゲームから全チャットメッセージを削除できるか",
@@ -21,7 +21,10 @@ Deno.test({
     }
 
     for (const game of games) {
-      const messageResponse = await apiRequest("POST", `/games/${game.id}/chat`, { content: `Message for game ${game.id}` , channel: "PUBLIC" }, token);
+      const messageResponse = await apiRequest("POST", `/games/${game.id}/chat`, {
+        content: `Message for game ${game.id}`,
+        channel: "PUBLIC",
+      }, token);
       assertEquals(messageResponse.status, 201);
     }
 
@@ -54,7 +57,10 @@ Deno.test({
     const gameId = game.id;
 
     for (let i = 0; i < 5; i++) {
-      const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: `Message ${i}`, channel: "PUBLIC" }, token);
+      const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+        content: `Message ${i}`,
+        channel: "PUBLIC",
+      }, token);
       assertEquals(messageResponse.status, 201);
     }
 

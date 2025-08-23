@@ -67,7 +67,7 @@ export enum ErrorCode {
   MEDIUM_ERROR = "MEDIUM_ERROR",
   // システムエラー
   INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
-  NOT_FOUND = "NOT_FOUND"
+  NOT_FOUND = "NOT_FOUND",
 }
 
 // エラーコードのカテゴリマッピング

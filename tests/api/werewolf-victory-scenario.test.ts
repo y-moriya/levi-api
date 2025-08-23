@@ -49,7 +49,7 @@ Deno.test({
     // テストの安定性のために明示的に役職を割り当て
     gameInstance = {
       ...gameInstance,
-      players: gameInstance.players.map(p => {
+      players: gameInstance.players.map((p) => {
         if (p.playerId === werewolfAuth.user.id) {
           return { ...p, role: "WEREWOLF" };
         } else if (p.playerId === seerAuth.user.id) {
@@ -62,9 +62,9 @@ Deno.test({
           return { ...p, role: "VILLAGER" };
         }
         return p;
-      })
+      }),
     };
-    
+
     // 更新されたゲームを保存
     await gameModel.gameStore.update(gameInstance);
 
@@ -73,13 +73,13 @@ Deno.test({
 
     // Day 1: 投票フェーズへ移行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after advancing phase");
     }
-    
+
     // フェーズが変更されたことを確認
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
@@ -96,18 +96,18 @@ Deno.test({
 
     // 夜のフェーズへ進行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after advancing to night");
     }
-    
+
     // seerが処刑されたことを確認
     const seerPlayer = gameInstance.players.find((p) => p.playerId === seerAuth.user.id)!;
     assertEquals(seerPlayer.isAlive, false);
     assertEquals(seerPlayer.deathCause, "EXECUTION");
-    
+
     // フェーズが夜になったことを確認
     assertEquals(gameInstance.currentPhase, "NIGHT");
 
@@ -119,13 +119,13 @@ Deno.test({
 
     // 2日目の昼フェーズへ進行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after night phase");
     }
-    
+
     // bodyguardが襲撃されたことを確認
     const bodyguardPlayer = gameInstance.players.find((p) => p.playerId === bodyguardAuth.user.id)!;
     assertEquals(bodyguardPlayer.isAlive, false);
@@ -133,13 +133,13 @@ Deno.test({
 
     // 2日目: 投票フェーズへ移行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after advancing to day 2 vote");
     }
-    
+
     // フェーズが変更されたことを確認
     assertEquals(gameInstance.currentPhase, "DAY_VOTE");
 
@@ -153,17 +153,17 @@ Deno.test({
 
     // 夜のフェーズへ進行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after day 2 vote");
     }
-    
+
     // villagerが処刑されたことを確認
     const villagerPlayer = gameInstance.players.find((p) => p.playerId === villagerAuth.user.id)!;
     assertEquals(villagerPlayer.isAlive, false);
-    
+
     // フェーズが夜になったことを確認
     assertEquals(gameInstance.currentPhase, "NIGHT");
 
@@ -175,13 +175,13 @@ Deno.test({
 
     // 3日目の昼フェーズへ進行
     await gameLogic.advancePhase(gameId);
-    
+
     // 更新されたゲームインスタンスを再取得
     gameInstance = await gameModel.getGameById(gameId);
     if (!gameInstance) {
       throw new Error("Game not found after final night");
     }
-    
+
     // オーナーが襲撃され、ゲームが終了していることを確認
     const ownerPlayer = gameInstance.players.find((p) => p.playerId === ownerAuth.user.id)!;
     assertEquals(ownerPlayer.isAlive, false);

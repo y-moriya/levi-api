@@ -70,7 +70,7 @@ app.notFound((c: Context) => {
   const _lang = getLang(c);
   const requestId = getRequestId(c);
 
-  // リクエストID生成（存在しない場合） 
+  // リクエストID生成（存在しない場合）
   const actualRequestId = requestId || `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
   // 404エラーをログに記録
@@ -170,7 +170,7 @@ async function initializeRepositories() {
 // サーバーの起動
 if (import.meta.main) {
   const port = Number(Deno.env.get("PORT")) || 8080;
-  
+
   // リポジトリの初期化後にサーバーを起動
   initializeRepositories().then(() => {
     Deno.serve({ port }, app.fetch);

@@ -1,4 +1,4 @@
-import { Game, GamePlayer, GameAction } from "../../types/game.ts";
+import { Game, GameAction, GamePlayer } from "../../types/game.ts";
 import { User } from "../../types/user.ts";
 import { ChatMessage } from "../../types/chat.ts";
 
@@ -206,8 +206,8 @@ export function createMockChatMessage(overrides: Partial<ChatMessage> = {}): Cha
     senderId: `user_${Date.now()}`,
     senderUsername: "モックユーザー",
     content: "テストメッセージ",
-  channel: "PUBLIC",
-  createdAt: new Date().toISOString(),
+    channel: "PUBLIC",
+    createdAt: new Date().toISOString(),
     ...overrides,
   };
 }

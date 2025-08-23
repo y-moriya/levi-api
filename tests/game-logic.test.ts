@@ -73,7 +73,7 @@ async function setupGameLogicTest() {
       seerCount: 1,
       bodyguardCount: 1,
       mediumCount: 0,
-    }
+    },
   };
 
   // タイマーのスケジュールなしでゲームを初期化
@@ -173,12 +173,12 @@ Deno.test({
       werewolfCount: 2,
       seerCount: 1,
       bodyguardCount: 1,
-      mediumCount: 0
+      mediumCount: 0,
     };
 
     // 修正された assignRoles 関数を使用
     const updatedPlayers = gameLogic.assignRoles(testGame);
-    
+
     // テストゲームのプレイヤー配列を更新
     testGame.players = updatedPlayers;
 
@@ -196,9 +196,11 @@ Deno.test({
       }
     });
 
-  // 期待される役職の数をログ出力
-  logger.info(`期待される役職数: 人狼=${testGame.settings.roles.werewolfCount}, 占い師=${testGame.settings.roles.seerCount}, 狩人=${testGame.settings.roles.bodyguardCount}`);
-  logger.info(`実際の役職数: 人狼=${roleCount.WEREWOLF}, 占い師=${roleCount.SEER}, 狩人=${roleCount.BODYGUARD}`);
+    // 期待される役職の数をログ出力
+    logger.info(
+      `期待される役職数: 人狼=${testGame.settings.roles.werewolfCount}, 占い師=${testGame.settings.roles.seerCount}, 狩人=${testGame.settings.roles.bodyguardCount}`,
+    );
+    logger.info(`実際の役職数: 人狼=${roleCount.WEREWOLF}, 占い師=${roleCount.SEER}, 狩人=${roleCount.BODYGUARD}`);
 
     assertEquals(roleCount.WEREWOLF, testGame.settings.roles.werewolfCount);
     assertEquals(roleCount.SEER, testGame.settings.roles.seerCount);

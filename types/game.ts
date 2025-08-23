@@ -40,7 +40,16 @@ export type Role = "VILLAGER" | "WEREWOLF" | "SEER" | "BODYGUARD" | "MEDIUM";
 export type DeathCause = "WEREWOLF_ATTACK" | "EXECUTION" | "NONE";
 
 // アクションの種類
-export type ActionType = "VOTE" | "ATTACK" | "DIVINE" | "GUARD" | "MEDIUM" | "CHAT" | "WEREWOLF_ATTACK" | "DIVINATION" | "PROTECT";
+export type ActionType =
+  | "VOTE"
+  | "ATTACK"
+  | "DIVINE"
+  | "GUARD"
+  | "MEDIUM"
+  | "CHAT"
+  | "WEREWOLF_ATTACK"
+  | "DIVINATION"
+  | "PROTECT";
 
 // ベースアクション
 export interface GameAction {

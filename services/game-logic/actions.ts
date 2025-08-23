@@ -30,7 +30,7 @@ export function validateActionPermission(
   }
 
   if (targetId) {
-    const target = game.players.find(p => p.playerId === targetId);
+    const target = game.players.find((p) => p.playerId === targetId);
     if (!target) throw new Error("Target player not found");
     if (!target.isAlive) throw new Error("Cannot target a dead player");
   }
@@ -81,7 +81,8 @@ export async function upsertAction(
   };
 
   const actionsArray = [...game.actions];
-  if (existingActionIndex >= 0) actionsArray[existingActionIndex] = newAction; else actionsArray.push(newAction);
+  if (existingActionIndex >= 0) actionsArray[existingActionIndex] = newAction;
+  else actionsArray.push(newAction);
 
   // 合成型: GameAction[] と拡張マップ
   const updatedActions = actionsArray as unknown as GameAction[] & { [key: string]: Map<string, string> };

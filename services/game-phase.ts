@@ -1,12 +1,6 @@
 import { Game, GamePhase, Winner } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
-import { 
-  checkGameEnd, 
-  getNextPhase, 
-  getPhaseTime, 
-  getPhaseChangeDescription,
-  getActionMap
-} from "./game-core.ts";
+import { checkGameEnd, getActionMap, getNextPhase, getPhaseChangeDescription, getPhaseTime } from "./game-core.ts";
 import { repositoryContainer } from "../repositories/repository-container.ts";
 
 // 他のファイルから利用できるようにgetActionMapを再エクスポート
@@ -75,7 +69,7 @@ export const scheduleNextPhase = (game: Game): void => {
       timeoutMs,
     });
   } catch (error) {
-    logger.error("Failed to schedule phase timer", { 
+    logger.error("Failed to schedule phase timer", {
       error: (error as Error).message,
       gameId: game.id,
       phase: game.currentPhase,
@@ -91,14 +85,14 @@ export const setPhaseTimer = async (gameId: string, durationSeconds: number): Pr
   // ゲーム情報を取得
   const gameRepo = repositoryContainer.getGameRepository();
   const game = await gameRepo.findById(gameId);
-  
+
   if (!game || game.status !== "IN_PROGRESS") {
     return;
   }
-  
+
   // 既存のタイマーがあれば削除
   clearPhaseTimer(gameId);
-  
+
   try {
     // 新しいタイマーを設定
     const timerId = setTimeout(async () => {
@@ -111,24 +105,24 @@ export const setPhaseTimer = async (gameId: string, durationSeconds: number): Pr
           await gameRepo.update(gameId, currentGame);
         }
       } catch (error) {
-        logger.error("Error in phase timer callback", { 
-          error: (error as Error).message, 
-          gameId 
+        logger.error("Error in phase timer callback", {
+          error: (error as Error).message,
+          gameId,
         });
       }
     }, durationSeconds * 1000);
-    
+
     // タイマーIDを保存
     phaseTimers.set(gameId, timerId);
-    
+
     logger.info("Phase timer set", {
       gameId,
       durationSeconds,
     });
   } catch (error) {
-    logger.error("Failed to set phase timer", { 
-      error: (error as Error).message, 
-      gameId 
+    logger.error("Failed to set phase timer", {
+      error: (error as Error).message,
+      gameId,
     });
   }
 };
@@ -144,9 +138,9 @@ export const clearPhaseTimer = (gameId: string): void => {
       phaseTimers.delete(gameId);
       logger.info("Phase timer cleared", { gameId });
     } catch (error) {
-      logger.error("Failed to clear phase timer", { 
-        error: (error as Error).message, 
-        gameId 
+      logger.error("Failed to clear phase timer", {
+        error: (error as Error).message,
+        gameId,
       });
     }
   }
@@ -269,7 +263,7 @@ function handlePendingNightActions(game: Game): void {
 
   // 前日に処刑されたプレイヤーを探す（霊能者用）
   const executedPlayers = game.players.filter(
-    (p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1
+    (p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1,
   );
 
   // 生存していて特殊役職を持つプレイヤーを処理
@@ -281,7 +275,7 @@ function handlePendingNightActions(game: Game): void {
         case "WEREWOLF": {
           // 投票可能な対象（自分以外の生存者で人狼以外）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId && t.role !== "WEREWOLF"
+            (t) => t.isAlive && t.playerId !== player.playerId && t.role !== "WEREWOLF",
           );
 
           if (possibleTargets.length > 0) {
@@ -300,7 +294,7 @@ function handlePendingNightActions(game: Game): void {
         case "SEER": {
           // 投票可能な対象（自分以外の生存者）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId
+            (t) => t.isAlive && t.playerId !== player.playerId,
           );
 
           if (possibleTargets.length > 0) {
@@ -319,7 +313,7 @@ function handlePendingNightActions(game: Game): void {
         case "BODYGUARD": {
           // 投票可能な対象（自分以外の生存者）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId
+            (t) => t.isAlive && t.playerId !== player.playerId,
           );
 
           if (possibleTargets.length > 0) {
@@ -334,7 +328,7 @@ function handlePendingNightActions(game: Game): void {
           }
           break;
         }
-        
+
         case "MEDIUM": {
           // 前日処刑者がいれば自動的に対象にする
           if (executedPlayers.length > 0) {
@@ -360,7 +354,7 @@ function endGame(game: Game, winner: Winner): void {
   game.currentPhase = "GAME_OVER";
   game.winner = winner;
   game.phaseEndTime = null;
-  
+
   // 結果を記録
   const now = new Date();
   game.gameEvents.push({
@@ -368,22 +362,20 @@ function endGame(game: Game, winner: Winner): void {
     day: game.currentDay,
     phase: game.currentPhase,
     type: "GAME_END",
-    description: winner === "VILLAGERS" 
-      ? "村人陣営が勝利しました！" 
-      : "人狼陣営が勝利しました！",
+    description: winner === "VILLAGERS" ? "村人陣営が勝利しました！" : "人狼陣営が勝利しました！",
     timestamp: now.toISOString(),
   });
 
   logger.info("Game ended", {
     gameId: game.id,
     winner,
-    players: game.players.map(p => ({
+    players: game.players.map((p) => ({
       id: p.playerId,
       role: p.role,
       isAlive: p.isAlive,
     })),
   });
-  
+
   // タイマーをクリア
   clearPhaseTimer(game.id);
 }

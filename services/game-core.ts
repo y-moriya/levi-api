@@ -1,5 +1,5 @@
 // filepath: c:\Users\wellk\project\levi-api\services\game-core.ts
-import { Game, GamePhase, GameStatus, GamePlayer, GameEvent, Winner } from "../types/game.ts";
+import { Game, GameEvent, GamePhase, GamePlayer, GameStatus, Winner } from "../types/game.ts";
 import { logger } from "../utils/logger.ts";
 
 // ゲームの基本定数
@@ -10,15 +10,15 @@ const phaseTimers: Map<string, number> = new Map();
 
 // プレイヤー関連のユーティリティ関数
 export function getAlivePlayerCount(game: Game): number {
-  return game.players.filter(p => p.isAlive).length;
+  return game.players.filter((p) => p.isAlive).length;
 }
 
 export function findPlayerById(game: Game, playerId: string): GamePlayer | undefined {
-  return game.players.find(p => p.playerId === playerId);
+  return game.players.find((p) => p.playerId === playerId);
 }
 
 export function findAlivePlayerById(game: Game, playerId: string): GamePlayer | undefined {
-  return game.players.find(p => p.playerId === playerId && p.isAlive);
+  return game.players.find((p) => p.playerId === playerId && p.isAlive);
 }
 
 // ゲーム状態チェック関数
@@ -27,7 +27,7 @@ export function isGameInProgress(game: Game): boolean {
 }
 
 export function isPlayerInGame(game: Game, playerId: string): boolean {
-  return game.players.some(p => p.playerId === playerId);
+  return game.players.some((p) => p.playerId === playerId);
 }
 
 export function isPlayerAlive(game: Game, playerId: string): boolean {
@@ -233,7 +233,7 @@ export function handlePendingNightActions(game: Game): void {
 
   // 前日に処刑されたプレイヤーを探す（霊能者用）
   const executedPlayers = game.players.filter(
-    (p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1
+    (p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1,
   );
 
   // 生存していて特殊役職を持つプレイヤーを処理
@@ -245,7 +245,7 @@ export function handlePendingNightActions(game: Game): void {
         case "WEREWOLF": {
           // 投票可能な対象（自分以外の生存者で人狼以外）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId && t.role !== "WEREWOLF"
+            (t) => t.isAlive && t.playerId !== player.playerId && t.role !== "WEREWOLF",
           );
 
           if (possibleTargets.length > 0) {
@@ -264,7 +264,7 @@ export function handlePendingNightActions(game: Game): void {
         case "SEER": {
           // 投票可能な対象（自分以外の生存者）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId
+            (t) => t.isAlive && t.playerId !== player.playerId,
           );
 
           if (possibleTargets.length > 0) {
@@ -283,7 +283,7 @@ export function handlePendingNightActions(game: Game): void {
         case "BODYGUARD": {
           // 投票可能な対象（自分以外の生存者）を取得
           const possibleTargets = game.players.filter(
-            (t) => t.isAlive && t.playerId !== player.playerId
+            (t) => t.isAlive && t.playerId !== player.playerId,
           );
 
           if (possibleTargets.length > 0) {
@@ -298,7 +298,7 @@ export function handlePendingNightActions(game: Game): void {
           }
           break;
         }
-        
+
         case "MEDIUM": {
           // 前日処刑者がいれば自動的に対象にする
           if (executedPlayers.length > 0) {
@@ -324,9 +324,7 @@ export function endGame(game: Game, winner: Winner): void {
   game.winner = winner;
   game.endTime = new Date().toISOString();
 
-  const winReason = winner === "VILLAGERS" 
-    ? "村人陣営が人狼を全て倒しました"
-    : "人狼が村人と同数になりました";
+  const winReason = winner === "VILLAGERS" ? "村人陣営が人狼を全て倒しました" : "人狼が村人と同数になりました";
 
   // ゲーム終了イベントを記録
   game.gameEvents.push({

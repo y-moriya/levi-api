@@ -8,7 +8,10 @@ import { UserResponse } from "../helpers/types.ts";
 
 let isServerRunning = false;
 
-export interface AuthenticatedUser { token: string; user: UserResponse }
+export interface AuthenticatedUser {
+  token: string;
+  user: UserResponse;
+}
 
 export async function setupTests(): Promise<{ ownerAuth: AuthenticatedUser; playerAuth: AuthenticatedUser }> {
   // まずテスト状態のリセット（メモリ側）

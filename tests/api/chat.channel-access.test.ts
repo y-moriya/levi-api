@@ -3,7 +3,7 @@ import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers
 import { GameResponse } from "../helpers/types.ts";
 import { getGameById } from "../../models/game.ts";
 import * as gameModel from "../../models/game.ts";
-import { setupTests, cleanupTests } from "./chat.test-helpers.ts";
+import { cleanupTests, setupTests } from "./chat.test-helpers.ts";
 
 Deno.test({
   name: "チャット - 各役割チャットのアクセス制御が正しく機能するか",
@@ -17,7 +17,12 @@ Deno.test({
     const bodyguardAuth = await createAuthenticatedUser("bodyguard");
     const villagerAuth = await createAuthenticatedUser("villager");
 
-    const gameResponse = await apiRequest("POST", "/games", { name: "Role Access Test", maxPlayers: 5 }, ownerAuth.token);
+    const gameResponse = await apiRequest(
+      "POST",
+      "/games",
+      { name: "Role Access Test", maxPlayers: 5 },
+      ownerAuth.token,
+    );
     const game = await consumeResponse<GameResponse>(gameResponse);
     assertEquals(gameResponse.status, 201);
     const gameId = game.id;
@@ -34,14 +39,18 @@ Deno.test({
 
     gameInstance = {
       ...gameInstance,
-      players: gameInstance.players.map(p => {
+      players: gameInstance.players.map((p) => {
         if (p.playerId === werewolfAuth.user.id) return { ...p, role: "WEREWOLF" };
-        if (p.playerId === seerAuth.user.id) return { ...p, role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" };
-        if (p.playerId === bodyguardAuth.user.id) return { ...p, role: "BODYGUARD", isAlive: false, deathCause: "EXECUTION" };
+        if (p.playerId === seerAuth.user.id) {
+          return { ...p, role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" };
+        }
+        if (p.playerId === bodyguardAuth.user.id) {
+          return { ...p, role: "BODYGUARD", isAlive: false, deathCause: "EXECUTION" };
+        }
         if (p.playerId === villagerAuth.user.id) return { ...p, role: "VILLAGER" };
         if (p.playerId === ownerAuth.user.id) return { ...p, role: "VILLAGER" };
         return p;
-      })
+      }),
     };
     await gameModel.gameStore.update(gameInstance);
 
@@ -49,7 +58,11 @@ Deno.test({
       { channel: "PUBLIC", canAccess: [ownerAuth, werewolfAuth, villagerAuth], cannotAccess: [] },
       { channel: "WEREWOLF", canAccess: [werewolfAuth], cannotAccess: [ownerAuth, villagerAuth] },
       { channel: "SEER", canAccess: [seerAuth], cannotAccess: [ownerAuth, werewolfAuth, villagerAuth] },
-      { channel: "BODYGUARD", canAccess: [bodyguardAuth], cannotAccess: [ownerAuth, werewolfAuth, villagerAuth, seerAuth] },
+      {
+        channel: "BODYGUARD",
+        canAccess: [bodyguardAuth],
+        cannotAccess: [ownerAuth, werewolfAuth, villagerAuth, seerAuth],
+      },
       { channel: "DEAD", canAccess: [seerAuth, bodyguardAuth], cannotAccess: [ownerAuth, werewolfAuth, villagerAuth] },
     ] as const;
 
@@ -61,20 +74,29 @@ Deno.test({
         const isNotDeadChannel = channel !== "DEAD";
 
         if (isDeadPlayer && isNotDeadChannel) {
-          const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: `${auth.user.username} in ${channel}`, channel }, auth.token);
+          const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+            content: `${auth.user.username} in ${channel}`,
+            channel,
+          }, auth.token);
           assertEquals(messageResponse.status, 403);
           continue;
         }
 
-        const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: `${auth.user.username} in ${channel}`, channel }, auth.token);
+        const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+          content: `${auth.user.username} in ${channel}`,
+          channel,
+        }, auth.token);
         assertEquals(messageResponse.status, 201);
 
-        const chatResponse = await apiRequest("GET", `/games/${gameId}/chat?channel=${channel}` , undefined, auth.token);
+        const chatResponse = await apiRequest("GET", `/games/${gameId}/chat?channel=${channel}`, undefined, auth.token);
         assertEquals(chatResponse.status, 200);
       }
 
       for (const auth of cannotAccess) {
-        const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: `${auth.user.username} trying ${channel}`, channel }, auth.token);
+        const messageResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+          content: `${auth.user.username} trying ${channel}`,
+          channel,
+        }, auth.token);
         assertEquals(messageResponse.status, 403);
 
         const chatResponse = await apiRequest("GET", `/games/${gameId}/chat?channel=${channel}`, undefined, auth.token);

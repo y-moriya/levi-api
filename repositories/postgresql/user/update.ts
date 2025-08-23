@@ -7,14 +7,14 @@ export async function updateUser(id: string, user: User): Promise<User | null> {
   try {
     const { rows: existingUser } = await client.queryObject<{ id: string }>(
       "SELECT id FROM users WHERE id = $1",
-      [id]
+      [id],
     );
 
     if (existingUser.length === 0) return null;
 
     const { rows: emailCheck } = await client.queryObject<{ count: number }>(
       "SELECT COUNT(*) as count FROM users WHERE email = $1 AND id != $2",
-      [user.email, id]
+      [user.email, id],
     );
     if (emailCheck[0].count > 0) {
       throw new Error(`メールアドレス ${user.email} は既に登録されています`);
@@ -22,13 +22,14 @@ export async function updateUser(id: string, user: User): Promise<User | null> {
 
     const { rows: usernameCheck } = await client.queryObject<{ count: number }>(
       "SELECT COUNT(*) as count FROM users WHERE username = $1 AND id != $2",
-      [user.username, id]
+      [user.username, id],
     );
     if (usernameCheck[0].count > 0) {
       throw new Error(`ユーザー名 ${user.username} は既に使用されています`);
     }
 
-    await client.queryObject(`
+    await client.queryObject(
+      `
       UPDATE users SET
         username = $1,
         email = $2,
@@ -39,17 +40,19 @@ export async function updateUser(id: string, user: User): Promise<User | null> {
         villager_wins = $7,
         werewolf_wins = $8
       WHERE id = $9
-    `, [
-      user.username,
-      user.email,
-      user.password,
-      user.stats.gamesPlayed,
-      user.stats.gamesWon,
-      user.stats.winRatio,
-      user.stats.villagerWins,
-      user.stats.werewolfWins,
-      id
-    ]);
+    `,
+      [
+        user.username,
+        user.email,
+        user.password,
+        user.stats.gamesPlayed,
+        user.stats.gamesWon,
+        user.stats.winRatio,
+        user.stats.villagerWins,
+        user.stats.werewolfWins,
+        id,
+      ],
+    );
 
     logger.info("User updated in PostgreSQL repository", { userId: id });
     return user;

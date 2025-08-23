@@ -31,8 +31,8 @@ export async function createAuthenticatedUser(
   if (typeof userNameOrData === "string") {
     const userName = userNameOrData || "testuser";
     userData = {
-      username: `${userName}${role ? `-${role}` : ''}`,
-      email: `${userName}${role ? `.${role}` : ''}${Date.now()}@example.com`,
+      username: `${userName}${role ? `-${role}` : ""}`,
+      email: `${userName}${role ? `.${role}` : ""}${Date.now()}@example.com`,
       password: "password123",
     };
   } else if (userNameOrData && typeof userNameOrData === "object") {

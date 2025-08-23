@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers/api.ts";
 import { GameResponse } from "../helpers/types.ts";
-import { setupTests, cleanupTests } from "./chat.test-helpers.ts";
+import { cleanupTests, setupTests } from "./chat.test-helpers.ts";
 
 Deno.test({
   name: "チャット - 認証なしでチャットにアクセスできないか",
@@ -26,7 +26,7 @@ Deno.test({
 
     const messagesResponse = await apiRequest(
       "GET",
-      `/games/${gameId}/chat?channel=PUBLIC`
+      `/games/${gameId}/chat?channel=PUBLIC`,
     );
     assertEquals(messagesResponse.status, 401);
 

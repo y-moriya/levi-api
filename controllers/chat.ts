@@ -21,7 +21,7 @@ export const sendMessage = async (c: Context) => {
         ErrorCode.INVALID_MESSAGE,
         "メッセージは空にできません",
         "WARN",
-        { gameId, userId }
+        { gameId, userId },
       );
     }
 
@@ -88,7 +88,7 @@ export const sendMessage = async (c: Context) => {
         { gameId, userId, channel: data.channel },
       );
     }
-    
+
     // 死亡者チャンネルへの投稿は死亡したプレイヤーのみ許可
     if (data.channel === "DEAD" && player.isAlive) {
       logger.warn("死亡者チャンネルアクセス拒否", { gameId, userId, channel: data.channel });
@@ -129,18 +129,18 @@ export const sendMessage = async (c: Context) => {
           ErrorCode.INVALID_MESSAGE,
           "プライベートメッセージの受信者IDが指定されていません",
           "WARN",
-          { gameId, userId }
+          { gameId, userId },
         );
       }
 
       // 受信者が存在するかチェック
-    const recipient = game.players.find((p) => p.playerId === data.recipientId);
+      const recipient = game.players.find((p) => p.playerId === data.recipientId);
       if (!recipient) {
         throw new GameError(
-      ErrorCode.INVALID_REQUEST,
+          ErrorCode.INVALID_REQUEST,
           "指定された受信者は存在しません",
           "WARN",
-      { gameId, userId }
+          { gameId, userId },
         );
       }
 
@@ -150,7 +150,7 @@ export const sendMessage = async (c: Context) => {
           ErrorCode.CHANNEL_ACCESS_DENIED,
           "死亡したプレイヤーはプライベートメッセージを送信できません",
           "WARN",
-          { gameId, userId }
+          { gameId, userId },
         );
       }
     }
@@ -253,7 +253,7 @@ export const getMessages = async (c: Context) => {
         { gameId, userId, channel },
       );
     }
-    
+
     // その他の役職別チャンネル制限
     if (channel === "SEER" && player.role !== "SEER") {
       logger.warn("占い師チャンネルアクセス拒否", { gameId, userId, channel });
@@ -284,7 +284,7 @@ export const getMessages = async (c: Context) => {
         { gameId, userId, channel },
       );
     }
-    
+
     // 死亡者チャンネルのアクセス権確認
     if (channel === "DEAD" && player.isAlive) {
       logger.warn("死亡者チャンネルアクセス拒否", { gameId, userId, channel });

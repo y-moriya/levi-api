@@ -1,4 +1,4 @@
-import { setupTests, cleanupTests } from "./games.test-helpers.ts";
+import { cleanupTests, setupTests } from "./games.test-helpers.ts";
 
 Deno.test({
   name: "ゲームAPI - サーバーセットアップ",

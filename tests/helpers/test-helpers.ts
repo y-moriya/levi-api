@@ -173,17 +173,17 @@ export function withQuietLogs(testFn: () => Promise<void> | void): () => Promise
 export async function setupTest(): Promise<void> {
   // テスト実行中であることを示す環境変数を設定
   Deno.env.set("TEST_MODE", "true");
-  
+
   // リポジトリのコンテナを初期化
   const { repositoryContainer } = await import("../../repositories/repository-container.ts");
   await repositoryContainer.initialize();
-  
+
   // すべてのリポジトリをリセット
   repositoryContainer.resetRepositories();
-  
+
   // すべてのデータをクリア
   await repositoryContainer.clearAllRepositories();
-  
+
   // ゲームとユーザーストアをリセット
   await resetTestState();
 }
@@ -202,7 +202,10 @@ export const assertions = {
   /**
    * ゲームの勝者を検証する
    */
-  assertGameWinner(game: { ended?: boolean; winner: Winner | "NONE" | null }, expectedWinner: Winner | "NONE" | null): void {
+  assertGameWinner(
+    game: { ended?: boolean; winner: Winner | "NONE" | null },
+    expectedWinner: Winner | "NONE" | null,
+  ): void {
     if (expectedWinner === null) {
       assertEquals(game.winner, null, "ゲームは勝者が決定していないはずです");
       return;

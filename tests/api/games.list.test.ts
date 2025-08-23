@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse } from "../helpers/api.ts";
 import { GameListResponse, GameResponse } from "../helpers/types.ts";
-import { setupTests, cleanupTests } from "./games.test-helpers.ts";
+import { cleanupTests, setupTests } from "./games.test-helpers.ts";
 
 Deno.test({
   name: "ゲーム一覧 - ゲームが存在しない場合、空の配列を返す",

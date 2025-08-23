@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse } from "../helpers/api.ts";
 import { GameResponse } from "../helpers/types.ts";
-import { setupTests, cleanupTests } from "./games.test-helpers.ts";
+import { cleanupTests, setupTests } from "./games.test-helpers.ts";
 
 Deno.test({
   name: "ゲーム参加 - プレイヤーがゲームに参加できるか",

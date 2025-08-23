@@ -158,5 +158,7 @@ Deno.test("リソースが見つからない場合のエラーが適切に処理
 // Deno.addFinalizer は存在しないので、代わりにテスト終了時に自動的に実行される処理として
 // unload イベントにリスナーを追加
 addEventListener("unload", () => {
-  stopTestServer().catch((e) => logger.error("Error stopping test server on unload:", e instanceof Error ? e : { error: String(e) }));
+  stopTestServer().catch((e) =>
+    logger.error("Error stopping test server on unload:", e instanceof Error ? e : { error: String(e) })
+  );
 });

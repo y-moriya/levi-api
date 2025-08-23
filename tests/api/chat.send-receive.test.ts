@@ -1,7 +1,7 @@
 import { assertEquals, assertNotEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers/api.ts";
-import { GameResponse, ChatMessageResponse } from "../helpers/types.ts";
-import { setupTests, cleanupTests } from "./chat.test-helpers.ts";
+import { ChatMessageResponse, GameResponse } from "../helpers/types.ts";
+import { cleanupTests, setupTests } from "./chat.test-helpers.ts";
 
 Deno.test({
   name: "チャット - チャットメッセージを正常に送信できるか",

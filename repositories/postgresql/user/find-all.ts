@@ -18,7 +18,7 @@ export async function findAllUsers(): Promise<User[]> {
       werewolf_wins: number;
     }>("SELECT * FROM users");
 
-    return rows.map(userData => ({
+    return rows.map((userData) => ({
       id: userData.id,
       username: userData.username,
       email: userData.email,

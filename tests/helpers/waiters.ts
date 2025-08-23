@@ -28,8 +28,12 @@ export async function waitForActionInitialization(
   timeout = 2000,
   interval = 50,
 ): Promise<boolean> {
-  return await waitForCondition(() => {
-    const actions = gameActions.getGameActions(gameId);
-    return actions !== undefined;
-  }, timeout, interval);
+  return await waitForCondition(
+    () => {
+      const actions = gameActions.getGameActions(gameId);
+      return actions !== undefined;
+    },
+    timeout,
+    interval,
+  );
 }

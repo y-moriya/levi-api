@@ -47,7 +47,9 @@ function getEnv<T>(
   if (typeof defaultValue === "number") {
     typedValue = Number(envValue) as unknown as T;
     if (isNaN(typedValue as unknown as number)) {
-    logger.warn(`警告: 環境変数 ${key} の値 "${envValue}" は数値に変換できません。デフォルト値 ${defaultValue} を使用します。`);
+      logger.warn(
+        `警告: 環境変数 ${key} の値 "${envValue}" は数値に変換できません。デフォルト値 ${defaultValue} を使用します。`,
+      );
       return defaultValue;
     }
   } else if (typeof defaultValue === "boolean") {
@@ -58,7 +60,7 @@ function getEnv<T>(
 
   // バリデーション処理
   if (validator && !validator(typedValue)) {
-  logger.warn(`警告: 環境変数 ${key} の値 "${envValue}" は無効です。デフォルト値 ${defaultValue} を使用します。`);
+    logger.warn(`警告: 環境変数 ${key} の値 "${envValue}" は無効です。デフォルト値 ${defaultValue} を使用します。`);
     return defaultValue;
   }
 
@@ -130,8 +132,8 @@ export const config: Config = {
     saltRounds: getEnv("PASSWORD_SALT_ROUNDS", 10, (rounds) => rounds > 0 && rounds <= 20),
   },
   logging: {
-  // 環境変数 LOG_LEVEL が未設定の場合、テストランナー実行時は 'error' をデフォルトにする
-  level: getEnv("LOG_LEVEL", defaultLogLevel, isValidLogLevel),
+    // 環境変数 LOG_LEVEL が未設定の場合、テストランナー実行時は 'error' をデフォルトにする
+    level: getEnv("LOG_LEVEL", defaultLogLevel, isValidLogLevel),
   },
   database: {
     type: getEnv("DB_TYPE", "memory", isValidRepositoryType),
@@ -160,6 +162,6 @@ if (
   config.database.type === "memory"
 ) {
   logger.warn(
-    "警告: 本番環境でインメモリストレージを使用しています。サーバー再起動時にデータが失われます。DB_TYPE=postgresql の設定を検討してください。"
+    "警告: 本番環境でインメモリストレージを使用しています。サーバー再起動時にデータが失われます。DB_TYPE=postgresql の設定を検討してください。",
   );
 }

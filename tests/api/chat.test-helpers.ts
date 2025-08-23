@@ -40,7 +40,10 @@ export async function cleanupTests() {
     const chatRepo = repositoryContainer.getChatMessageRepository();
     await chatRepo.clear();
   } catch (error) {
-    logger.error("テストのクリーンアップ中にエラーが発生しました:", error instanceof Error ? error : { error: String(error) });
+    logger.error(
+      "テストのクリーンアップ中にエラーが発生しました:",
+      error instanceof Error ? error : { error: String(error) },
+    );
     throw error;
   }
 }

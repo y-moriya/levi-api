@@ -16,12 +16,12 @@ export class MemoryChatMessageRepository implements ChatMessageRepository {
     if (!this.gameChannelIndex.has(message.gameId)) {
       this.gameChannelIndex.set(message.gameId, new Map());
     }
-    
+
     const gameChannels = this.gameChannelIndex.get(message.gameId)!;
     if (!gameChannels.has(message.channel)) {
       gameChannels.set(message.channel, new Set());
     }
-    
+
     gameChannels.get(message.channel)!.add(message.id);
 
     logger.info("Chat message added to repository", {

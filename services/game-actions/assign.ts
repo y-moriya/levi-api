@@ -37,7 +37,11 @@ export function assignRandomActions(game: Game): void {
         if (nonActingWerewolves.length > 0) {
           const targetId = nonWerewolves[Math.floor(Math.random() * nonWerewolves.length)].playerId;
           nonActingWerewolves.forEach((wolf) => actions.attacks.set(wolf.playerId, targetId));
-          logger.info("Random coordinated attack assigned", { gameId: game.id, werewolfCount: nonActingWerewolves.length, targetId });
+          logger.info("Random coordinated attack assigned", {
+            gameId: game.id,
+            werewolfCount: nonActingWerewolves.length,
+            targetId,
+          });
         }
       }
       const seers = rolePlayerMap.get("SEER") || [];
@@ -59,7 +63,9 @@ export function assignRandomActions(game: Game): void {
         bodyguards.forEach((guard) => {
           if (!actions.guards.has(guard.playerId) && guard.isAlive) {
             // まずは襲撃対象を除外した候補
-            let candidates = alivePlayers.filter((p) => p.playerId !== guard.playerId && !attackedTargets.has(p.playerId));
+            let candidates = alivePlayers.filter((p) =>
+              p.playerId !== guard.playerId && !attackedTargets.has(p.playerId)
+            );
             // もし全除外で空になった場合は、従来通り自分以外から選ぶ（ゲーム継続性のため）
             if (candidates.length === 0) {
               candidates = alivePlayers.filter((p) => p.playerId !== guard.playerId);
@@ -75,13 +81,19 @@ export function assignRandomActions(game: Game): void {
 
     const mediums = rolePlayerMap.get("MEDIUM") || [];
     if (mediums.length > 0 && game.currentDay > 1) {
-      const executedPlayers = game.players.filter((p) => !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1);
+      const executedPlayers = game.players.filter((p) =>
+        !p.isAlive && p.deathCause === "EXECUTION" && p.deathDay === game.currentDay - 1
+      );
       if (executedPlayers.length > 0) {
         mediums.forEach((medium) => {
           if (!actions.mediums.has(medium.playerId) && medium.isAlive) {
             const target = executedPlayers[0];
             actions.mediums.set(medium.playerId, target.playerId);
-            logger.info("Random medium action assigned", { gameId: game.id, playerId: medium.playerId, targetId: target.playerId });
+            logger.info("Random medium action assigned", {
+              gameId: game.id,
+              playerId: medium.playerId,
+              targetId: target.playerId,
+            });
           }
         });
       }

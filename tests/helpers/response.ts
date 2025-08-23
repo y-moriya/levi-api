@@ -16,7 +16,10 @@ export async function consumeResponse<T>(response: Response): Promise<T> {
         else if (["NOT_FOUND", "GAME_NOT_FOUND"].includes(errorCode)) mappedStatus = 404;
       } else if (typeof data === "object" && (data as any).message) {
         const msg = (data as any).message as string;
-        if (msg.includes("このメールアドレスは既に登録") || msg.includes("Invalid") || msg.includes("リクエストデータが無効")) mappedStatus = 400;
+        if (
+          msg.includes("このメールアドレスは既に登録") || msg.includes("Invalid") ||
+          msg.includes("リクエストデータが無効")
+        ) mappedStatus = 400;
         else if (msg.includes("無効なメール") || msg.includes("パスワード")) mappedStatus = 401;
       }
 
@@ -26,7 +29,9 @@ export async function consumeResponse<T>(response: Response): Promise<T> {
     }
 
     if (isActionResponse(data)) {
-      if (typeof (data as any).success !== "boolean") throw new Error("Invalid ActionResponse: success must be boolean");
+      if (typeof (data as any).success !== "boolean") {
+        throw new Error("Invalid ActionResponse: success must be boolean");
+      }
       if (typeof (data as any).message !== "string") throw new Error("Invalid ActionResponse: message must be string");
     }
     return data as T;

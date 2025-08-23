@@ -18,11 +18,11 @@ function parseCliLogLevel(): LogLevel | undefined {
       const a = args[i];
       if (a.startsWith("--log-level=")) {
         const v = a.split("=")[1];
-  if (v && v in LOG_LEVELS) return v as LogLevel;
+        if (v && v in LOG_LEVELS) return v as LogLevel;
       }
       if (a === "--log-level" && i + 1 < args.length) {
         const v = args[i + 1];
-  if (v && v in LOG_LEVELS) return v as LogLevel;
+        if (v && v in LOG_LEVELS) return v as LogLevel;
       }
       // allow short form like -L=info or -L info if desired in future
     }
@@ -53,27 +53,27 @@ class Logger {
   private startTime: Record<string, number> = {}; // パフォーマンス計測用
 
   constructor() {
-  // Do not import config here to avoid circular dependency with config.ts.
-  // Allow CLI flag --log-level to override environment and test defaults.
-  const cliLevel = parseCliLogLevel();
-  const isDenoTest = typeof Deno !== "undefined" && typeof (Deno as { test?: unknown }).test === "function";
-  // 優先順序:
-  // 1) CLI フラグ --log-level があればそれを尊重
-  // 2) テスト実行時 (deno test) かつ CLI 未指定なら 'none'（出力なし）
-  // 3) 通常実行時は環境変数 LOG_LEVEL を使用し、未指定なら 'info'
-  if (cliLevel) {
-    this.level = cliLevel;
-  } else if (isDenoTest) {
-    this.level = "none";
-  } else {
-    this.level = (Deno.env.get("LOG_LEVEL") as LogLevel) || "info";
-  }
+    // Do not import config here to avoid circular dependency with config.ts.
+    // Allow CLI flag --log-level to override environment and test defaults.
+    const cliLevel = parseCliLogLevel();
+    const isDenoTest = typeof Deno !== "undefined" && typeof (Deno as { test?: unknown }).test === "function";
+    // 優先順序:
+    // 1) CLI フラグ --log-level があればそれを尊重
+    // 2) テスト実行時 (deno test) かつ CLI 未指定なら 'none'（出力なし）
+    // 3) 通常実行時は環境変数 LOG_LEVEL を使用し、未指定なら 'info'
+    if (cliLevel) {
+      this.level = cliLevel;
+    } else if (isDenoTest) {
+      this.level = "none";
+    } else {
+      this.level = (Deno.env.get("LOG_LEVEL") as LogLevel) || "info";
+    }
   }
 
   private shouldLog(level: LogLevel): boolean {
-  // 'none' はすべて抑制するため、常に false を返す
-  if (this.level === "none") return false;
-  return LOG_LEVELS[level] >= LOG_LEVELS[this.level];
+    // 'none' はすべて抑制するため、常に false を返す
+    if (this.level === "none") return false;
+    return LOG_LEVELS[level] >= LOG_LEVELS[this.level];
   }
 
   private formatMessage(

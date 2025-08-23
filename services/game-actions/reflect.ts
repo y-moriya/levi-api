@@ -15,8 +15,8 @@ export function processPhaseActions(game: Game): void {
     const votes = game.actions[voteKey];
     votes.clear();
     actions.votes.forEach((targetId, playerId) => votes.set(playerId, targetId));
-  // 投票はこの時点ではキャッシュを残す（テストが参照するため）。
-  // 次フェーズ移行時に必要であれば別箇所でクリアする。
+    // 投票はこの時点ではキャッシュを残す（テストが参照するため）。
+    // 次フェーズ移行時に必要であれば別箇所でクリアする。
   } else if (game.currentPhase === "NIGHT" || game.currentPhase === "DAY_DISCUSSION") {
     const attackKey = `attack_${game.currentDay}` as const;
     const divineKey = `divine_${game.currentDay}` as const;

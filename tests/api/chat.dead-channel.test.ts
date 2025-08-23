@@ -1,9 +1,9 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers/api.ts";
-import { GameResponse, ChatMessageResponse } from "../helpers/types.ts";
+import { ChatMessageResponse, GameResponse } from "../helpers/types.ts";
 import { getGameById } from "../../models/game.ts";
 import * as gameModel from "../../models/game.ts";
-import { setupTests, cleanupTests } from "./chat.test-helpers.ts";
+import { cleanupTests, setupTests } from "./chat.test-helpers.ts";
 
 Deno.test({
   name: "チャット - 死亡プレイヤーのみがデッドチャットにアクセスできるか",
@@ -34,21 +34,29 @@ Deno.test({
 
     gameInstance = {
       ...gameInstance,
-      players: gameInstance.players.map(p => {
+      players: gameInstance.players.map((p) => {
         if (p.playerId === werewolfAuth.user.id) return { ...p, role: "WEREWOLF" };
-        if (p.playerId === seerAuth.user.id) return { ...p, role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" };
+        if (p.playerId === seerAuth.user.id) {
+          return { ...p, role: "SEER", isAlive: false, deathCause: "WEREWOLF_ATTACK" };
+        }
         if (p.playerId === bodyguardAuth.user.id) return { ...p, role: "BODYGUARD" };
         if (p.playerId === villagerAuth.user.id) return { ...p, role: "VILLAGER" };
         if (p.playerId === ownerAuth.user.id) return { ...p, role: "VILLAGER" };
         return p;
-      })
+      }),
     };
     await gameModel.gameStore.update(gameInstance);
 
-    const deadMessageResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: "Message from the dead", channel: "DEAD" }, seerAuth.token);
+    const deadMessageResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+      content: "Message from the dead",
+      channel: "DEAD",
+    }, seerAuth.token);
     assertEquals(deadMessageResponse.status, 201);
 
-    const aliveToDeadResponse = await apiRequest("POST", `/games/${gameId}/chat`, { content: "Alive trying to message dead", channel: "DEAD" }, villagerAuth.token);
+    const aliveToDeadResponse = await apiRequest("POST", `/games/${gameId}/chat`, {
+      content: "Alive trying to message dead",
+      channel: "DEAD",
+    }, villagerAuth.token);
     assertEquals(aliveToDeadResponse.status, 403);
 
     const deadChatResponse = await apiRequest("GET", `/games/${gameId}/chat?channel=DEAD`, undefined, seerAuth.token);
@@ -57,7 +65,12 @@ Deno.test({
     assertEquals(deadChatData.length, 1);
     assertEquals(deadChatData[0].content, "Message from the dead");
 
-    const aliveDeadChatResponse = await apiRequest("GET", `/games/${gameId}/chat?channel=DEAD`, undefined, villagerAuth.token);
+    const aliveDeadChatResponse = await apiRequest(
+      "GET",
+      `/games/${gameId}/chat?channel=DEAD`,
+      undefined,
+      villagerAuth.token,
+    );
     assertEquals(aliveDeadChatResponse.status, 403);
 
     await cleanupTests();

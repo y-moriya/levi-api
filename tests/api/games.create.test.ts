@@ -1,7 +1,7 @@
 import { assertEquals } from "https://deno.land/std@0.210.0/assert/mod.ts";
 import { apiRequest, consumeResponse, createAuthenticatedUser } from "../helpers/api.ts";
 import { GameResponse } from "../helpers/types.ts";
-import { setupTests, cleanupTests } from "./games.test-helpers.ts";
+import { cleanupTests, setupTests } from "./games.test-helpers.ts";
 
 Deno.test({
   name: "ゲーム作成 - 新しいゲームを正常に作成できるか",

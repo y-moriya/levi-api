@@ -8,7 +8,7 @@ export async function findGamesByStatus(status: string): Promise<Game[]> {
   try {
     const { rows: gameIds } = await client.queryObject<{ id: string }>(
       "SELECT id FROM games WHERE status = $1",
-      [status]
+      [status],
     );
 
     const games: Game[] = [];

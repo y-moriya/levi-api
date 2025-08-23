@@ -5,23 +5,23 @@ export async function getGameStats(): Promise<Record<string, number>> {
   const client = await getClient();
   try {
     const { rows: totalGames } = await client.queryObject<{ count: number }>(
-      "SELECT COUNT(*) as count FROM games"
+      "SELECT COUNT(*) as count FROM games",
     );
 
     const { rows: waitingGames } = await client.queryObject<{ count: number }>(
-      "SELECT COUNT(*) as count FROM games WHERE status = 'WAITING'"
+      "SELECT COUNT(*) as count FROM games WHERE status = 'WAITING'",
     );
 
     const { rows: inProgressGames } = await client.queryObject<{ count: number }>(
-      "SELECT COUNT(*) as count FROM games WHERE status = 'IN_PROGRESS'"
+      "SELECT COUNT(*) as count FROM games WHERE status = 'IN_PROGRESS'",
     );
 
     const { rows: finishedGames } = await client.queryObject<{ count: number }>(
-      "SELECT COUNT(*) as count FROM games WHERE status = 'FINISHED'"
+      "SELECT COUNT(*) as count FROM games WHERE status = 'FINISHED'",
     );
 
     const { rows: activePlayers } = await client.queryObject<{ count: number }>(
-      "SELECT COUNT(DISTINCT player_id) as count FROM players"
+      "SELECT COUNT(DISTINCT player_id) as count FROM players",
     );
 
     return {
@@ -29,7 +29,7 @@ export async function getGameStats(): Promise<Record<string, number>> {
       waitingGames: waitingGames[0].count,
       inProgressGames: inProgressGames[0].count,
       finishedGames: finishedGames[0].count,
-      activePlayers: activePlayers[0].count
+      activePlayers: activePlayers[0].count,
     };
   } catch (error) {
     const err = error as Error;

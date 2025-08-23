@@ -53,7 +53,7 @@ export const createGame = async (data: GameCreation, ownerId: string): Promise<G
       username: owner.username,
       email: owner.email,
       createdAt: owner.createdAt,
-      stats: owner.stats
+      stats: owner.stats,
     },
     creatorId: ownerId,
     maxPlayers: data.maxPlayers,
@@ -65,7 +65,7 @@ export const createGame = async (data: GameCreation, ownerId: string): Promise<G
       username: owner.username,
       isAlive: true,
       joinedAt: new Date().toISOString(),
-      deathCause: "NONE"
+      deathCause: "NONE",
     }],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -77,12 +77,12 @@ export const createGame = async (data: GameCreation, ownerId: string): Promise<G
     gameEvents: [],
     gameActions: [],
     actions: [] as any, // 型アサーションを使用して互換性を確保
-    revealedRoles: []
+    revealedRoles: [],
   };
 
   const gameRepo = repositoryContainer.getGameRepository();
   await gameRepo.add(game);
-  
+
   return game;
 };
 
@@ -99,7 +99,7 @@ export const getGameById = async (gameId: string): Promise<Game | null | undefin
 export const joinGame = async (gameId: string, playerId: string): Promise<Game> => {
   const gameRepo = repositoryContainer.getGameRepository();
   const game = await gameRepo.findById(gameId);
-  
+
   if (!game) {
     throw new Error("Game not found");
   }
@@ -114,7 +114,7 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
 
   const userRepo = repositoryContainer.getUserRepository();
   const player = await userRepo.findById(playerId);
-  
+
   if (!player) {
     throw new Error("Player not found");
   }
@@ -128,7 +128,7 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
     username: player.username,
     isAlive: true,
     joinedAt: new Date().toISOString(),
-    deathCause: "NONE"
+    deathCause: "NONE",
   };
 
   game.players.push(newPlayer);
@@ -144,7 +144,7 @@ export const joinGame = async (gameId: string, playerId: string): Promise<Game> 
 export const leaveGame = async (gameId: string, playerId: string): Promise<Game> => {
   const gameRepo = repositoryContainer.getGameRepository();
   const game = await gameRepo.findById(gameId);
-  
+
   if (!game) {
     throw new Error("Game not found");
   }
@@ -179,7 +179,7 @@ export const leaveGame = async (gameId: string, playerId: string): Promise<Game>
 export const startGame = async (gameId: string, playerId: string): Promise<Game> => {
   const gameRepo = repositoryContainer.getGameRepository();
   const game = await gameRepo.findById(gameId);
-  
+
   if (!game) {
     throw new Error("Game not found");
   }
@@ -194,7 +194,7 @@ export const startGame = async (gameId: string, playerId: string): Promise<Game>
 
   // ゲーム開始のロジックを呼び出し
   const updatedGame = await initializeGameLogic(game.id);
-  
+
   // 更新されたゲームのステータスを確認し、必要に応じて修正
   if (updatedGame.status !== "IN_PROGRESS") {
     logger.warn(`ゲームステータスが正しく更新されていません: ${updatedGame.status}`);

@@ -9,7 +9,7 @@ import { repositoryContainer } from "../repositories/repository-container.ts";
 export async function addMessage(message: ChatMessage): Promise<ChatMessage> {
   const chatRepo = repositoryContainer.getChatMessageRepository();
   const saved = await chatRepo.add(message);
-  
+
   logger.info("Chat message added", {
     gameId: message.gameId,
     channel: message.channel,
@@ -22,7 +22,7 @@ export async function addMessage(message: ChatMessage): Promise<ChatMessage> {
 export async function addSystemMessage(
   gameId: string,
   content: string,
-  channel: ChatChannel = "PUBLIC"
+  channel: ChatChannel = "PUBLIC",
 ): Promise<void> {
   const message: ChatMessage = {
     id: crypto.randomUUID(),
@@ -104,7 +104,16 @@ export async function sendMessage(
 
   // 有効なチャンネルかどうかをチェック
   const validChannels: ChatChannel[] = [
-    "GLOBAL", "GENERAL", "PUBLIC", "WEREWOLF", "SPIRIT", "DEAD", "SEER", "BODYGUARD", "MEDIUM", "PRIVATE",
+    "GLOBAL",
+    "GENERAL",
+    "PUBLIC",
+    "WEREWOLF",
+    "SPIRIT",
+    "DEAD",
+    "SEER",
+    "BODYGUARD",
+    "MEDIUM",
+    "PRIVATE",
   ];
   if (!validChannels.includes(channel)) {
     throw new GameError(ErrorCode.INVALID_CHANNEL, `無効なチャンネルです: ${channel}`);
@@ -137,10 +146,13 @@ export async function sendMessage(
     if (channel === "WEREWOLF" && player.role !== "WEREWOLF") {
       throw new GameError(ErrorCode.CHANNEL_ACCESS_DENIED, "人狼チャンネルには人狼のみがアクセスできます");
     }
-    
+
     // 霊界/デッドチャンネルへのアクセス権限チェック
     if (isDead(channel) && player.isAlive) {
-      throw new GameError(ErrorCode.CHANNEL_ACCESS_DENIED, "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
+      throw new GameError(
+        ErrorCode.CHANNEL_ACCESS_DENIED,
+        "霊界チャンネルには死亡したプレイヤーのみがアクセスできます",
+      );
     }
 
     // プレイヤーの生存状態チェック（公開チャット）
@@ -189,7 +201,16 @@ export async function getMessages(
 
   // 有効なチャンネルかどうかをチェック
   const validChannels: ChatChannel[] = [
-    "GLOBAL", "GENERAL", "PUBLIC", "WEREWOLF", "SPIRIT", "DEAD", "SEER", "BODYGUARD", "MEDIUM", "PRIVATE",
+    "GLOBAL",
+    "GENERAL",
+    "PUBLIC",
+    "WEREWOLF",
+    "SPIRIT",
+    "DEAD",
+    "SEER",
+    "BODYGUARD",
+    "MEDIUM",
+    "PRIVATE",
   ];
   if (!validChannels.includes(channel)) {
     throw new GameError(ErrorCode.INVALID_CHANNEL, `無効なチャンネルです: ${channel}`);
@@ -212,15 +233,18 @@ export async function getMessages(
   // 権限チェック（テストモード以外）
   if (!isTestMode && gameInstance && playerId) {
     const player = gameInstance.players.find((p) => p.playerId === playerId);
-    
+
     // 人狼チャンネルの権限チェック
     if (channel === "WEREWOLF" && (!player || player.role !== "WEREWOLF")) {
       throw new GameError(ErrorCode.CHANNEL_ACCESS_DENIED, "人狼チャンネルには人狼のみがアクセスできます");
     }
-    
+
     // 霊界/デッドチャンネルの権限チェック
     if (isDead(channel) && (!player || player.isAlive)) {
-      throw new GameError(ErrorCode.CHANNEL_ACCESS_DENIED, "霊界チャンネルには死亡したプレイヤーのみがアクセスできます");
+      throw new GameError(
+        ErrorCode.CHANNEL_ACCESS_DENIED,
+        "霊界チャンネルには死亡したプレイヤーのみがアクセスできます",
+      );
     }
   }
 

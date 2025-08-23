@@ -12,36 +12,39 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
   async add(message: ChatMessage): Promise<ChatMessage> {
     const client = await getClient();
     try {
-      await client.queryObject(`
+      await client.queryObject(
+        `
         INSERT INTO chat_messages (
           id, game_id, channel, sender_id, sender_username, sender_role, content, timestamp
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8
         )
-      `, [
-        message.id,
-        message.gameId,
-        message.channel,
-        message.senderId,
-        message.senderUsername,
-        message.senderRole,
-  message.content,
-  message.createdAt
-      ]);
-      
+      `,
+        [
+          message.id,
+          message.gameId,
+          message.channel,
+          message.senderId,
+          message.senderUsername,
+          message.senderRole,
+          message.content,
+          message.createdAt,
+        ],
+      );
+
       logger.info("Chat message added to PostgreSQL repository", {
         messageId: message.id,
         gameId: message.gameId,
-        channel: message.channel
+        channel: message.channel,
       });
-      
+
       return message;
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         messageId: message.id,
         gameId: message.gameId,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error adding chat message to PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -55,14 +58,16 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
     try {
       // メッセージが存在するか確認
       const { rows: existingMessage } = await client.queryObject<{ id: string }>(
-        "SELECT id FROM chat_messages WHERE id = $1", [id]
+        "SELECT id FROM chat_messages WHERE id = $1",
+        [id],
       );
-      
+
       if (existingMessage.length === 0) {
         return null;
       }
-      
-      await client.queryObject(`
+
+      await client.queryObject(
+        `
         UPDATE chat_messages SET
           game_id = $1,
           channel = $2,
@@ -72,24 +77,26 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
           content = $6,
           timestamp = $7
         WHERE id = $8
-      `, [
-        message.gameId,
-        message.channel,
-        message.senderId,
-        message.senderUsername,
-        message.senderRole,
-  message.content,
-  message.createdAt,
-        id
-      ]);
-      
+      `,
+        [
+          message.gameId,
+          message.channel,
+          message.senderId,
+          message.senderUsername,
+          message.senderRole,
+          message.content,
+          message.createdAt,
+          id,
+        ],
+      );
+
       logger.info("Chat message updated in PostgreSQL repository", { messageId: id });
       return message;
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         messageId: id,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error updating chat message in PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -109,32 +116,35 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-  timestamp: string;
-      }>(`
+        timestamp: string;
+      }>(
+        `
         SELECT * FROM chat_messages WHERE id = $1
-      `, [id]);
-      
+      `,
+        [id],
+      );
+
       if (rows.length === 0) {
         return null;
       }
-      
+
       const messageData = rows[0];
-      
+
       return {
         id: messageData.id,
         gameId: messageData.game_id,
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
+        senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        createdAt: messageData.timestamp
+        createdAt: messageData.timestamp,
       };
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         messageId: id,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error finding chat message by ID in PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -147,21 +157,22 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
     const client = await getClient();
     try {
       const result = await client.queryObject(
-        "DELETE FROM chat_messages WHERE id = $1", [id]
+        "DELETE FROM chat_messages WHERE id = $1",
+        [id],
       );
-      
+
       const deleted = result.rowCount && result.rowCount > 0;
-      
+
       if (deleted) {
         logger.info("Chat message deleted from PostgreSQL repository", { messageId: id });
       }
-      
+
       return deleted ? true : false; // 明示的にbooleanを返す
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         messageId: id,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error deleting chat message from PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -181,23 +192,23 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-  timestamp: string;
+        timestamp: string;
       }>("SELECT * FROM chat_messages ORDER BY timestamp ASC");
-      
-      return rows.map(messageData => ({
+
+      return rows.map((messageData) => ({
         id: messageData.id,
         gameId: messageData.game_id,
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
+        senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        createdAt: messageData.timestamp
+        createdAt: messageData.timestamp,
       }));
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
-        error: err.message
+      const context: Record<string, unknown> = {
+        error: err.message,
       };
       logger.error("Error finding all chat messages in PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -217,29 +228,32 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-  timestamp: string;
-      }>(`
+        timestamp: string;
+      }>(
+        `
         SELECT * FROM chat_messages 
         WHERE game_id = $1 AND channel = $2
         ORDER BY timestamp ASC
-      `, [gameId, channel]);
-      
-      return rows.map(messageData => ({
+      `,
+        [gameId, channel],
+      );
+
+      return rows.map((messageData) => ({
         id: messageData.id,
         gameId: messageData.game_id,
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
+        senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        createdAt: messageData.timestamp
+        createdAt: messageData.timestamp,
       }));
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
-        gameId, 
+      const context: Record<string, unknown> = {
+        gameId,
         channel,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error finding chat messages by game and channel in PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -259,28 +273,31 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
         sender_username: string;
         sender_role: string | null;
         content: string;
-  timestamp: string;
-      }>(`
+        timestamp: string;
+      }>(
+        `
         SELECT * FROM chat_messages 
         WHERE game_id = $1
         ORDER BY timestamp ASC
-      `, [gameId]);
-      
-      return rows.map(messageData => ({
+      `,
+        [gameId],
+      );
+
+      return rows.map((messageData) => ({
         id: messageData.id,
         gameId: messageData.game_id,
         channel: messageData.channel as ChatChannel,
         senderId: messageData.sender_id,
         senderUsername: messageData.sender_username,
-  senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
+        senderRole: (messageData.sender_role as unknown as Role | null) ?? undefined,
         content: messageData.content,
-        createdAt: messageData.timestamp
+        createdAt: messageData.timestamp,
       }));
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         gameId,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error finding chat messages by game in PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -293,21 +310,22 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
     const client = await getClient();
     try {
       const result = await client.queryObject(
-        "DELETE FROM chat_messages WHERE game_id = $1", [gameId]
+        "DELETE FROM chat_messages WHERE game_id = $1",
+        [gameId],
       );
-      
+
       const deleted = result.rowCount && result.rowCount > 0;
-      
+
       if (deleted) {
         logger.info("All chat messages for game deleted from PostgreSQL repository", { gameId });
       }
-      
+
       return deleted ? true : false; // 明示的にbooleanを返す
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
+      const context: Record<string, unknown> = {
         gameId,
-        error: err.message
+        error: err.message,
       };
       logger.error("Error deleting chat messages by game from PostgreSQL repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
@@ -323,8 +341,8 @@ export class PostgresChatMessageRepository implements ChatMessageRepository {
       logger.info("PostgreSQL chat message repository cleared");
     } catch (error: unknown) {
       const err = error as Error;
-      const context: Record<string, unknown> = { 
-        error: err.message
+      const context: Record<string, unknown> = {
+        error: err.message,
       };
       logger.error("Error clearing PostgreSQL chat message repository", context);
       throw GameError.fromError(error, ErrorCode.INTERNAL_SERVER_ERROR, context as ErrorContext);
